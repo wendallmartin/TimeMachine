@@ -1,0 +1,47 @@
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.exe.config
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.exe
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.pdb
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csprojResolveAssemblyReference.cache
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.Form1.resources
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.Properties.Resources.resources
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csproj.GenerateResource.Cache
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.exe
+c:\users\joseph\documents\visual studio 2015\Projects\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.pdb
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.exe.config
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.exe
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.pdb
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csprojResolveAssemblyReference.cache
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.TimeView.resources
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.DayViewEdit.resources
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.TheTimeAppForm.resources
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.Properties.Resources.resources
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.TimeViewEdit.resources
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.TimeViewWindow.resources
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csproj.GenerateResource.Cache
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.exe
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.pdb
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csproj.CoreCompileInputs.cache
+C:\Users\Wendall Martin\Documents\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.EmailSettingsWindow.resources
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.exe.config
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.exe
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\bin\Debug\TheTimeApp.pdb
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csprojResolveAssemblyReference.cache
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.TimeView.resources
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.Properties.Resources.resources
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.TimeViewEdit.resources
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.TimeViewWindow.resources
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csproj.GenerateResource.Cache
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.csproj.CoreCompileInputs.cache
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.exe
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.pdb
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.EmailOrPrintWindow.resources
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\wpfDayViewEdit.g.cs
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp_Content.g.cs
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp_MarkupCompile.cache
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp_MarkupCompile.lref
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\wpfDayViewEdit.baml
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\TheTimeApp.g.resources
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\WPFTimeAppForm.g.cs
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\WPFTimeAppForm.baml
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\SettingsWindow.g.cs
+C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\obj\Debug\SettingsWindow.baml

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<settings>
+  <database>C:\Users\Wendall Martin\Source\TheTimeApp\TheTimeApp\bin\Release\\time.dtf</database>
+  <fromemail>Wendall@hersheysmm.com</fromemail>
+  <fromuser>Wendall</fromuser>
+  <frompass>u5UGsgyA</frompass>
+  <emailhost>smtp.HersheysMM.com</emailhost>
+  <emailport>587</emailport>
+  <EmailSsl>false</EmailSsl>
+  <toemail>Accounting@HersheysMM.com</toemail>
+  <militime>false</militime>
+</settings>
