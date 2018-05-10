@@ -12,6 +12,7 @@ namespace TheTimeApp.TimeData
     public class TimeData
     {
         private int _stateIndex = 0;
+        private static object readWrite = new object();
 
         private List<Day> days;
 
@@ -49,34 +50,36 @@ namespace TheTimeApp.TimeData
         /// <param name="file"></param>
         public void Save()
         {
-            
-            string file = AppSettings.DataPath;
-
-            SortDays();
-            
-            SQLServerHelper.PushToServer(days);
-            
-            if (!File.Exists(file))
-                File.Create(file).Close();
-
-            try
+            lock (readWrite)
             {
-                using (var fs = new FileStream(file, FileMode.Create))
+                string file = AppSettings.DataPath;
+
+                SortDays();
+            
+                SQLServerHelper.PushToServer(days);
+            
+                if (!File.Exists(file))
+                    File.Create(file).Close();
+
+                try
                 {
-                    using (var des = new DESCryptoServiceProvider())
+                    using (var fs = new FileStream(file, FileMode.Create))
                     {
-                        using (Stream cryptoStream = new CryptoStream(fs, des.CreateEncryptor(bKey, IV), CryptoStreamMode.Write))
+                        using (var des = new DESCryptoServiceProvider())
                         {
-                            var binaryFormatter = new BinaryFormatter();
-                            binaryFormatter.Serialize(cryptoStream, this);
-                            cryptoStream.Flush();
+                            using (Stream cryptoStream = new CryptoStream(fs, des.CreateEncryptor(bKey, IV), CryptoStreamMode.Write))
+                            {
+                                var binaryFormatter = new BinaryFormatter();
+                                binaryFormatter.Serialize(cryptoStream, this);
+                                cryptoStream.Flush();
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception eSerialize)
-            {
-                MessageBox.Show(eSerialize.ToString());
+                catch (Exception eSerialize)
+                {
+                    MessageBox.Show(eSerialize.ToString());
+                }    
             }
         }
 
@@ -96,39 +99,42 @@ namespace TheTimeApp.TimeData
 
         public static TimeData Load()
         {
-            string file = AppSettings.DataPath;
-
-            TimeData data = null;
-            if (File.Exists(file))
+            lock (readWrite)
             {
-                //if files is not found, create file
-                // Profile exists and can be loaded.
-                try
+                string file = AppSettings.DataPath;
+
+                TimeData data = null;
+                if (File.Exists(file))
                 {
-                    using (var fs = new FileStream(file, FileMode.Open))
+                    //if files is not found, create file
+                    // Profile exists and can be loaded.
+                    try
                     {
-                        using (var des = new DESCryptoServiceProvider())
+                        using (var fs = new FileStream(file, FileMode.Open))
                         {
-                            using (Stream cryptoStream = new CryptoStream(fs, des.CreateDecryptor(bKey, IV), CryptoStreamMode.Read))
+                            using (var des = new DESCryptoServiceProvider())
                             {
-                                var binaryFormatter = new BinaryFormatter();
-                                data = (TimeData) binaryFormatter.Deserialize(cryptoStream);
+                                using (Stream cryptoStream = new CryptoStream(fs, des.CreateDecryptor(bKey, IV), CryptoStreamMode.Read))
+                                {
+                                    var binaryFormatter = new BinaryFormatter();
+                                    data = (TimeData) binaryFormatter.Deserialize(cryptoStream);
+                                }
                             }
                         }
                     }
+                    catch (Exception eDeserialize)
+                    {
+                        MessageBox.Show(eDeserialize.ToString());
+                        return new TimeData();
+                    }
                 }
-                catch (Exception eDeserialize)
+                else
                 {
-                    MessageBox.Show(eDeserialize.ToString());
+                    // we assume this is the first instance of the app so the data file must be created
                     return new TimeData();
                 }
+                return data;   
             }
-            else
-            {
-                // we assume this is the first instance of the app so the data file must be created
-                return new TimeData();
-            }
-            return data;
         }
 
         private bool DatesAreInTheSameWeek(DateTime date1, DateTime date2)

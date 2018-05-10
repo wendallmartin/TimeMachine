@@ -11,7 +11,6 @@ namespace TheTimeApp.TimeData
     public class SQLServerHelper
     {
         private static object _lock = new Object();
-        private static bool _kill;
 
         private static List<Day> Days { get; set; }
 
@@ -61,9 +60,6 @@ namespace TheTimeApp.TimeData
                         
                         while(myReader.Read())
                         {
-                            if (_kill) 
-                                return;
-
                             if (myReader["TimeIn"] is TimeSpan && myReader["TimeOut"] is TimeSpan)
                             {
                                 if ((TimeSpan) myReader["TimeIn"] == new TimeSpan() && (TimeSpan) myReader["TimeOut"] == new TimeSpan())// day header
@@ -106,14 +102,9 @@ namespace TheTimeApp.TimeData
                         
                         foreach (Day day in days)
                         {
-                            if (_kill) 
-                                return;
-                            
                             InsertDayHeader(day, con);
                             foreach (var time in day.GetTimes())
                             {
-                                if (_kill) 
-                                    return;
                                 InsertTime(time, con);
                             }
                         }
