@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using TheTimeApp.TimeData;
 
 namespace TheTimeApp
 {
@@ -21,7 +23,7 @@ namespace TheTimeApp
     public partial class SettingsWindow : Window
     {
         private TimeData.TimeData _data;
-        
+        SQLServerHelper _sqlHelper = new SQLServerHelper();
         public SettingsWindow(TimeData.TimeData data)
         {
             InitializeComponent();
@@ -40,6 +42,8 @@ namespace TheTimeApp
             TextBoxSqlUserId.Text = AppSettings.SQLUserId;
             TextBoxSqlPassword.Text = "*********";
             TextBoxSqlCatelog.Text = AppSettings.SQLCatelog;
+            btn_SQLEnable.Content = AppSettings.SQLEnabled == "true" ? "Enabled" : "Disabled";
+            btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
 
             AssociateEvents();
         }
@@ -59,6 +63,10 @@ namespace TheTimeApp
             TextBoxSqlUserId.TextChanged += TextBoxSqlUserId_TextChanged;
             TextBoxSqlPassword.TextChanged += TextBoxSqlPassword_TextChanged;
             TextBoxSqlCatelog.TextChanged += TextBoxSqlCatelog_TextChanged;
+            
+            // sql server progress changed
+            _sqlHelper.ProgressChangedEvent += OnSQLPushAllProgressChanged;
+            _sqlHelper.ProgressFinishEvent += OnSQLPushAllProgressFinish;
         }
 
         private void TextBoxSqlDataSource_TextChanged(object sender, TextChangedEventArgs e)
@@ -119,6 +127,73 @@ namespace TheTimeApp
         private void Ssl_CheckBox_UnChecked(object sender, RoutedEventArgs e)
         {
             AppSettings.SslEmail = "false";
+        }
+
+        private void Btn_SQLEnabled_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppSettings.SQLEnabled == "true")
+            {
+                AppSettings.SQLEnabled = "false";
+                btn_SQLEnable.Content = "Disabled";
+            }
+            else
+            {
+                AppSettings.SQLEnabled = "true";
+                btn_SQLEnable.Content = "Enabled";
+            }
+        }
+        
+        private void Btn_SQLPushAll_Click(object sender, RoutedEventArgs e)
+        {
+            ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
+            btn_SQLSyncAll.IsEnabled = false;
+            _sqlHelper.RePushToServer(_data.Days);
+        }
+
+        private void OnSQLPushAllProgressChanged(float value)
+        {
+            Debug.WriteLine(value);
+            Dispatcher.Invoke(new Action(() =>
+            {
+                ProgressBar_SQLRePushAll.Value = value;
+                
+            
+                if (value == 100)
+                    ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;    
+            }));
+        }
+        
+        private void OnSQLPushAllProgressFinish()
+        {
+            Dispatcher.Invoke(new Action(() =>
+            {
+                btn_SQLSyncAll.IsEnabled = true;
+                ProgressBar_SQLRePushAll.Value = 0;
+                ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;
+            }));
+        }
+
+
+        private void btn_EmployEmployer_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppSettings.MainPermission == "write")
+            {
+                AppSettings.MainPermission = "read";
+                btn_Permission.Content = "Read";
+            }
+            else
+            {
+                AppSettings.MainPermission = "write";
+                btn_Permission.Content = "Write";
+            }
+        }
+
+        private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((sender as TabItem) == Developer_Settings)
+            {
+                MessageBox.Show("Enter Password");
+            }
         }
     }
 }

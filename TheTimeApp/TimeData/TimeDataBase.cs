@@ -21,6 +21,9 @@ namespace TheTimeApp.TimeData
 
         private Time inprogress;
 
+        [NonSerialized]
+        private SQLServerHelper _sqlHelper = new SQLServerHelper();
+
         public TimeData()
         {
             days = new List<Day>();
@@ -55,8 +58,19 @@ namespace TheTimeApp.TimeData
                 string file = AppSettings.DataPath;
 
                 SortDays();
-            
-                SQLServerHelper.PushToServer(days);
+
+                if (AppSettings.SQLEnabled == "true")
+                {
+                    if (AppSettings.MainPermission == "write")
+                    {
+//                        _sqlHelper.PushToServer(days);
+                    }
+                    else
+                    {
+//                        _sqlHelper.PullFromServer(days);
+                    }
+                }
+                
             
                 if (!File.Exists(file))
                     File.Create(file).Close();

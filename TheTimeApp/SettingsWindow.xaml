@@ -3,11 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:TheTimeApp"
         mc:Ignorable="d"
         Height="300" Width="343">
     <Grid>
-        <TabControl>
+        <TabControl SelectionChanged="OnSelectionChanged">
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
@@ -46,18 +45,33 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
-                    <Label Content="Data source" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,15,0,0" />
-                    <Label Content="User id" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,47,0,0" />
-                    <Label Content="Password" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,81,0,0" />
-                    <Label Content="Catelog" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,116,0,0" />
+                    <Label Content="Data source" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,48,0,0" />
+                    <Label Content="User id" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,80,0,0" />
+                    <Label Content="Password" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,114,0,0" />
+                    <Label Content="Catelog" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,149,0,0" />
                     <TextBox x:Name="TextBoxSqlDataSource" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                             VerticalAlignment="Top" Width="196" Margin="119,17,0,0" />
-                    <TextBox x:Name="TextBoxSqlUserId" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
                              VerticalAlignment="Top" Width="196" Margin="119,50,0,0" />
+                    <TextBox x:Name="TextBoxSqlUserId" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
+                             VerticalAlignment="Top" Width="196" Margin="119,83,0,0" />
                     <TextBox x:Name="TextBoxSqlPassword" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                             VerticalAlignment="Top" Width="196" Margin="119,84,0,0"/>
+                             VerticalAlignment="Top" Width="196" Margin="119,117,0,0"/>
                     <TextBox x:Name="TextBoxSqlCatelog" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                             VerticalAlignment="Top" Width="196" Margin="119,119,0,0" />
+                             VerticalAlignment="Top" Width="196" Margin="119,152,0,0" />
+                    <Button x:Name="btn_SQLEnable"  Content="enable/disable" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="75"  Click="Btn_SQLEnabled_Click" Margin="0,0,0,10"/>
+                    <Button x:Name="btn_SQLSyncAll"  Content="Sync" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75"  Click="Btn_SQLPushAll_Click"/>
+                    <ProgressBar x:Name="ProgressBar_SQLRePushAll" HorizontalAlignment="Center" Height="16" VerticalAlignment="Top" Width="200" Margin="0,27,0,0" Visibility="Hidden"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem x:Name="Developer_Settings" Visibility="Visible">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Admin" Foreground="Black" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                    <Label Content="Permission" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="7,5,0,0" />
+                    <Button x:Name = "btn_Permission"  Content="Permission" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="91,10,0,0" Click="btn_EmployEmployer_Click"/>
                 </Grid>
             </TabItem>
 

@@ -21,7 +21,13 @@ namespace TheTimeApp
         
         public static string DataPath
         {
-            get { return ReadValueFromXML("uwnmnnvvkgsfghks", false); }
+            get{
+                if (ReadValueFromXML("uwnmnnvvkgsfghks", false) == "")
+                {
+                    WriteValueTOXML("uwnmnnvvkgsfghks", "time.dtf", false);
+                }
+                return ReadValueFromXML("uwnmnnvvkgsfghks", false);
+            }
             set{ WriteValueTOXML("uwnmnnvvkgsfghks", value, false); }
         }
         public static string FromAddress
@@ -92,6 +98,18 @@ namespace TheTimeApp
             set { WriteValueTOXML("lafjedoioowowfowof", value); }
         }
 
+        public static string SQLEnabled
+        {
+            get{return ReadValueFromXML("dkjfgjpwhjpo");}
+            set{ WriteValueTOXML("dkjfgjpwhjpo", value); }
+        }
+
+        public static string MainPermission
+        {
+            get { return ReadValueFromXML("dlajwugpasdh"); }
+            set { WriteValueTOXML("dlajwugpasdh", value); }
+        }
+
         public static void Validate()
         {
             if (!File.Exists(settingsFilePath))
@@ -160,6 +178,14 @@ namespace TheTimeApp
 
             xmlWriter.WriteStartElement("lafjedoioowowfowof");
             xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteEndElement();
+
+            xmlWriter.WriteStartElement("dkjfgjpwhjpo");
+            xmlWriter.WriteValue("false");
+            xmlWriter.WriteEndElement();
+
+            xmlWriter.WriteStartElement("dlajwugpasdh");
+            xmlWriter.WriteValue("read");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteEndDocument();
