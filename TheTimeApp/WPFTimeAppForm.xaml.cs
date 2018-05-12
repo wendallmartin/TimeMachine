@@ -12,7 +12,6 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeAppForm : Window
     {
-        private Timer _timer = new Timer(3000);
         private TimeData.TimeData _timeData = new TimeData.TimeData();
         private DateTime startTime;
         private DateTime StopTime;
@@ -27,24 +26,12 @@ namespace TheTimeApp
         public WPFTimeAppForm()
         {
             InitializeComponent();
-            _timer.Elapsed += OnTimerElapsed;
 
             AppSettings.Validate();
 
             _timeData = TimeData.TimeData.Load();
 
             DayDetailsBox.Text = _timeData.CurrentDay().Details;
-        }
-
-        /// <summary>
-        /// Timer to keep save from firing every key press
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void OnTimerElapsed(object sender, ElapsedEventArgs e)
-        {
-            _timeData.Save();
-            _timer.Stop();
         }
 
         private void btn_Start_CheckedChanged(object sender, RoutedEventArgs e)
@@ -88,11 +75,8 @@ namespace TheTimeApp
 
         private void OnDayDetailsChanged(object sender, TextChangedEventArgs e)
         {
-            if(_timer.Enabled)
-                _timer.Stop();
-            _timer.Start();
-            
-            _timeData.CurrentDay().Details = DayDetailsBox.Text;
+            _timeData.UpdateDetails(_timeData.CurrentDay(), DayDetailsBox.Text);
+            _timeData.Save();
         }
     }
 }

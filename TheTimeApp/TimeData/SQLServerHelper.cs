@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading;
 using MessageBox = System.Windows.MessageBox;
 
 namespace TheTimeApp.TimeData
 {
-    public class SQLServerHelper
+    public class SQLServerHelper : IDisposable
     {
         private static object _lock = new Object();
 
@@ -21,6 +22,10 @@ namespace TheTimeApp.TimeData
         public ProgressFinishDel ProgressFinishEvent;
 
         private List<Day> Days { get; set; }
+        
+        private List<SqlCommand> _commands = new List<SqlCommand>();
+
+        private SqlConnection connection;
 
         private List<Time> Times
         {
@@ -46,57 +51,34 @@ namespace TheTimeApp.TimeData
             InitialCatalog = AppSettings.SQLCatelog,
             MultipleActiveResultSets = true
         };
-        
+
+        public SQLServerHelper()
+        {
+            connection = new SqlConnection(cb.ConnectionString);
+            connection.Open();
+        }
+
         public void PullFromServer(List<Day> days)
         {
             lock (_lock)
             {
                 Days = days;
-                using (SqlConnection con = new SqlConnection(cb.ConnectionString))
+
+                // removes deleted from server
+                SqlCommand dayCommand = new SqlCommand("SELECT * FROM Time_Server WHERE (TimeIn = '" + new TimeSpan() + "' AND TimeOut = '" + new TimeSpan() + "')", connection);
+                SqlDataReader dayReader = dayCommand.ExecuteReader();
+
+                while (dayReader.Read())
                 {
-                    con.Open();
-
-                    // removes deleted from server
-                    SqlCommand dayCommand = new SqlCommand("SELECT * FROM Time_Server WHERE (TimeIn = '" + new TimeSpan() + "' AND TimeOut = '" + new TimeSpan() + "')", con);
-                    SqlDataReader dayReader = dayCommand.ExecuteReader();
-
-                    while (dayReader.Read())
+                    if (dayReader["TimeIn"] is TimeSpan && dayReader["TimeOut"] is TimeSpan)
                     {
-                        if (dayReader["TimeIn"] is TimeSpan && dayReader["TimeOut"] is TimeSpan)
+                        if ((TimeSpan) dayReader["TimeIn"] == new TimeSpan() && (TimeSpan) dayReader["TimeOut"] == new TimeSpan()) // day header
                         {
-                            if ((TimeSpan) dayReader["TimeIn"] == new TimeSpan() && (TimeSpan) dayReader["TimeOut"] == new TimeSpan()) // day header
-                            {
-                                Day day = new Day((DateTime) dayReader["Date"]) {Details = dayReader["Details"].ToString()};
-                                bool contains = false;
-                                foreach (Day d in Days)
-                                {
-                                    if (d.Date == (DateTime) dayReader["Date"] && (TimeSpan) dayReader["TimeIn"] == new TimeSpan())
-                                    {
-                                        contains = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!contains)
-                                {
-                                    days.Add(new Day((DateTime) dayReader["Date"]));
-                                }
-                            }
-                        }
-                    }
-
-                    SqlCommand timeCommand = new SqlCommand("SELECT * FROM Time_Server WHERE (TimeIn <> '" + new TimeSpan() + "' AND TimeOut <> '" + new TimeSpan() + "')", con);
-                    SqlDataReader timeReader = timeCommand.ExecuteReader();
-
-                    while (timeReader.Read())
-                    {
-                        if (timeReader["TimeIn"] is TimeSpan && timeReader["TimeOut"] is TimeSpan)
-                        {
-
+                            Day day = new Day((DateTime) dayReader["Date"]) {Details = dayReader["Details"].ToString()};
                             bool contains = false;
-                            foreach (Time t in Times)
+                            foreach (Day d in Days)
                             {
-                                if (t.TimeIn.TimeOfDay == (TimeSpan) timeReader["TimeIn"] && t.TimeOut.TimeOfDay == (TimeSpan) timeReader["TimeOut"])
+                                if (d.Date == (DateTime) dayReader["Date"] && (TimeSpan) dayReader["TimeIn"] == new TimeSpan())
                                 {
                                     contains = true;
                                     break;
@@ -105,8 +87,32 @@ namespace TheTimeApp.TimeData
 
                             if (!contains)
                             {
-                                RemoveTime((TimeSpan) timeReader["TimeIn"], (TimeSpan) timeReader["TimeOut"], con);
+                                days.Add(new Day((DateTime) dayReader["Date"]));
                             }
+                        }
+                    }
+                }
+
+                SqlCommand timeCommand = new SqlCommand("SELECT * FROM Time_Server WHERE (TimeIn <> '" + new TimeSpan() + "' AND TimeOut <> '" + new TimeSpan() + "')", connection);
+                SqlDataReader timeReader = timeCommand.ExecuteReader();
+
+                while (timeReader.Read())
+                {
+                    if (timeReader["TimeIn"] is TimeSpan && timeReader["TimeOut"] is TimeSpan)
+                    {
+                        bool contains = false;
+                        foreach (Time t in Times)
+                        {
+                            if (t.TimeIn.TimeOfDay == (TimeSpan) timeReader["TimeIn"] && t.TimeOut.TimeOfDay == (TimeSpan) timeReader["TimeOut"])
+                            {
+                                contains = true;
+                                break;
+                            }
+                        }
+
+                        if (!contains)
+                        {
+                            RemoveTime((TimeSpan) timeReader["TimeIn"], (TimeSpan) timeReader["TimeOut"], connection);
                         }
                     }
                 }
@@ -127,115 +133,41 @@ namespace TheTimeApp.TimeData
                     CreateCommand(@"IF EXISTS (SELECT * FROM sysobjects WHERE name='Time_Server' AND xtype='U') DROP TABLE Time_Server");
                     CreateCommand(@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Time_Server' AND xtype='U')
                                             CREATE TABLE Time_Server (Date date, TimeIn time, TimeOut time, Details text)");
-            
-                    ProgressChangedEvent?.Invoke(0);
-                    using (SqlConnection con = new SqlConnection(cb.ConnectionString))
-                    {
-                        con.Open();
-                        for (float i = 0; i < days.Count; i++)
-                        {
-                            Day day = days[(int)i];
-                            InsertDayHeader(day, con);
-                            foreach (var time in day.GetTimes())
-                            {
-                                InsertTime(time, con);
-                            }
 
-                            ProgressChangedEvent?.Invoke(i / days.Count * 100f);
+                    ProgressChangedEvent?.Invoke(0);
+                    for (float i = 0; i < days.Count; i++)
+                    {
+                        Day day = days[(int) i];
+                        InsertOrUpdateDayHeader(day);
+                        foreach (var time in day.GetTimes())
+                        {
+                            InsertTime(time);
                         }
+
+                        ProgressChangedEvent?.Invoke(i / days.Count * 100f);
                     }
+
                     ProgressFinishEvent?.Invoke();
                     IsRePushingSQL = false;
                 }
-                
             }).Start();
         }
-        
-        public void PushToServer(List<Day> days)
+
+        private void CreateCommand(string sqlstring)
         {
-            new Thread(() =>
-            {
-                lock (_lock)
-                {
-                    Days = days;
-                    
-                    CreateCommand(@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Time_Server' AND xtype='U')
-                                            CREATE TABLE Time_Server (Date date, TimeIn time, TimeOut time, Details text)");
-
-                    using (SqlConnection con = new SqlConnection(cb.ConnectionString))
-                    {
-                        con.Open();
-                        
-                        // removes deleted from server
-                        SqlCommand myCommand = new SqlCommand("SELECT * FROM Time_Server",  con);
-                        SqlDataReader myReader = myCommand.ExecuteReader();
-                        
-                        while(myReader.Read())
-                        {
-                            if (myReader["TimeIn"] is TimeSpan && myReader["TimeOut"] is TimeSpan)
-                            {
-                                if ((TimeSpan) myReader["TimeIn"] == new TimeSpan() && (TimeSpan) myReader["TimeOut"] == new TimeSpan())// day header
-                                {
-                                    Day day = new Day((DateTime) myReader["Date"]) {Details = myReader["Details"].ToString()};
-                                    bool contains = false;
-                                    foreach (Day d in Days)
-                                    {
-                                        if (d.Date == (DateTime)myReader["Date"] && (TimeSpan)myReader["TimeIn"] == new TimeSpan())
-                                        {
-                                            contains = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!contains || (DateTime.Today - day.Date).TotalDays > 30)
-                                    {
-                                        RemoveDayHeader((DateTime)myReader["Date"],con);
-                                    }
-                                }
-                                else// time entry
-                                {
-                                    bool contains = false;
-                                    foreach (Time t in Times)
-                                    {
-                                        if(t.TimeIn.TimeOfDay == (TimeSpan) myReader["TimeIn"] && t.TimeOut.TimeOfDay == (TimeSpan) myReader["TimeOut"] )
-                                        {
-                                            contains = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!contains || (DateTime.Today - ((DateTime) myReader["Date"]).Date).TotalDays > 30)
-                                    {
-                                        RemoveTime((TimeSpan) myReader["TimeIn"], (TimeSpan) myReader["TimeOut"],con);
-                                    }
-                                }
-                            }
-                        }
-                        
-                        foreach (Day day in days)
-                        {
-                            InsertDayHeader(day, con);
-                            foreach (var time in day.GetTimes())
-                            {
-                                InsertTime(time, con);
-                            }
-                        }
-                        CreateCommand("SELECT * FROM Time_Server ORDER BY Date DESC");
-                    }
-                }
-            }).Start();
+            AddCommand(new SqlCommand(sqlstring,connection));
         }
-        
-        private void CreateCommand(string queryString)
+
+        /// <summary>
+        /// Add command to list and trys to flush commands
+        /// </summary>
+        /// <param name="command"></param>
+        private void AddCommand(SqlCommand command)
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(cb.ConnectionString))
-                {
-                    SqlCommand command = new SqlCommand(queryString, connection);
-                    command.Connection.Open();
-                    command.ExecuteNonQuery();
-                }
+                _commands.Add(command);
+                FlushCommands();
             }
             catch (Exception e)
             {
@@ -255,7 +187,7 @@ namespace TheTimeApp.TimeData
             {
                 using (SqlCommand cmd = new SqlCommand("DELETE FROM Time_Server WHERE( Date = '" + date + "' AND TimeIn = '" + new TimeSpan() + "')", con))
                 {
-                    cmd.ExecuteNonQuery();
+                    AddCommand(cmd);
                     //rows number of record got updated
                 }
             }
@@ -277,7 +209,7 @@ namespace TheTimeApp.TimeData
             {
                 using (SqlCommand command = new SqlCommand("DELETE FROM Time_Server WHERE( TimeIn = '" + timein + "' AND TimeOut = '" + timeout + "')", con))
                 {
-                    command.ExecuteNonQuery();
+                    AddCommand(command);
                 }
             }
             catch (Exception e)
@@ -292,69 +224,70 @@ namespace TheTimeApp.TimeData
         /// </summary>
         /// <param name="day"></param>
         /// <param name="con"></param>
-        private void InsertDayHeader(Day day, SqlConnection con = null)
+        private void InsertOrUpdateDayHeader(Day day)
         {
             if (day == null) return;
-            
-            SqlConnection connection = con == null ? new SqlConnection(cb.ConnectionString) : con;
-            
-            try
+
+            lock (_lock)
             {
-                if (ServerContainsDay(day, con))
+                try
                 {
-                    using (SqlCommand cmd = new SqlCommand("UPDATE Time_Server SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", con))
+                    if (ServerContainsDay(day))
                     {
-                        cmd.Parameters.AddWithValue("@Details", day.Details);
-                        int rows = cmd.ExecuteNonQuery();
-                        //rows number of record got updated
+                        using (SqlCommand cmd = new SqlCommand("UPDATE Time_Server SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", connection))
+                        {
+                            cmd.Parameters.AddWithValue("@Details", day.Details);
+                            AddCommand(cmd);
+                            //rows number of record got updated
+                        }
+                    }
+                    else
+                    {
+                        using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details)", connection))
+                        {
+                            command.Parameters.Add(new SqlParameter("Date", day.Date));
+                            command.Parameters.Add(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
+                            command.Parameters.Add(new SqlParameter("TimeOut", new DateTime().TimeOfDay));
+                            command.Parameters.Add(new SqlParameter("Details", day.Details));
+                            AddCommand(command);
+                        }    
                     }
                 }
-                else
+                catch (Exception e)
                 {
-                    using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details)", connection))
-                    {
-                        command.Parameters.Add(new SqlParameter("Date", day.Date));
-                        command.Parameters.Add(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
-                        command.Parameters.Add(new SqlParameter("TimeOut", new DateTime().TimeOfDay));
-                        command.Parameters.Add(new SqlParameter("Details", day.Details));
-                        command.ExecuteNonQuery();
-                    }    
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                throw;
+                    MessageBox.Show(e.ToString());
+                    throw;
+                }                
             }
         }
 
-        private void InsertTime(Time time, SqlConnection con)
+        public void InsertTime(Time time)
         {
             if (time == null) return;
             
             try
             {
-                if (ServerContainsTime(time, con))
+                if (ServerContainsTime(time))
                 {
                     using (SqlCommand command = new SqlCommand($@"UPDATE Time_Server SET Date = @Date, TimeIn = @TimeIn, TimeOut = @TimeOut, Details = @Details 
-                         WHERE Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' OR TimeOut = '{time.TimeOut.TimeOfDay}' ", con))
+                         WHERE Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' OR TimeOut = '{time.TimeOut.TimeOfDay}' ", connection))
                     {
                         command.Parameters.Add(new SqlParameter("Date", time.TimeIn.Date));
                         command.Parameters.Add(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
                         command.Parameters.Add(new SqlParameter("TimeOut", time.TimeOut.TimeOfDay));
                         command.Parameters.Add(new SqlParameter("Details", ""));
-                        command.ExecuteNonQuery();
+                        AddCommand(command);
                     }
                 }
                 else
                 {
-                    using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details) ", con))
+                    using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details) ", connection))
                     {
                         command.Parameters.Add(new SqlParameter("Date", time.TimeIn.Date));
                         command.Parameters.Add(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
                         command.Parameters.Add(new SqlParameter("TimeOut", time.TimeOut.TimeOfDay));
                         command.Parameters.Add(new SqlParameter("Details", ""));
-                        command.ExecuteNonQuery();
+                        AddCommand(command);
                     }
                     
                 }
@@ -366,12 +299,41 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        private bool ServerContainsDay(Day day, SqlConnection con)
+        private void FlushCommands()
+        {
+            new Thread(() =>
+            {
+                lock (_lock)
+                {
+                    var successful = new List<SqlCommand>();
+                    try
+                    {
+                        foreach (SqlCommand sqlCommand in _commands)
+                        {
+                            sqlCommand.Connection = connection;
+                            sqlCommand.ExecuteNonQuery();
+                            successful.Add(sqlCommand);
+                        }
+
+                        foreach (SqlCommand success in successful)
+                        {
+                            _commands.Remove(success);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.ToString());
+                    }    
+                }    
+            }).Start();
+        }
+
+        private bool ServerContainsDay(Day day)
         {
             try
             {
                 using (SqlCommand command = new SqlCommand($@"SELECT * FROM Time_Server WHERE( Date = '" + day.Date + "' AND TimeIn = '" 
-                                                           + new DateTime().TimeOfDay + "' )", con))
+                                                           + new DateTime().TimeOfDay + "' )", connection))
                 {
                     return command.ExecuteScalar() != null;
                 }
@@ -383,12 +345,12 @@ namespace TheTimeApp.TimeData
             }
         }
         
-        private bool ServerContainsTime(Time time, SqlConnection con)
+        private bool ServerContainsTime(Time time)
         {
             try
             {
                 using (SqlCommand command = new SqlCommand(@"SELECT * FROM Time_Server WHERE( Date = @Date AND TimeIn = @TimeIn AND 
-                                                                TimeOut = @TimeOut AND CONVERT(VARCHAR,Details) = @Details)", con))
+                                                                TimeOut = @TimeOut AND CONVERT(VARCHAR,Details) = @Details)", connection))
                 {
                     command.Parameters.AddWithValue("@Date", time.TimeIn.Date);
                     command.Parameters.AddWithValue("@TimeIn", time.TimeIn.TimeOfDay);
@@ -401,6 +363,63 @@ namespace TheTimeApp.TimeData
             {
                 MessageBox.Show(e.ToString());
                 throw;
+            }
+        }
+
+        public void Dispose()
+        {
+            FlushCommands();
+            connection?.Close();
+            connection?.Dispose();
+        }
+        
+        private List<DateTime> DatesAreInTheSameWeek(DateTime date)
+        {
+            int currentDayOfWeek = (int) date.DayOfWeek;
+            DateTime sunday = date.AddDays(-currentDayOfWeek);
+            DateTime monday = sunday.AddDays(1);
+            // If we started on Sunday, we should actually have gone *back*
+            // 6 days instead of forward 1...
+            if (currentDayOfWeek == 0)
+            {
+                monday = monday.AddDays(-7);
+            }
+            return Enumerable.Range(0, 7).Select(days => monday.AddDays(days)).ToList();
+        }
+
+        public void RemoveWeek(DateTime date)
+        {
+            List<DateTime> datesInWeek = DatesAreInTheSameWeek(date);
+            using (SqlCommand command = new SqlCommand(@"DELETE FROM Time_Server WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + 
+                     "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] + "' OR Date = '" + datesInWeek[5] + "' OR Date = '" + datesInWeek[6] + "')", connection))
+                
+            {
+                AddCommand(command);
+            }
+        }
+
+        public void RemoveDay(DateTime date)
+        {
+            using (SqlCommand command = new SqlCommand(@"DELETE FROM Time_Server WHERE( Date = '" + date + "')", connection))
+            {
+                AddCommand(command);
+            }
+        }
+
+        public void DeleteTime(Time time)
+        {
+            using (SqlCommand command = new SqlCommand(@"DELETE FROM Time_Server WHERE( TimeIn = '" + time.TimeIn.TimeOfDay + "' AND TimeOut = '" + time.TimeOut.TimeOfDay + "')", connection))
+            {
+                AddCommand(command);
+            }
+        }
+
+        public void UpdateDetails(Day day)
+        {
+            using (SqlCommand cmd = new SqlCommand("UPDATE Time_Server SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", connection))
+            {
+                cmd.Parameters.AddWithValue("@Details", day.Details);
+                AddCommand(cmd);
             }
         }
     }

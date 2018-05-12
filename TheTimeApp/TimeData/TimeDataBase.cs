@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Windows.Forms;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
@@ -19,7 +20,7 @@ namespace TheTimeApp.TimeData
         private static readonly byte[] IV = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xCD, 0xEF };
         private static readonly byte[] bKey = { 27, 35, 75, 232, 73, 52, 87, 99 };
 
-        private Time inprogress;
+        private Time _inprogress;
 
         [NonSerialized]
         private SQLServerHelper _sqlHelper = new SQLServerHelper();
@@ -27,7 +28,13 @@ namespace TheTimeApp.TimeData
         public TimeData()
         {
             days = new List<Day>();
-            inprogress = new Time();
+            _inprogress = new Time();
+        }
+
+        [OnDeserialized]
+        private void InitSqlHelper(StreamingContext context)
+        {
+            _sqlHelper = new SQLServerHelper();
         }
 
         public List<Day> Days
@@ -58,19 +65,6 @@ namespace TheTimeApp.TimeData
                 string file = AppSettings.DataPath;
 
                 SortDays();
-
-                if (AppSettings.SQLEnabled == "true")
-                {
-                    if (AppSettings.MainPermission == "write")
-                    {
-//                        _sqlHelper.PushToServer(days);
-                    }
-                    else
-                    {
-//                        _sqlHelper.PullFromServer(days);
-                    }
-                }
-                
             
                 if (!File.Exists(file))
                     File.Create(file).Close();
@@ -190,6 +184,8 @@ namespace TheTimeApp.TimeData
                     }
                 }
             }
+
+            _sqlHelper.DeleteTime(time);
             Save();
         }
 
@@ -207,6 +203,8 @@ namespace TheTimeApp.TimeData
                     break;
                 }
             }
+
+            _sqlHelper.RemoveDay(date);
             Save();
         }
         
@@ -223,6 +221,8 @@ namespace TheTimeApp.TimeData
                     days.RemoveAt(i);
                 }
             }
+
+            _sqlHelper.RemoveWeek(date);
             Save();
         }
 
@@ -271,14 +271,15 @@ namespace TheTimeApp.TimeData
 
         public void PunchIn()
         {
-            inprogress = new Time();
-            inprogress.PunchIn();
+            _inprogress = new Time();
+            _inprogress.PunchIn();
         }
 
         public void PunchOut()
         {
-            inprogress.PunchOut();
-            CurrentDay().AddTime(inprogress);
+            _inprogress.PunchOut();
+            CurrentDay().AddTime(_inprogress);
+            _sqlHelper.InsertTime(_inprogress);
             Save();
         }
 
@@ -300,6 +301,12 @@ namespace TheTimeApp.TimeData
             result += "\n -------------------------------";
             result += "\n Total hours = " + HoursInWeek(date);
             return result;
+        }
+
+        public void UpdateDetails(Day day, string details)
+        {
+            day.Details = details;
+            _sqlHelper.UpdateDetails(day);
         }
     }
 }
