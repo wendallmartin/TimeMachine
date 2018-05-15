@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
+using System.Timers;
 using MessageBox = System.Windows.MessageBox;
+using Timer = System.Timers.Timer;
 
 namespace TheTimeApp.TimeData
 {
@@ -15,17 +18,31 @@ namespace TheTimeApp.TimeData
     
         public delegate void ProgressChangedDel(float value);
         
+        public delegate void ConnectionChangedDel(bool value);
+        
         public delegate void ProgressFinishDel();
         
         public ProgressChangedDel ProgressChangedEvent;
 
         public ProgressFinishDel ProgressFinishEvent;
 
+        public ConnectionChangedDel ConnectionChangedEvent;
+        
+        public ConnectionChangedDel UpdateChangedEvent;
+
         private List<Day> Days { get; set; }
         
         private List<SqlCommand> _commands = new List<SqlCommand>();
 
         private SqlConnection connection;
+        
+        private Timer _connectionRetry = new Timer(1000);
+
+        private bool _prevConnected = false;// disconnected is default
+
+        public bool IsConnected => connection?.State == ConnectionState.Open 
+                                   || connection?.State == ConnectionState.Executing 
+                                   || connection?.State == ConnectionState.Fetching;
 
         private List<Time> Times
         {
@@ -38,7 +55,6 @@ namespace TheTimeApp.TimeData
                         times.Add(dayTime);
                     }
                 }
-
                 return times;
             }
         }
@@ -52,10 +68,62 @@ namespace TheTimeApp.TimeData
             MultipleActiveResultSets = true
         };
 
-        public SQLServerHelper()
+        public SQLServerHelper(List<SqlCommand> sqlCommands)
         {
+            _commands = sqlCommands;
+            
             connection = new SqlConnection(cb.ConnectionString);
-            connection.Open();
+
+            _connectionRetry.Elapsed += OnConnectionRetry;
+            _connectionRetry.Enabled = true;
+
+            TryConnect();
+        }
+
+        private void OnConnectionRetry(object sender, ElapsedEventArgs e)
+        {
+            TryConnect();
+        }
+
+        /// <summary>
+        /// Returns true if successful
+        /// </summary>
+        /// <returns></returns>
+        private void TryConnect()
+        {
+            new Thread(() =>
+            {
+                lock (_lock)
+                {
+                    if (IsConnected)
+                    {
+                        return;
+                    }
+            
+                    if(connection == null)
+                        connection = new SqlConnection(cb.ConnectionString);
+
+                    try
+                    {
+                        connection.Open();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
+                    OnConnectionChanged();
+                    _prevConnected = IsConnected;
+                }    
+            }).Start();
+        }
+
+        private void OnConnectionChanged()
+        {
+            if(IsConnected)
+                FlushCommandsAsync();
+            
+            ConnectionChangedEvent?.Invoke(IsConnected);   
         }
 
         public void PullFromServer(List<Day> days)
@@ -166,8 +234,9 @@ namespace TheTimeApp.TimeData
         {
             try
             {
+                UpdateChangedEvent?.Invoke(false);
                 _commands.Add(command);
-                FlushCommands();
+                FlushCommandsAsync();
             }
             catch (Exception e)
             {
@@ -228,68 +297,37 @@ namespace TheTimeApp.TimeData
         {
             if (day == null) return;
 
-            lock (_lock)
-            {
                 try
                 {
-                    if (ServerContainsDay(day))
+                    using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details)", connection))
                     {
-                        using (SqlCommand cmd = new SqlCommand("UPDATE Time_Server SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", connection))
-                        {
-                            cmd.Parameters.AddWithValue("@Details", day.Details);
-                            AddCommand(cmd);
-                            //rows number of record got updated
-                        }
-                    }
-                    else
-                    {
-                        using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details)", connection))
-                        {
-                            command.Parameters.Add(new SqlParameter("Date", day.Date));
-                            command.Parameters.Add(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
-                            command.Parameters.Add(new SqlParameter("TimeOut", new DateTime().TimeOfDay));
-                            command.Parameters.Add(new SqlParameter("Details", day.Details));
-                            AddCommand(command);
-                        }    
-                    }
+                        command.Parameters.Add(new SqlParameter("Date", day.Date));
+                        command.Parameters.Add(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
+                        command.Parameters.Add(new SqlParameter("TimeOut", new DateTime().TimeOfDay));
+                        command.Parameters.Add(new SqlParameter("Details", day.Details));
+                        AddCommand(command);
+                    }    
                 }
                 catch (Exception e)
                 {
                     MessageBox.Show(e.ToString());
                     throw;
                 }                
-            }
         }
 
         public void InsertTime(Time time)
         {
             if (time == null) return;
-            
+
             try
             {
-                if (ServerContainsTime(time))
+                using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details) ", connection))
                 {
-                    using (SqlCommand command = new SqlCommand($@"UPDATE Time_Server SET Date = @Date, TimeIn = @TimeIn, TimeOut = @TimeOut, Details = @Details 
-                         WHERE Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' OR TimeOut = '{time.TimeOut.TimeOfDay}' ", connection))
-                    {
-                        command.Parameters.Add(new SqlParameter("Date", time.TimeIn.Date));
-                        command.Parameters.Add(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
-                        command.Parameters.Add(new SqlParameter("TimeOut", time.TimeOut.TimeOfDay));
-                        command.Parameters.Add(new SqlParameter("Details", ""));
-                        AddCommand(command);
-                    }
-                }
-                else
-                {
-                    using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details) ", connection))
-                    {
-                        command.Parameters.Add(new SqlParameter("Date", time.TimeIn.Date));
-                        command.Parameters.Add(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
-                        command.Parameters.Add(new SqlParameter("TimeOut", time.TimeOut.TimeOfDay));
-                        command.Parameters.Add(new SqlParameter("Details", ""));
-                        AddCommand(command);
-                    }
-                    
+                    command.Parameters.Add(new SqlParameter("Date", time.TimeIn.Date));
+                    command.Parameters.Add(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
+                    command.Parameters.Add(new SqlParameter("TimeOut", time.TimeOut.TimeOfDay));
+                    command.Parameters.Add(new SqlParameter("Details", ""));
+                    AddCommand(command);
                 }
             }
             catch (Exception e)
@@ -301,31 +339,52 @@ namespace TheTimeApp.TimeData
 
         private void FlushCommands()
         {
-            new Thread(() =>
+            if (connection.State == ConnectionState.Open)
             {
                 lock (_lock)
                 {
                     var successful = new List<SqlCommand>();
                     try
                     {
-                        foreach (SqlCommand sqlCommand in _commands)
+                        List<Exception> _exceptions = new List<Exception>();
+                        for (int i = 0; i < _commands.Count; i++) // must use for loop to avoid collection changed exception
                         {
-                            sqlCommand.Connection = connection;
-                            sqlCommand.ExecuteNonQuery();
-                            successful.Add(sqlCommand);
+                            UpdateChangedEvent?.Invoke(false);
+                            try
+                            {
+                                SqlCommand sqlCommand = _commands[i];
+                                sqlCommand.Connection = connection;
+                                sqlCommand.ExecuteNonQuery();
+                                successful.Add(sqlCommand);
+                            }
+                            catch (Exception e)
+                            {
+                                _exceptions.Add(e);
+                            }
                         }
 
                         foreach (SqlCommand success in successful)
                         {
                             _commands.Remove(success);
                         }
+
+                        foreach (Exception exception in _exceptions)
+                        {
+                            MessageBox.Show(exception.ToString());
+                        }
                     }
                     catch (Exception e)
                     {
                         MessageBox.Show(e.ToString());
-                    }    
-                }    
-            }).Start();
+                    }
+                    UpdateChangedEvent?.Invoke(_commands.Count == 0);
+                }
+            }
+        }
+
+        private void FlushCommandsAsync()
+        {
+            new Thread(() => { FlushCommands(); }).Start();
         }
 
         private bool ServerContainsDay(Day day)
@@ -368,7 +427,8 @@ namespace TheTimeApp.TimeData
 
         public void Dispose()
         {
-            FlushCommands();
+            FlushCommands();// try one last time to flush sql commands 
+            TimeData.Commands = _commands;
             connection?.Close();
             connection?.Dispose();
         }
@@ -389,6 +449,9 @@ namespace TheTimeApp.TimeData
 
         public void RemoveWeek(DateTime date)
         {
+            if (AppSettings.SQLEnabled == "false")
+                return;
+            
             List<DateTime> datesInWeek = DatesAreInTheSameWeek(date);
             using (SqlCommand command = new SqlCommand(@"DELETE FROM Time_Server WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + 
                      "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] + "' OR Date = '" + datesInWeek[5] + "' OR Date = '" + datesInWeek[6] + "')", connection))
@@ -400,6 +463,9 @@ namespace TheTimeApp.TimeData
 
         public void RemoveDay(DateTime date)
         {
+            if (AppSettings.SQLEnabled == "false")
+                return;
+            
             using (SqlCommand command = new SqlCommand(@"DELETE FROM Time_Server WHERE( Date = '" + date + "')", connection))
             {
                 AddCommand(command);
@@ -408,6 +474,9 @@ namespace TheTimeApp.TimeData
 
         public void DeleteTime(Time time)
         {
+            if (AppSettings.SQLEnabled == "false")
+                return;
+            
             using (SqlCommand command = new SqlCommand(@"DELETE FROM Time_Server WHERE( TimeIn = '" + time.TimeIn.TimeOfDay + "' AND TimeOut = '" + time.TimeOut.TimeOfDay + "')", connection))
             {
                 AddCommand(command);
@@ -416,6 +485,9 @@ namespace TheTimeApp.TimeData
 
         public void UpdateDetails(Day day)
         {
+            if (AppSettings.SQLEnabled == "false")
+                return;
+            
             using (SqlCommand cmd = new SqlCommand("UPDATE Time_Server SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", connection))
             {
                 cmd.Parameters.AddWithValue("@Details", day.Details);

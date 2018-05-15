@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Windows.Forms;
@@ -9,24 +10,42 @@ using Timer = System.Timers.Timer;
 
 namespace TheTimeApp.TimeData
 {
+    public delegate void ConnectionChangedDel(bool connected);
+    
     [Serializable]
     public class TimeData
     {
         private int _stateIndex = 0;
         private static object readWrite = new object();
 
+        [NonSerialized]
+        public ConnectionChangedDel ConnectionChangedEvent;
+        
+        
+        [NonSerialized]
+        public ConnectionChangedDel UpdateChangedEvent;
+        
+        [NonSerialized]
+        public static List<SqlCommand> Commands = new List<SqlCommand>();
+
         private List<Day> days;
 
+        [NonSerialized]
         private static readonly byte[] IV = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xCD, 0xEF };
+        
+        [NonSerialized]
         private static readonly byte[] bKey = { 27, 35, 75, 232, 73, 52, 87, 99 };
 
         private Time _inprogress;
 
         [NonSerialized]
-        private SQLServerHelper _sqlHelper = new SQLServerHelper();
+        private SQLServerHelper _sqlHelper;
 
         public TimeData()
         {
+            _sqlHelper = new SQLServerHelper(Commands);
+            _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
+            _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
             days = new List<Day>();
             _inprogress = new Time();
         }
@@ -34,7 +53,12 @@ namespace TheTimeApp.TimeData
         [OnDeserialized]
         private void InitSqlHelper(StreamingContext context)
         {
-            _sqlHelper = new SQLServerHelper();
+            if (_sqlHelper == null)
+            {
+                _sqlHelper = new SQLServerHelper(Commands);
+                _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
+                _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
+            }
         }
 
         public List<Day> Days
@@ -52,6 +76,15 @@ namespace TheTimeApp.TimeData
 
         }
 
+        private void OnUpdateChanged(bool uptodate)
+        {
+            UpdateChangedEvent?.Invoke(uptodate);
+        }
+        
+        private void OnConnectionChanged(bool connected)
+        {
+            ConnectionChangedEvent?.Invoke(connected);
+        }
 
         /// <summary>
         /// serializes the class to file

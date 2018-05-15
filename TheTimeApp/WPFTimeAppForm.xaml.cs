@@ -30,6 +30,8 @@ namespace TheTimeApp
             AppSettings.Validate();
 
             _timeData = TimeData.TimeData.Load();
+            _timeData.ConnectionChangedEvent += ConnectionChanged;
+            _timeData.UpdateChangedEvent += UpdateChanged;
 
             DayDetailsBox.Text = _timeData.CurrentDay().Details;
         }
@@ -48,6 +50,42 @@ namespace TheTimeApp
                 Start_Button.Background = Brushes.Green;
                 Start_Button.Content = "Start";
             }
+        }
+        
+        
+        private void UpdateChanged(bool connected)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (connected)
+                {
+                    lbl_UpToDate.Content = "Up to date";
+                    lbl_UpToDate.Foreground = Brushes.Green;
+                }
+                else
+                {
+                    lbl_UpToDate.Content = "NOT up to date";
+                    lbl_UpToDate.Foreground = Brushes.Red;
+                }
+            });
+
+        }
+
+        private void ConnectionChanged(bool con)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (con)
+                {
+                    lbl_Connected.Content = "Connected";
+                    lbl_Connected.Foreground = Brushes.Green;
+                }
+                else
+                {
+                    lbl_Connected.Content = "Disconnected";
+                    lbl_Connected.Foreground = Brushes.Red;
+                }
+            });
         }
 
         private void Report_Click(object sender, RoutedEventArgs e)
