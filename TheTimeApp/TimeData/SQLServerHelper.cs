@@ -77,7 +77,7 @@ namespace TheTimeApp.TimeData
 
             new Thread(() =>
             {
-                TryConnect();
+                TestConnection();
                 FlushCommands();    
             }).Start();
         }
@@ -85,7 +85,7 @@ namespace TheTimeApp.TimeData
         private void OnConnectionRetry(object sender, ElapsedEventArgs e)
         {
             _connectionRetry.Stop();
-            TryConnect();
+            TestConnection();
             _connectionRetry.Start();
         }
 
@@ -93,7 +93,7 @@ namespace TheTimeApp.TimeData
         {
             try
             {
-                using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)))
+                using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)){SendTimeout = 1000})
                     return true;
             }
             catch (SocketException ex)
@@ -106,7 +106,7 @@ namespace TheTimeApp.TimeData
         /// Returns true if successful
         /// </summary>
         /// <returns></returns>
-        private void TryConnect()
+        private void TestConnection()
         {
             bool connected = PingHost();
             
@@ -114,22 +114,6 @@ namespace TheTimeApp.TimeData
             {
                 previousConnected = connected;
                 OnConnectionChanged(connected);
-
-                if (connected)
-                {
-                    if (connection == null)
-                        connection = new SqlConnection(cb.ConnectionString);
-
-                    try
-                    {
-                        connection.Open();
-                        FlushCommands();
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                }
             }
         }
 
@@ -351,46 +335,49 @@ namespace TheTimeApp.TimeData
 
         private void FlushCommands()
         {
-            if (connection.State == ConnectionState.Open)
+            lock (_lock)
             {
-                lock (_lock)
+                var successful = new List<SqlCommand>();
+                try
                 {
-                    var successful = new List<SqlCommand>();
-                    try
+                    connection.Open();
+                    List<Exception> _exceptions = new List<Exception>();
+                    for (int i = 0; i < _commands.Count; i++) // must use for loop to avoid collection changed exception
                     {
-                        List<Exception> _exceptions = new List<Exception>();
-                        for (int i = 0; i < _commands.Count; i++) // must use for loop to avoid collection changed exception
+                        UpdateChangedEvent?.Invoke(false);
+                        try
                         {
-                            UpdateChangedEvent?.Invoke(false);
-                            try
-                            {
-                                SqlCommand sqlCommand = _commands[i];
-                                sqlCommand.Connection = connection;
-                                sqlCommand.ExecuteNonQuery();
-                                successful.Add(sqlCommand);
-                            }
-                            catch (Exception e)
-                            {
-                                _exceptions.Add(e);
-                            }
+                            SqlCommand sqlCommand = _commands[i];
+                            sqlCommand.Connection = connection;
+                            sqlCommand.ExecuteNonQuery();
+                            successful.Add(sqlCommand);
                         }
-
-                        foreach (SqlCommand success in successful)
+                        catch (Exception e)
                         {
-                            _commands.Remove(success);
-                        }
-
-                        foreach (Exception exception in _exceptions)
-                        {
-                            MessageBox.Show(exception.ToString());
+                            _exceptions.Add(e);
                         }
                     }
-                    catch (Exception e)
+
+                    foreach (SqlCommand success in successful)
                     {
-                        MessageBox.Show(e.ToString());
+                        _commands.Remove(success);
                     }
-                    UpdateChangedEvent?.Invoke(_commands.Count == 0);
+
+                    foreach (Exception exception in _exceptions)
+                    {
+                        MessageBox.Show(exception.ToString());
+                    }
                 }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString());
+                }
+                finally
+                {
+                    connection.Close();
+                }
+
+                UpdateChangedEvent?.Invoke(_commands.Count == 0);
             }
         }
 
