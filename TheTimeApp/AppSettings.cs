@@ -79,6 +79,12 @@ namespace TheTimeApp
             get{ return ReadValueFromXML("kwkvuesav");}
             set{ WriteValueTOXML("kwkvuesav", value); }
         }
+        
+        public static string SQLPortNumber
+        {
+            get{ return ReadValueFromXML("dhjahhdjh");}
+            set{ WriteValueTOXML("dhjahhdjh", value); }
+        }
 
         public static string SQLUserId
         {
@@ -158,6 +164,10 @@ namespace TheTimeApp
 
             xmlWriter.WriteStartElement("aaljgjlkej");
             xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("aaljgjlkej");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("keslkwkjw");

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Timers;
 using MessageBox = System.Windows.MessageBox;
@@ -35,14 +37,10 @@ namespace TheTimeApp.TimeData
         private List<SqlCommand> _commands = new List<SqlCommand>();
 
         private SqlConnection connection;
+
+        private bool previousConnected = false;
         
         private Timer _connectionRetry = new Timer(1000);
-
-        private bool _prevConnected = false;// disconnected is default
-
-        public bool IsConnected => connection?.State == ConnectionState.Open 
-                                   || connection?.State == ConnectionState.Executing 
-                                   || connection?.State == ConnectionState.Fetching;
 
         private List<Time> Times
         {
@@ -77,53 +75,67 @@ namespace TheTimeApp.TimeData
             _connectionRetry.Elapsed += OnConnectionRetry;
             _connectionRetry.Enabled = true;
 
-            TryConnect();
+            new Thread(() =>
+            {
+                TryConnect();
+                FlushCommands();    
+            }).Start();
         }
 
         private void OnConnectionRetry(object sender, ElapsedEventArgs e)
         {
+            _connectionRetry.Stop();
             TryConnect();
+            _connectionRetry.Start();
         }
 
+        public static bool PingHost()
+        {
+            try
+            {
+                using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)))
+                    return true;
+            }
+            catch (SocketException ex)
+            {
+                return false;
+            }
+        }
+        
         /// <summary>
         /// Returns true if successful
         /// </summary>
         /// <returns></returns>
         private void TryConnect()
         {
-            new Thread(() =>
-            {
-                lock (_lock)
-                {
-                    if (IsConnected)
-                    {
-                        return;
-                    }
+            bool connected = PingHost();
             
-                    if(connection == null)
+            if (previousConnected != connected)
+            {
+                previousConnected = connected;
+                OnConnectionChanged(connected);
+
+                if (connected)
+                {
+                    if (connection == null)
                         connection = new SqlConnection(cb.ConnectionString);
 
                     try
                     {
                         connection.Open();
+                        FlushCommands();
                     }
                     catch (Exception e)
                     {
                         Console.WriteLine(e);
                     }
-
-                    OnConnectionChanged();
-                    _prevConnected = IsConnected;
-                }    
-            }).Start();
+                }
+            }
         }
 
-        private void OnConnectionChanged()
+        private void OnConnectionChanged(bool connected)
         {
-            if(IsConnected)
-                FlushCommandsAsync();
-            
-            ConnectionChangedEvent?.Invoke(IsConnected);   
+            ConnectionChangedEvent?.Invoke(connected);   
         }
 
         public void PullFromServer(List<Day> days)

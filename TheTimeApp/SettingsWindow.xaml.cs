@@ -42,6 +42,8 @@ namespace TheTimeApp
             TextBoxSqlUserId.Text = AppSettings.SQLUserId;
             TextBoxSqlPassword.Text = "*********";
             TextBoxSqlCatelog.Text = AppSettings.SQLCatelog;
+            TextBoxSqlPort.Text = AppSettings.SQLPortNumber;
+            
             btn_SQLEnable.Content = AppSettings.SQLEnabled == "true" ? "Enabled" : "Disabled";
             btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
 
@@ -63,7 +65,8 @@ namespace TheTimeApp
             TextBoxSqlUserId.TextChanged += TextBoxSqlUserId_TextChanged;
             TextBoxSqlPassword.TextChanged += TextBoxSqlPassword_TextChanged;
             TextBoxSqlCatelog.TextChanged += TextBoxSqlCatelog_TextChanged;
-            
+            TextBoxSqlPort.TextChanged += TextBoxSqlPort_TextChanged;
+
             // sql server progress changed
             _sqlHelper.ProgressChangedEvent += OnSQLPushAllProgressChanged;
             _sqlHelper.ProgressFinishEvent += OnSQLPushAllProgressFinish;
@@ -194,6 +197,11 @@ namespace TheTimeApp
             {
                 MessageBox.Show("Enter Password");
             }
+        }
+
+        private void TextBoxSqlPort_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.SQLPortNumber = (sender as TextBox)?.Text;
         }
     }
 }
