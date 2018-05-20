@@ -21,11 +21,9 @@ namespace TheTimeApp.TimeData
         [NonSerialized]
         public ConnectionChangedDel ConnectionChangedEvent;
         
-        
         [NonSerialized]
         public ConnectionChangedDel UpdateChangedEvent;
         
-        [NonSerialized]
         public static List<SqlCommand> Commands = new List<SqlCommand>();
 
         private List<Day> days;
@@ -39,11 +37,11 @@ namespace TheTimeApp.TimeData
         private Time _inprogress;
 
         [NonSerialized]
-        private SQLServerHelper _sqlHelper;
+        private SqlServerHelper _sqlHelper;
 
         public TimeData()
         {
-            _sqlHelper = new SQLServerHelper(Commands);
+            _sqlHelper = new SqlServerHelper(Commands);
             _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
             _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
             days = new List<Day>();
@@ -55,7 +53,7 @@ namespace TheTimeApp.TimeData
         {
             if (_sqlHelper == null)
             {
-                _sqlHelper = new SQLServerHelper(Commands);
+                _sqlHelper = new SqlServerHelper(Commands);
                 _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
                 _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
             }
@@ -218,7 +216,7 @@ namespace TheTimeApp.TimeData
                 }
             }
 
-            _sqlHelper.DeleteTime(time);
+            _sqlHelper.RemoveTime(time);
             Save();
         }
 
@@ -259,22 +257,6 @@ namespace TheTimeApp.TimeData
             Save();
         }
 
-        /// <summary>
-        /// returns true if data base contains current day
-        /// </summary>
-        /// <returns></returns>
-        public bool ContainsCurrentDay()
-        {
-            foreach (Day day in days)
-            {
-                if (day.Date.Year == DateTime.Now.Year && day.Date.Month == DateTime.Now.Month && day.Date.Day == DateTime.Now.Day)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public Day CurrentDay()
         {
             Day currentDay = new Day(new DateTime(2000,1,1));
@@ -289,7 +271,10 @@ namespace TheTimeApp.TimeData
             }
 
             if (!containsDay)
+            {
+                _sqlHelper.InsertDay(new Day(DateTime.Now));
                 days.Add(new Day(DateTime.Now));
+            }
 
             foreach (Day day in days)
             {
@@ -306,13 +291,18 @@ namespace TheTimeApp.TimeData
         {
             _inprogress = new Time();
             _inprogress.PunchIn();
+            
+            CurrentDay().AddTime(_inprogress);
+            _sqlHelper.InsertTime(_inprogress);
+            
+            Save();
         }
 
         public void PunchOut()
         {
             _inprogress.PunchOut();
-            CurrentDay().AddTime(_inprogress);
-            _sqlHelper.InsertTime(_inprogress);
+            _sqlHelper.UpdateTime(_inprogress);
+            
             Save();
         }
 
@@ -340,6 +330,16 @@ namespace TheTimeApp.TimeData
         {
             day.Details = details;
             _sqlHelper.UpdateDetails(day);
+        }
+
+        public void UpdateDayTime(Time org, Time upd)// todo, must implement
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UpdateDayDate(DateTime date, DateTime timeeditGetDate)// todo, must implement
+        {
+            throw new NotImplementedException();
         }
     }
 }

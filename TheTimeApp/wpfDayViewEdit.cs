@@ -21,9 +21,12 @@ namespace TheTimeApp
     /// </summary>
     public partial class wpfDayViewEdit : Window
     {
+        private TimeData.TimeData _data;
         private Day _day;
-        public wpfDayViewEdit(Day day)
+        
+        public wpfDayViewEdit(TimeData.TimeData data, Day day)
         {
+            _data = data;
             _day = day;
             InitializeComponent();
             dayDetails.Text = day.Details;
@@ -31,7 +34,7 @@ namespace TheTimeApp
 
         private void RichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            _day.Details = dayDetails.Text;
+            _data.UpdateDetails(_day, dayDetails.Text);
         }
     }
 }

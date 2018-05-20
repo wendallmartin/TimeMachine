@@ -162,7 +162,7 @@ namespace TheTimeApp
             Day day = _timeData.Days.First(d => d.Date == date);
             if (day == null) return;
 
-            wpfDayViewEdit dayView = new wpfDayViewEdit(day);
+            wpfDayViewEdit dayView = new wpfDayViewEdit(_timeData, day);
             dayView.ShowDialog();
 
             _timeData.Save();
@@ -201,13 +201,13 @@ namespace TheTimeApp
                 Application.Exit();
             }
 
-            timeedit = new TimeViewEdit(view.GetTime(), _12hour);
+            timeedit = new TimeViewEdit(view.GetTime(), _timeData, _12hour);
 
             var result = timeedit.ShowDialog();
             if (result == DialogResult.OK)
             {
-                _timeData.Days[dayIndex].Date = timeedit.GetDate;
-                _timeData.Days[dayIndex].Times[timeIndex] = timeedit.GetTime;
+                _timeData.UpdateDayDate(_timeData.Days[dayIndex].Date, timeedit.GetDate);
+                _timeData.UpdateDayTime(_timeData.Days[dayIndex].Times[timeIndex], timeedit.GetTime);
             }
             timeedit.Close();
             InitTimes();

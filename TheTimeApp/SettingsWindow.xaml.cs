@@ -23,7 +23,7 @@ namespace TheTimeApp
     public partial class SettingsWindow : Window
     {
         private TimeData.TimeData _data;
-        SQLServerHelper _sqlHelper = new SQLServerHelper(TimeData.TimeData.Commands);
+        SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
         public SettingsWindow(TimeData.TimeData data)
         {
             InitializeComponent();

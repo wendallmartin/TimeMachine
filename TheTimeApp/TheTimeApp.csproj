@@ -74,6 +74,12 @@
     <Compile Include="Controls\TimeViewBar.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Controls\TimeViewEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\TimeViewEdit.Designer.cs">
+      <DependentUpon>TimeViewEdit.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\WeekViewBar.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -91,12 +97,6 @@
     <Compile Include="TimeData\SQLServerHelper.cs" />
     <Compile Include="TimeData\Time.cs" />
     <Compile Include="TimeData\TimeDataBase.cs" />
-    <Compile Include="TimeViewEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TimeViewEdit.Designer.cs">
-      <DependentUpon>TimeViewEdit.cs</DependentUpon>
-    </Compile>
     <Compile Include="TimeViewWindow.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -113,6 +113,9 @@
     <EmbeddedResource Include="Controls\TimeView.resx">
       <DependentUpon>TimeViewBar.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TimeViewEdit.resx">
+      <DependentUpon>TimeViewEdit.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="EmailOrPrintWindow.resx">
       <DependentUpon>EmailOrPrintWindow.cs</DependentUpon>
     </EmbeddedResource>
@@ -125,9 +128,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="TimeViewEdit.resx">
-      <DependentUpon>TimeViewEdit.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="TimeViewWindow.resx">
       <DependentUpon>TimeViewWindow.cs</DependentUpon>
     </EmbeddedResource>

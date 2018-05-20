@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TheTimeApp.TimeData;
+using Day = TheTimeApp.TimeData.Day;
 
 namespace TheTimeApp
 {
@@ -25,7 +26,7 @@ namespace TheTimeApp
         
         private Time _time = new Time();
 
-        
+        private TimeData.TimeData _data;
         
         public Time GetTime
         {
@@ -37,8 +38,11 @@ namespace TheTimeApp
             get{ return _time.TimeIn.Date; }
         }
 
-        public TimeViewEdit(Time time, bool _12hour)
+        public TimeViewEdit(Time time, TimeData.TimeData data,  bool _12hour)
         {
+            _data = data;
+            _time = time;
+            
             InitializeComponent();
             MouseDown += FormMouseDown;
             KeyDown += OnKeyDown;

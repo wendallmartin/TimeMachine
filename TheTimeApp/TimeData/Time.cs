@@ -18,7 +18,7 @@ namespace TheTimeApp.TimeData
             punchin = new DateTime();
             punchout = new DateTime();
         }
-
+        
         public void PunchIn()
         {
             if (punchin != new DateTime())
