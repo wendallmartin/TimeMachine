@@ -33,6 +33,11 @@ namespace TheTimeApp
             _timeData.ConnectionChangedEvent += ConnectionChanged;
             _timeData.UpdateChangedEvent += UpdateChanged;
 
+            if (_timeData.ClockedIn())
+            {
+                Start_Button.Background = Brushes.Red;
+                Start_Button.Content = "Stop";
+            }
             DayDetailsBox.Text = _timeData.CurrentDay().Details;
         }
 

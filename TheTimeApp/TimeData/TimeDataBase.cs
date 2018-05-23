@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Windows.Forms;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -340,6 +341,17 @@ namespace TheTimeApp.TimeData
         public void UpdateDayDate(DateTime date, DateTime timeeditGetDate)// todo, must implement
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// returns true if we did not punch out.
+        /// </summary>
+        /// <returns></returns>
+        public bool ClockedIn()
+        {
+            Day day = days.LastOrDefault();
+            Time time = day?.Times.LastOrDefault();
+            return time?. TimeOut.TimeOfDay == new TimeSpan();
         }
     }
 }
