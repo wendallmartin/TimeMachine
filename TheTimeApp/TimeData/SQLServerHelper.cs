@@ -95,6 +95,7 @@ namespace TheTimeApp.TimeData
         {
             try
             {
+                AppSettings.Validate();
                 using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)) {SendTimeout = 1000}) return true;
             }
             catch (SocketException)
