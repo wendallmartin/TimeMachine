@@ -96,6 +96,7 @@ namespace TheTimeApp.TimeData
             try
             {
                 AppSettings.Validate();
+                if (AppSettings.SQLPortNumber == "") return false;
                 using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)) {SendTimeout = 1000}) return true;
             }
             catch (SocketException)
@@ -160,6 +161,7 @@ namespace TheTimeApp.TimeData
 
         private void FlushCommands()
         {
+            if (AppSettings.SQLEnabled == "false") return;
             lock (SqlServerLock)
             {
                 var successful = new List<SqlCommand>();
