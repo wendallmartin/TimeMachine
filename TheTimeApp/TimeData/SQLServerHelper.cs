@@ -161,13 +161,22 @@ namespace TheTimeApp.TimeData
 
         private void FlushCommands()
         {
-            if (AppSettings.SQLEnabled == "false") return;
+            if (AppSettings.SQLEnabled != "true") return;
             lock (SqlServerLock)
             {
                 var successful = new List<SqlCommand>();
                 using (SqlConnection connection = new SqlConnection(ConnectionString.ConnectionString))
                 {
-                    connection.Open();
+                    try
+                    {
+                        connection.Open();
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                        Console.WriteLine(e);
+                    }
+                    
                     foreach (SqlCommand c in _commands)
                     {
                         try
