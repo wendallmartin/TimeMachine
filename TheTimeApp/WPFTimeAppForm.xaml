@@ -23,5 +23,5 @@
             <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="82" Canvas.Left="10"/>
             <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
         </Canvas>
-    </Grid>s
+    </Grid>
 </Window>
