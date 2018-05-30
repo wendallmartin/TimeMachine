@@ -3,6 +3,7 @@ using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace TheTimeApp
 {
@@ -32,18 +33,29 @@ namespace TheTimeApp
             _timeData = TimeData.TimeData.Load();
             _timeData.ConnectionChangedEvent += ConnectionChanged;
             _timeData.UpdateChangedEvent += UpdateChanged;
+            
+            SetStartChecked();
+            
+            DayDetailsBox.Text = _timeData.CurrentDay().Details;
+        }
 
+        private void SetStartChecked()
+        {
             if (_timeData.ClockedIn())
             {
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
             }
-            DayDetailsBox.Text = _timeData.CurrentDay().Details;
+            else
+            {
+                Start_Button.Background = Brushes.Green;
+                Start_Button.Content = "Start";
+            }
         }
 
         private void btn_Start_CheckedChanged(object sender, RoutedEventArgs e)
         {
-            if (Start_Button.Background == Brushes.Green)
+            if (Equals(Start_Button.Background, Brushes.Green))
             {
                 _timeData.PunchIn();
                 Start_Button.Background = Brushes.Red;
@@ -93,20 +105,6 @@ namespace TheTimeApp
             });
         }
 
-        private void Report_Click(object sender, RoutedEventArgs e)
-        {
-            _timeData.SortDays();
-            timeViewWindow = new TimeViewWindow(_timeData);
-            timeViewWindow.CloseEvent += CloseTimeViewWindow;
-            timeViewWindow.ShowDialog();
-        }
-
-        private void Settings_Click(object sender, RoutedEventArgs e)
-        {
-            SettingsWindow esettings = new SettingsWindow(_timeData);
-            esettings.ShowDialog();
-        }
-
         private void CloseTimeViewWindow(TimeData.TimeData data)
         {
             _timeData = data;
@@ -120,6 +118,24 @@ namespace TheTimeApp
         {
             _timeData.UpdateDetails(_timeData.CurrentDay(), DayDetailsBox.Text);
             _timeData.Save();
+        }
+
+        private void btn_Report_Click(object sender, RoutedEventArgs e)
+        {
+            _timeData.SortDays();
+            timeViewWindow = new TimeViewWindow(_timeData);
+            timeViewWindow.CloseEvent += CloseTimeViewWindow;
+            timeViewWindow.ShowDialog();
+        }
+
+        private void btn_Settings_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsWindow esettings = new SettingsWindow(_timeData);
+            esettings.ShowDialog();
+            
+            _timeData = TimeData.TimeData.Load();
+            SetStartChecked();
+            DayDetailsBox.Text = _timeData.CurrentDay().Details;
         }
     }
 }

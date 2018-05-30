@@ -13,6 +13,12 @@ namespace TheTimeApp.TimeData
         private DateTime punchin;
         private DateTime punchout;
 
+        public Time(DateTime punchIn, DateTime punchOUt)
+        {
+            punchin = punchIn;
+            punchout = punchOUt;
+        }
+        
         public Time()
         {
             punchin = new DateTime();

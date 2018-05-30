@@ -89,12 +89,15 @@ namespace TheTimeApp.TimeData
         /// serializes the class to file
         /// arg given as string
         /// </summary>
-        /// <param name="file"></param>
-        public void Save()
+        /// <param name="toFile"> Optional file path arg.</param>
+        public void Save(string toFile = "")
         {
             lock (readWrite)
             {
-                string file = AppSettings.DataPath;
+                string file = toFile;
+
+                if (file == "")
+                    file = AppSettings.DataPath;
 
                 SortDays();
             

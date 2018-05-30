@@ -10,16 +10,25 @@
              WindowStyle="ThreeDBorderWindow" 
              Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
              Width="375"
-             Height="374.667"
+             Height="354.667"
              Icon="Resources/timecardpic.png"
              Title="Time Clock">
-    <Grid Height="342" VerticalAlignment="Top">
-        <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="Auto" Height="85" Margin="10,0,10,41" FontSize="36" Click="btn_Start_CheckedChanged" MinHeight="80"/>
-        <TextBox x:Name="DayDetailsBox" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Stretch" Width="Auto" Margin="45,59,45,137" MinHeight="120" TextChanged="OnDayDetailsChanged" AcceptsReturn="True" ScrollViewer.CanContentScroll="True">
+    <Grid Height="336" VerticalAlignment="Top">
+        <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="Auto" Height="85" Margin="10,0,10,57" FontSize="36" Click="btn_Start_CheckedChanged" MinHeight="80"/>
+        <TextBox x:Name="DayDetailsBox" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Stretch" Width="Auto" Margin="45,43,45,153" MinHeight="120" TextChanged="OnDayDetailsChanged" AcceptsReturn="True" ScrollViewer.CanContentScroll="True">
         </TextBox>
-        <Button Content="Report" HorizontalAlignment="Left" Margin="20,7,0,0" VerticalAlignment="Top" Width="Auto" Height="40" FontSize="14" Click="Report_Click" MinWidth="150"/>
-        <Button Content="Settings" HorizontalAlignment="Right" Margin="0,7,20,0" VerticalAlignment="Top" Width="Auto" Height="40" FontSize="14" Click="Settings_Click" MinWidth="150"/>
-        <Canvas HorizontalAlignment="Left" Height="28" Background="Gray" VerticalAlignment="Top" Width="367" Margin="0,308,0,0" >
+       
+                <Button x:Name="btn_Report" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Report_Click" Margin="5,5,0,0" >
+                    <StackPanel>
+                        <Image Source="Resources/Report.png" Height="25"></Image>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="btn_Settings" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Settings_Click" Margin="50,5,0,0" >
+                      <StackPanel>
+                          <Image Source="Resources/settings.png" Height="23"></Image>
+                      </StackPanel>
+                </Button>
+        <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="367" Margin="0,0,0,21" >
             <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="82" Canvas.Left="10"/>
             <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
         </Canvas>

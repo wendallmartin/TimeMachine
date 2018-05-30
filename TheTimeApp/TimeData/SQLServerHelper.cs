@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        private SqlConnectionStringBuilder ConnectionString =>
+        private SqlConnectionStringBuilder ConnectionStringBuilder =>
             new SqlConnectionStringBuilder() { 
                 DataSource = AppSettings.SQLDataSource,
                 UserID = AppSettings.SQLUserId,
@@ -165,7 +166,7 @@ namespace TheTimeApp.TimeData
             lock (SqlServerLock)
             {
                 var successful = new List<SqlCommand>();
-                using (SqlConnection connection = new SqlConnection(ConnectionString.ConnectionString))
+                using (SqlConnection connection = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                 {
                     try
                     {
@@ -221,7 +222,7 @@ namespace TheTimeApp.TimeData
             {
                 lock (SqlServerLock)
                 {
-                    using (SqlConnection con = new SqlConnection(ConnectionString.ConnectionString))
+                    using (SqlConnection con = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                     {
                         con.Open();
                         using (SqlCommand command = new SqlCommand($@"SELECT * FROM Time_Server WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", con))
@@ -464,8 +465,83 @@ namespace TheTimeApp.TimeData
                 AddCommand(cmd);
             }   
         }
-
+        
         #endregion
+
+        public void LoadDataFromServer(string savetoFile)// todo, not finished!
+        {
+            try
+            {
+                string query = "SELECT * FROM Time_Server";
+
+                using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
+                {
+                    conn.Open();
+                        
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                            
+                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        {
+                            TimeData data = new TimeData();
+                            DataTable temp = new DataTable();
+                            da.Fill(temp);
+                            
+                            for (int i = 0; i < temp.Rows.Count; i++)
+                            {
+                                DataRow row = temp.Rows[i];
+                                
+                                if (row.ItemArray[1] is TimeSpan)
+                                {
+                                    if (((TimeSpan) row.ItemArray[1]) == new TimeSpan())// if this is a day header
+                                    {
+                                        if (row.ItemArray[0] is DateTime)
+                                        {
+                                            if (!data.Days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
+                                            {
+                                                data.Days.Add(new Day((DateTime)row.ItemArray[0]){Details = row.ItemArray[3].ToString()});
+                                            }
+                                        }
+                                    }                                    
+                                }
+                                
+                                ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i);
+                            }
+
+                            for (int i = 0; i < data.Days.Count; i++)
+                            {
+                                Day day = data.Days[i];
+                                
+                                foreach (DataRow row in temp.Rows)
+                                {
+                                    if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
+                                    {
+                                        if ((DateTime) row.ItemArray[0] == day.Date)
+                                        {
+                                            if (((TimeSpan) row.ItemArray[1]) != new TimeSpan())// if this is not a day header
+                                            {
+                                                TimeSpan intime = (TimeSpan) row.ItemArray[1];
+                                                TimeSpan outtime = (TimeSpan) row.ItemArray[2];
+                                                day.Times.Add(new Time( new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
+                                                    new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
+                                            }    
+                                        }
+                                    }
+                                }
+                                ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i + 50);
+                            }
+                            data.Save(savetoFile);
+                            ProgressChangedEvent?.Invoke(100);
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                Console.WriteLine(e);
+            }
+        }
 
     }
 }

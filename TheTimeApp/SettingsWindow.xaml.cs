@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Win32;
 using TheTimeApp.TimeData;
 
 namespace TheTimeApp
@@ -23,7 +24,7 @@ namespace TheTimeApp
     public partial class SettingsWindow : Window
     {
         private TimeData.TimeData _data;
-        SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
+        private SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
         public SettingsWindow(TimeData.TimeData data)
         {
             InitializeComponent();
@@ -68,8 +69,8 @@ namespace TheTimeApp
             TextBoxSqlPort.TextChanged += TextBoxSqlPort_TextChanged;
 
             // sql server progress changed
-            _sqlHelper.ProgressChangedEvent += OnSQLPushAllProgressChanged;
-            _sqlHelper.ProgressFinishEvent += OnSQLPushAllProgressFinish;
+            _sqlHelper.ProgressChangedEvent += OnSqlProgressChanged;
+            _sqlHelper.ProgressFinishEvent += OnProgressFinish;
         }
 
         private void TextBoxSqlDataSource_TextChanged(object sender, TextChangedEventArgs e)
@@ -153,7 +154,7 @@ namespace TheTimeApp
             _sqlHelper.RePushToServer(_data.Days);
         }
 
-        private void OnSQLPushAllProgressChanged(float value)
+        private void OnSqlProgressChanged(float value)
         {
             Debug.WriteLine(value);
             Dispatcher.Invoke(new Action(() =>
@@ -162,11 +163,13 @@ namespace TheTimeApp
                 
             
                 if (value == 100)
-                    ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;    
+                {
+                    ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;
+                }
             }));
         }
         
-        private void OnSQLPushAllProgressFinish()
+        private void OnProgressFinish()
         {
             Dispatcher.Invoke(new Action(() =>
             {
@@ -193,7 +196,7 @@ namespace TheTimeApp
 
         private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if ((sender as TabItem) == Developer_Settings)
+            if (sender as TabItem == Developer_Settings)
             {
                 MessageBox.Show("Enter Password");
             }
@@ -202,6 +205,23 @@ namespace TheTimeApp
         private void TextBoxSqlPort_TextChanged(object sender, TextChangedEventArgs e)
         {
             AppSettings.SQLPortNumber = (sender as TextBox)?.Text;
+        }
+
+        private void Btn_SQLDownload_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "Time file (*.dtf)|*.dtf";
+            saveFileDialog.ShowDialog();
+            ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
+            _sqlHelper.LoadDataFromServer(saveFileDialog.FileName);
+        }
+
+        private void DataLocation_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Time file (*.dtf)|*.dtf";
+            openFileDialog.ShowDialog();
+            AppSettings.DataPath = openFileDialog.FileName;
         }
     }
 }

@@ -20,4 +20,6 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003ATimeViewEdit_002EDesigner_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003ATimeViewWindow_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AProgram_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AwpfDayViewEdit_002Examl/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AWPFTimeAppForm_002Examl/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AWPFTimeAppForm_002Examl_002Ecs/@EntryIndexedValue">ForceIncluded</s:String></wpf:ResourceDictionary>
