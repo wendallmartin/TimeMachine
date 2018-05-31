@@ -16,8 +16,17 @@ namespace TheTimeApp
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            WPFTimeAppForm mytime = new WPFTimeAppForm();
-            mytime.ShowDialog();
+
+            if (AppSettings.MainPermission == "write")
+            {
+                WPFTimeAppForm mytime = new WPFTimeAppForm();
+                mytime.ShowDialog();
+            }
+            else
+            {
+                WPFTimeViewForm myview = new WPFTimeViewForm();
+                myview.ShowDialog();
+            }
         }
     }
 }

@@ -1,0 +1,27 @@
+﻿<Window x:Class="TheTimeApp.WPFTimeViewForm"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:TheTimeApp"
+             mc:Ignorable="d" 
+             WindowStartupLocation="CenterScreen" 
+             ForceCursor="True" 
+             WindowStyle="ThreeDBorderWindow" 
+             Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+             Width="375"
+             Height="354.667"
+             Icon="Resources/timecardpic.png"
+             Title="Time Clock">
+    <Grid Height="336" VerticalAlignment="Top">
+        <Button x:Name="btn_Settings" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Settings_Click" Margin="6,5,0,0" >
+            <StackPanel>
+                <Image Source="Resources/settings.png" Height="23"></Image>
+            </StackPanel>
+        </Button>
+        <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="367" Margin="0,0,0,21" >
+            <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="82" Canvas.Left="10"/>
+            <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
+        </Canvas>
+    </Grid>
+</Window>

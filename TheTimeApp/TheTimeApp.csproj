@@ -110,6 +110,9 @@
     <Compile Include="WPFTimeAppForm.xaml.cs">
       <DependentUpon>WPFTimeAppForm.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WPFTimeViewForm.xaml.cs">
+      <DependentUpon>WPFTimeViewForm.xaml</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Controls\TimeView.resx">
       <DependentUpon>TimeViewBar.cs</DependentUpon>
     </EmbeddedResource>
@@ -156,6 +159,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="WPFTimeAppForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WPFTimeViewForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
