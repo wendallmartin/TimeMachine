@@ -84,7 +84,15 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="AppSettings.cs" />
-    <Compile Include="CryptoEngine.cs" />
+    <Compile Include="Controls\WPFDayViewBar.xaml.cs">
+      <DependentUpon>WPFDayViewBar.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WPFTimeViewBar.xaml.cs">
+      <DependentUpon>WPFTimeViewBar.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WPFWeekViewBar.xaml.cs">
+      <DependentUpon>WPFWeekViewBar.xaml</DependentUpon>
+    </Compile>
     <Compile Include="EmailOrPrintWindow.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -93,6 +101,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TimeData\CryptoEngine.cs" />
     <Compile Include="TimeData\Day.cs" />
     <Compile Include="TimeData\SQLServerHelper.cs" />
     <Compile Include="TimeData\Time.cs" />
@@ -150,6 +159,18 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\WPFDayViewBar.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\WPFTimeViewBar.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\WPFWeekViewBar.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="SettingsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
