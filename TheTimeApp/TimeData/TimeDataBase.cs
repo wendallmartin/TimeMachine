@@ -13,6 +13,8 @@ namespace TheTimeApp.TimeData
 {
     public delegate void ConnectionChangedDel(bool connected);
     
+    public delegate void TimeDataUpdatedDel();
+    
     [Serializable]
     public class TimeData
     {
@@ -24,6 +26,9 @@ namespace TheTimeApp.TimeData
         
         [NonSerialized]
         public ConnectionChangedDel UpdateChangedEvent;
+
+        [NonSerialized] 
+        public TimeDataUpdatedDel TimeDataUpdated;
         
         public static List<SqlCommand> Commands = new List<SqlCommand>();
 
@@ -45,6 +50,7 @@ namespace TheTimeApp.TimeData
             _sqlHelper = new SqlServerHelper(Commands);
             _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
             _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
+            _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
             days = new List<Day>();
             _inprogress = new Time();
         }
@@ -73,6 +79,11 @@ namespace TheTimeApp.TimeData
         public void Redo()
         {
 
+        }
+        
+        private void OnTimeDataUpdate()
+        {
+            TimeDataUpdated?.Invoke();
         }
 
         private void OnUpdateChanged(bool uptodate)

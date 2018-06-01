@@ -29,11 +29,16 @@ namespace TheTimeApp
             InitializeComponent();
 
             AppSettings.Validate();
+            
+            OnTimeDataUpdate();
+        }
 
+        private void OnTimeDataUpdate()
+        {
             _timeData = TimeData.TimeData.Load();
+            _timeData.TimeDataUpdated += OnTimeDataUpdate;
             _timeData.ConnectionChangedEvent += ConnectionChanged;
             _timeData.UpdateChangedEvent += UpdateChanged;
-            
             InitualizeView();
         }
 
