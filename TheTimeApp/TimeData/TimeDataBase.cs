@@ -358,6 +358,11 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
+        public void LoadDataFromSQLSever()
+        {
+            _sqlHelper.LoadDataFromServer(AppSettings.DataPath);
+        }
+
         /// <summary>
         /// returns true if we did not punch out.
         /// </summary>

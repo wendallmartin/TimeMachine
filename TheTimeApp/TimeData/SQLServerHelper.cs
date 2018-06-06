@@ -68,16 +68,20 @@ namespace TheTimeApp.TimeData
             _commands = sqlCommands;
             _connectionRetry.Elapsed += OnConnectionRetry;
             _connectionRetry.Enabled = true;
-            new Thread(() =>
+            if (AppSettings.MainPermission == "write")
             {
-                TestConnection();
-                FlushCommands();
-            }).Start();
+                new Thread(() =>
+                {
+                    TestConnection();
+                    FlushCommands();
+                }).Start();    
+            }
 
             // only start sql cyclic read if sql enabled and MainPermission is 'read'
             if ( AppSettings.SQLEnabled == "true" && AppSettings.MainPermission == "read")
             {
                 _cylcicSQLRead.Elapsed += PullDataElapsed;
+                _cylcicSQLRead.AutoReset = false;
                 StartCyclicSqlRead();
             }
         }
@@ -575,7 +579,6 @@ namespace TheTimeApp.TimeData
 
         private void PullDataElapsed(object sender, ElapsedEventArgs e)
         {
-            StopCyclicSqlRead();
             PullData();
             StartCyclicSqlRead();
         }

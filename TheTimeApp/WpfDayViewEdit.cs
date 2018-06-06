@@ -38,8 +38,11 @@ namespace TheTimeApp
         {
             if (!Enabled)
                 return;
-            
-            _data.UpdateDetails(_day, dayDetails.Text);
+
+            if (AppSettings.MainPermission == "write")
+            {
+                _data.UpdateDetails(_day, dayDetails.Text);
+            }
         }
     }
 }
