@@ -17,14 +17,16 @@ using TheTimeApp.TimeData;
 namespace TheTimeApp
 {
     /// <summary>
-    /// Interaction logic for wpfDayViewEdit.xaml
+    /// Interaction logic for WpfDayViewEdit.xaml
     /// </summary>
-    public partial class wpfDayViewEdit : Window
+    public partial class WpfDayViewEdit : Window
     {
         private TimeData.TimeData _data;
         private Day _day;
+
+        public bool Enabled { get; set; } = true;
         
-        public wpfDayViewEdit(TimeData.TimeData data, Day day)
+        public WpfDayViewEdit(TimeData.TimeData data, Day day)
         {
             _data = data;
             _day = day;
@@ -34,6 +36,9 @@ namespace TheTimeApp
 
         private void RichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (!Enabled)
+                return;
+            
             _data.UpdateDetails(_day, dayDetails.Text);
         }
     }

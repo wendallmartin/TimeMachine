@@ -31,7 +31,7 @@ namespace TheTimeApp.Controls
 
         public event DayDelegate DeleteDayEvent;
 
-        public event DayDelegate MouseClickEvent;
+        public event DayDelegate SelectedEvent;
 
         public bool Editable { get; set; }
 
@@ -49,7 +49,8 @@ namespace TheTimeApp.Controls
 
         private void OnDayClick(object sender, MouseEventArgs e)
         {
-            MouseClickEvent?.Invoke(date);
+            e.Handled = true;
+            SelectedEvent?.Invoke(date);
         }
 
         private void OnDeleteDay(object sender, MouseEventArgs e)

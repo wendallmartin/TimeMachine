@@ -162,7 +162,7 @@ namespace TheTimeApp
             Day day = _timeData.Days.First(d => d.Date == date);
             if (day == null) return;
 
-            wpfDayViewEdit dayView = new wpfDayViewEdit(_timeData, day);
+            WpfDayViewEdit dayView = new WpfDayViewEdit(_timeData, day);
             dayView.ShowDialog();
 
             _timeData.Save();

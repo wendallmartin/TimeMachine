@@ -1,19 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Printing;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
+using Brushes = System.Windows.Media.Brushes;
+using Color = System.Windows.Media.Color;
+using Size = System.Windows.Size;
+//To the top of my class file:
+using Forms = System.Windows.Forms;
 
 namespace TheTimeApp
 {
@@ -23,6 +32,7 @@ namespace TheTimeApp
     public partial class WPFTimeViewForm : Window
     {
         TimeData.TimeData _timeData = new TimeData.TimeData();
+        private bool _12hour = true;
 
         public WPFTimeViewForm()
         {
@@ -102,7 +112,7 @@ namespace TheTimeApp
                     StackPanel.Children.Add(weekViewBar);
                 }
                 WPFDayViewBar datevViewBar = new WPFDayViewBar(new Size(Width - 31, 26), day){Editable = false};
-                datevViewBar.MouseClickEvent += OnDateViewClick;
+                datevViewBar.SelectedEvent += OnDateViewClick;
                 StackPanel.Children.Add(datevViewBar);
 
                 prev = day;
@@ -116,22 +126,88 @@ namespace TheTimeApp
 
         private void OnDateViewClick(DateTime date)
         {
-            throw new NotImplementedException();
+            Day day = _timeData.Days.First(d => d.Date == date);
+            if (day == null) return;
+
+            WpfDayViewEdit dayView = new WpfDayViewEdit(_timeData, day){Enabled = false};
+            dayView.ShowDialog();
         }
 
         private void OnPreviewWeek(DateTime date)
         {
-            throw new NotImplementedException();
+            PrintDocument p = new PrintDocument();
+            p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
+            {
+                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 36), new SolidBrush(System.Drawing.Color.Black),
+                    new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
+
+            };
+            try
+            {
+                Forms.PrintPreviewDialog pdp = new Forms.PrintPreviewDialog();
+                pdp.Document = p;
+
+                if (pdp.ShowDialog() == Forms.DialogResult.OK)
+                {
+                    p.Print();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
 
         private void OnPrintWeek(DateTime date)
         {
-            throw new NotImplementedException();
+            PrintDocument p = new PrintDocument();
+            p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
+            {
+                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 36), new SolidBrush(System.Drawing.Color.Black),
+                    new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
+
+            };
+            try
+            {
+                Forms.PrintDialog pdp = new Forms.PrintDialog();
+                pdp.Document = p;
+
+                if (pdp.ShowDialog() == Forms.DialogResult.OK)
+                {
+                    p.Print();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
 
         private void OnEmailWeek(DateTime date)
         {
-            throw new NotImplementedException();
+            new Thread(() =>
+            {
+                try
+                {
+                    MailMessage msg = new MailMessage(AppSettings.FromAddress, AppSettings.ToAddress);
+                    SmtpClient smtp = new SmtpClient();
+                    NetworkCredential basicCredential = new NetworkCredential(AppSettings.FromUser, AppSettings.FromPass);
+                    smtp.EnableSsl = AppSettings.SslEmail == "true";
+                    smtp.Port = Convert.ToInt32(AppSettings.FromPort);
+                    smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
+                    smtp.UseDefaultCredentials = false;
+                    smtp.Credentials = basicCredential;
+                    smtp.Host = AppSettings.EmailHost;
+                    msg.Subject = "Time";
+                    msg.Body = _timeData.ConverWeekToText(date);
+                    smtp.Send(msg);
+                    MessageBox.Show("Mail sent!");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
+            }).Start();
         }
 
         private void btn_Settings_Click(object sender, RoutedEventArgs e)

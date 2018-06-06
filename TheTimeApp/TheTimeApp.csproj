@@ -115,7 +115,7 @@
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="wpfDayViewEdit.cs" />
+    <Compile Include="WpfDayViewEdit.cs" />
     <Compile Include="WPFTimeAppForm.xaml.cs">
       <DependentUpon>WPFTimeAppForm.xaml</DependentUpon>
     </Compile>
@@ -175,7 +175,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="wpfDayViewEdit.xaml">
+    <Page Include="WpfDayViewEdit.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

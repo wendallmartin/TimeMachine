@@ -193,11 +193,16 @@ namespace TheTimeApp.TimeData
 
         private bool DatesAreInTheSameWeek(DateTime date1, DateTime date2)
         {
-            var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
-            var d1 = date1.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date1));
-            var d2 = date2.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date2));
+            if (System.Globalization.DateTimeFormatInfo.CurrentInfo != null)
+            {
+                var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
+                var d1 = date1.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date1));
+                var d2 = date2.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date2));
 
-            return d1 == d2;
+                return d1 == d2;
+            }
+
+            return false;
         }
         
         public double HoursInWeek(DateTime weekdDateTime)
@@ -324,17 +329,13 @@ namespace TheTimeApp.TimeData
         public string ConverWeekToText(DateTime date)
         {
             string result = "";
-            result += "Week " + date.Date.Month + "\\" + date.Date.Day + "\\" + date.Date.Year; 
-
-            foreach (Day day in days)
+            result += "Week " + date.Date.Month + "\\" + date.Date.Day + "\\" + date.Date.Year;
+            List<Day> daysinweek = days.Where(d => DatesAreInTheSameWeek(d.Date, date)).ToList(); 
+            foreach (Day day in daysinweek)
             {
-                if(DatesAreInTheSameWeek(date, day.Date))
-                {
-                    day.Emailed = true;
-                    result += "\n   " + day.Date.Month + "\\" + day.Date.Day + "\\" + day.Date.Year + " Hours = " + day.Hours().ToString(@"hh\:mm");
-                    result += "\n " + day.Details;
-                    result += "\n--------------------------------------------------------";
-                }
+                result += "\n   " + day.Date.Month + "\\" + day.Date.Day + "\\" + day.Date.Year + " Hours = " + day.Hours().ToString(@"hh\:mm");
+                result += "\n " + day.Details;
+                result += "\n--------------------------------------------------------";
             }
             result += "\n -------------------------------";
             result += "\n Total hours = " + HoursInWeek(date);

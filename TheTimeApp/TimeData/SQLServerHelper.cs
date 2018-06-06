@@ -73,11 +73,13 @@ namespace TheTimeApp.TimeData
                 TestConnection();
                 FlushCommands();
             }).Start();
-            
-            _cylcicSQLRead.Elapsed += PullData;
-            
-            if(AppSettings.SQLEnabled == "true")
+
+            // only start sql cyclic read if sql enabled and MainPermission is 'read'
+            if ( AppSettings.SQLEnabled == "true" && AppSettings.MainPermission == "read")
+            {
+                _cylcicSQLRead.Elapsed += PullDataElapsed;
                 StartCyclicSqlRead();
+            }
         }
 
         #region Helper functions
@@ -571,9 +573,11 @@ namespace TheTimeApp.TimeData
 
         #region pull data cyclic read
 
-        private void PullData(object sender, ElapsedEventArgs e)
+        private void PullDataElapsed(object sender, ElapsedEventArgs e)
         {
+            StopCyclicSqlRead();
             PullData();
+            StartCyclicSqlRead();
         }
         
         // your method to pull data from database to datatable   
@@ -583,23 +587,23 @@ namespace TheTimeApp.TimeData
             {
                 string query = "SELECT * FROM Time_Server";
 
-                using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
-                {
-                    conn.Open();
-                    
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                     {
-                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        conn.Open();
+                    
+                        using (SqlCommand cmd = new SqlCommand(query, conn))
                         {
-                            DataTable temp = new DataTable();
-                            da.Fill(temp);
-
-                            if (dataTable.Columns.Count != 0 && !AreDifferent(temp, dataTable))
+                            using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                             {
-                                return;
-                            }
+                                DataTable temp = new DataTable();
+                                da.Fill(temp);
 
-                            dataTable = temp;
+                                if (dataTable.Columns.Count != 0 && !AreDifferent(temp, dataTable))
+                                {
+                                    return;
+                                }
+
+                                dataTable = temp;
 
                             LoadDataFromServer(AppSettings.DataPath);
                         }

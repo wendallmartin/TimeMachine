@@ -47,6 +47,7 @@ namespace TheTimeApp.Controls
             InitializeComponent();
             Width = size.Width;
             Height = size.Height;
+            date = dateTime;
 
             label.Content = "Week - " + dateTime.Month + "//" +
                    dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + hoursinweek;
