@@ -31,7 +31,7 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeViewForm : Window
     {
-        TimeData.TimeData _timeData = new TimeData.TimeData();
+        public TimeData.TimeData _timeData;
         private bool _12hour = true;
 
         public WPFTimeViewForm()
@@ -39,21 +39,34 @@ namespace TheTimeApp
             InitializeComponent();
 
             AppSettings.Validate();
-            
-            OnTimeDataUpdate();
-        }
 
-        private void OnTimeDataUpdate()
-        {
-            _timeData.LoadDataFromSQLSever();
+            if (SqlServerHelper.IsConnected)
+            {
+                _timeData = TimeData.TimeData.LoadDataFromSqlSever();
+                ConnectionChanged(true);
+                UpdateChanged(true);
+            }
+            else
+            {
+                _timeData = TimeData.TimeData.Load();
+            }
             
-            _timeData = TimeData.TimeData.Load();
-            
+            InitualizeView();
+
             _timeData.TimeDataUpdated += OnTimeDataUpdate;
             _timeData.ConnectionChangedEvent += ConnectionChanged;
             _timeData.UpdateChangedEvent += UpdateChanged;
-            
-            InitualizeView();
+        }
+
+        /// <summary>
+        /// Saves time to file and reinitualized the dispaly.
+        /// </summary>
+        /// <param name="data"></param>
+        private void OnTimeDataUpdate(TimeData.TimeData data)
+        {
+            _timeData.Days.Clear();
+            data.Days.ForEach(d => _timeData.Days.Add(d));
+            Dispatcher.Invoke(InitualizeView);
         }
 
         private void UpdateChanged(bool connected)

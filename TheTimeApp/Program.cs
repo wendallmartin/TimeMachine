@@ -9,6 +9,9 @@ namespace TheTimeApp
 {
     static class Program
     {
+        private static WPFTimeAppForm _mytime;
+        private static WPFTimeViewForm _myview;
+        
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -17,16 +20,25 @@ namespace TheTimeApp
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            
-            if (AppSettings.MainPermission == "write")
+
+            try
             {
-                WPFTimeAppForm mytime = new WPFTimeAppForm();
-                mytime.ShowDialog();
+                if (AppSettings.MainPermission == "write")
+                {
+                    _mytime = new WPFTimeAppForm();
+                    _mytime.ShowDialog();
+                }
+                else
+                {
+                    _myview = new WPFTimeViewForm();
+                    _myview.ShowDialog();
+                    _myview._timeData.Save();
+                }
             }
-            else
+            catch (Exception e)
             {
-                WPFTimeViewForm myview = new WPFTimeViewForm();
-                myview.ShowDialog();
+                MessageBox.Show(e.ToString());
+                throw;
             }
         }
     }

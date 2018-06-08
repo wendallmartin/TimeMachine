@@ -11,16 +11,16 @@ using Timer = System.Timers.Timer;
 
 namespace TheTimeApp.TimeData
 {
-    public delegate void ConnectionChangedDel(bool connected);
-    
-    public delegate void TimeDataUpdatedDel();
-    
     [Serializable]
-    public class TimeData
+    public class TimeData : IDisposable
     {
         private int _stateIndex = 0;
         private static object readWrite = new object();
-
+        
+        public delegate void ConnectionChangedDel(bool connected);
+    
+        public delegate void TimeDataUpdatedDel(TimeData data);
+        
         [NonSerialized]
         public ConnectionChangedDel ConnectionChangedEvent;
         
@@ -48,9 +48,11 @@ namespace TheTimeApp.TimeData
         public TimeData()
         {
             _sqlHelper = new SqlServerHelper(Commands);
+            
             _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
             _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
             _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
+            
             days = new List<Day>();
             _inprogress = new Time();
         }
@@ -69,6 +71,7 @@ namespace TheTimeApp.TimeData
         public List<Day> Days
         {
             get{ return days; }
+            set => days = value;
         }
 
         public void Revert()
@@ -81,9 +84,9 @@ namespace TheTimeApp.TimeData
 
         }
         
-        private void OnTimeDataUpdate()
+        private void OnTimeDataUpdate(TimeData data)
         {
-            TimeDataUpdated?.Invoke();
+            TimeDataUpdated?.Invoke(data);
         }
 
         private void OnUpdateChanged(bool uptodate)
@@ -157,7 +160,7 @@ namespace TheTimeApp.TimeData
             {
                 string file = AppSettings.DataPath;
 
-                TimeData data = null;
+                TimeData data;
                 if (File.Exists(file))
                 {
                     //if files is not found, create file
@@ -358,9 +361,9 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public void LoadDataFromSQLSever()
+        public static TimeData LoadDataFromSqlSever()
         {
-            _sqlHelper.LoadDataFromServer(AppSettings.DataPath);
+            return SqlServerHelper.LoadDataFromServer();
         }
 
         /// <summary>
@@ -372,6 +375,11 @@ namespace TheTimeApp.TimeData
             Day day = days.LastOrDefault();
             Time time = day?.Times.LastOrDefault();
             return time?. TimeOut.TimeOfDay == new TimeSpan();
+        }
+
+        public void Dispose()// todo implement dispose method
+        {
+            
         }
     }
 }

@@ -15,6 +15,8 @@ namespace TheTimeApp.TimeData
     public class SqlServerHelper
     {
         private static readonly object SqlServerLock = new object();
+        
+        private static readonly object SqlPullLock = new object();
 
         public delegate void ProgressChangedDel(float value);
 
@@ -22,7 +24,7 @@ namespace TheTimeApp.TimeData
 
         public delegate void ProgressFinishDel();
 
-        public delegate void TimeDateUpdated();
+        public delegate void TimeDateUpdated(TimeData data);
 
         public TimeDateUpdated TimeDateaUpdate;
         public ProgressChangedDel ProgressChangedEvent;
@@ -36,7 +38,7 @@ namespace TheTimeApp.TimeData
         private Timer _cylcicSQLRead = new Timer(5000);
         
         // your data table
-        private DataTable dataTable = new DataTable();
+        private DataTable _dataTable = new DataTable();
 
         private List<Time> Times
         {
@@ -54,7 +56,7 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        private SqlConnectionStringBuilder ConnectionStringBuilder =>
+        private static SqlConnectionStringBuilder ConnectionStringBuilder =>
             new SqlConnectionStringBuilder() { 
                 DataSource = AppSettings.SQLDataSource,
                 UserID = AppSettings.SQLUserId,
@@ -121,17 +123,19 @@ namespace TheTimeApp.TimeData
             _connectionRetry.Start();
         }
 
-        private static bool PingHost()
+        public static bool IsConnected
         {
-            try
-            {
-                AppSettings.Validate();
-                if (AppSettings.SQLPortNumber == "") return false;
-                using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)) {SendTimeout = 1000}) return true;
-            }
-            catch (SocketException)
-            {
-                return false;
+            get{
+                try
+                {
+                    AppSettings.Validate();
+                    if (AppSettings.SQLPortNumber == "") return false;
+                    using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)) {SendTimeout = 1000}) return true;
+                }
+                catch (SocketException)
+                {
+                    return false;
+                }
             }
         }
 
@@ -141,7 +145,7 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         private void TestConnection()
         {
-            bool connected = PingHost();
+            bool connected = IsConnected;
             if (_wasConnected != connected)
             {
                 _wasConnected = connected;
@@ -191,7 +195,9 @@ namespace TheTimeApp.TimeData
 
         private void FlushCommands()
         {
-            if (AppSettings.SQLEnabled != "true") return;
+            if (AppSettings.SQLEnabled != "true") 
+                return;
+            
             lock (SqlServerLock)
             {
                 var successful = new List<SqlCommand>();
@@ -234,11 +240,6 @@ namespace TheTimeApp.TimeData
                 TimeData.Commands = _commands;
                 UpdateChangedEvent?.Invoke(_commands.Count == 0);
             }
-        }
-
-        private void FlushCommandsAsync()
-        {
-            new Thread(() => { FlushCommands(); }).Start();
         }
 
         #endregion
@@ -497,9 +498,101 @@ namespace TheTimeApp.TimeData
         
         #endregion
 
-        public void LoadDataFromServer(string savetoFile)// todo, not finished!
+        /// <summary>
+        /// Returns timedata form server.
+        /// Calls TimeDataUpdate event with data as arg.
+        /// </summary>
+        /// <returns></returns>
+        public static TimeData LoadDataFromServer()// todo, not finished!
         {
             lock (SqlServerLock)
+            {
+                using (TimeData data = new TimeData())
+                {
+                    try
+                    {
+                        string query = "SELECT * FROM Time_Server";
+                        using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
+                        {
+                            conn.Open();
+                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            {
+                                using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                                {
+                                    DataTable temp = new DataTable();
+                                    da.Fill(temp);
+                                    for (int i = 0; i < temp.Rows.Count; i++)
+                                    {
+                                        DataRow row = temp.Rows[i];
+                                        if (row.ItemArray[1] is TimeSpan)
+                                        {
+                                            if (((TimeSpan) row.ItemArray[1]) == new TimeSpan()) // if this is a day header
+                                            {
+                                                if (row.ItemArray[0] is DateTime)
+                                                {
+                                                    if (!data.Days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
+                                                    {
+                                                        data.Days.Add(new Day((DateTime) row.ItemArray[0]) {Details = row.ItemArray[3].ToString()});
+                                                    }
+                                                }
+                                            }
+                                        }
+
+//                                        ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i);
+                                    }
+
+                                    for (int i = 0; i < data.Days.Count; i++)
+                                    {
+                                        Day day = data.Days[i];
+                                        foreach (DataRow row in temp.Rows)
+                                        {
+                                            if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
+                                            {
+                                                if ((DateTime) row.ItemArray[0] == day.Date)
+                                                {
+                                                    if (((TimeSpan) row.ItemArray[1]) != new TimeSpan()) // if this is not a day header
+                                                    {
+                                                        TimeSpan intime = (TimeSpan) row.ItemArray[1];
+                                                        TimeSpan outtime = (TimeSpan) row.ItemArray[2];
+                                                        day.Times.Add(new Time(new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
+                                                            new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
+                                                    }
+                                                }
+                                            }
+                                        }
+
+//                                        ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i + 50);
+                                    }
+
+//                                    ProgressChangedEvent?.Invoke(100);
+                                }
+                            }
+
+//                            TimeDateaUpdate?.Invoke(data); // Fire event for updating ui
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.ToString());
+                        Console.WriteLine(e);
+                    }
+                    return data;
+                } 
+            }
+        }
+
+        #region pull data cyclic read
+
+        private void PullDataElapsed(object sender, ElapsedEventArgs e)
+        {
+            Debug.WriteLine("Pulldataeleapsed.");
+            PullData();
+        }
+        
+        // your method to pull data from database to datatable   
+        private void PullData()
+        {
+            lock (SqlPullLock)// must use seperate lock case sqlserverlock is used in loaddatafromserver()
             {
                 try
                 {
@@ -513,58 +606,28 @@ namespace TheTimeApp.TimeData
                         {
                             using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                             {
-                                TimeData data = new TimeData();
                                 DataTable temp = new DataTable();
                                 da.Fill(temp);
+                                
+                                Debug.WriteLine("");
+                                Debug.WriteLine("Before");
+                                Debug.WriteLine($"DataTable: R:{_dataTable.Rows.Count} L:{_dataTable.Columns.Count}");
+                                Debug.WriteLine($"Temp: R:{temp.Rows.Count} L:{temp.Columns.Count}");
 
-                                for (int i = 0; i < temp.Rows.Count; i++)
+                                if (AreTablesTheSame(temp, _dataTable))
                                 {
-                                    DataRow row = temp.Rows[i];
-
-                                    if (row.ItemArray[1] is TimeSpan)
-                                    {
-                                        if (((TimeSpan) row.ItemArray[1]) == new TimeSpan()) // if this is a day header
-                                        {
-                                            if (row.ItemArray[0] is DateTime)
-                                            {
-                                                if (!data.Days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
-                                                {
-                                                    data.Days.Add(new Day((DateTime) row.ItemArray[0]) {Details = row.ItemArray[3].ToString()});
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i);
+                                    return;
                                 }
 
-                                for (int i = 0; i < data.Days.Count; i++)
-                                {
-                                    Day day = data.Days[i];
+                                _dataTable = temp.Copy();
+                                Debug.WriteLine("");
+                                Debug.WriteLine("After");
+                                Debug.WriteLine($"DataTable: R:{_dataTable.Rows.Count} L:{_dataTable.Columns.Count}");
+                                Debug.WriteLine($"Temp: R:{temp.Rows.Count} L:{temp.Columns.Count}");
 
-                                    foreach (DataRow row in temp.Rows)
-                                    {
-                                        if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
-                                        {
-                                            if ((DateTime) row.ItemArray[0] == day.Date)
-                                            {
-                                                if (((TimeSpan) row.ItemArray[1]) != new TimeSpan()) // if this is not a day header
-                                                {
-                                                    TimeSpan intime = (TimeSpan) row.ItemArray[1];
-                                                    TimeSpan outtime = (TimeSpan) row.ItemArray[2];
-                                                    day.Times.Add(new Time(new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
-                                                        new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
-                                                }
-                                            }
-                                        }
-                                    }
-                                    ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i + 50);
-                                }
-                                data.Save(savetoFile);
-                                ProgressChangedEvent?.Invoke(100);
+                                LoadDataFromServer();
                             }
                         }
-                        TimeDateaUpdate?.Invoke();// Fire event for updating ui
                     }
                 }
                 catch (Exception e)
@@ -574,112 +637,23 @@ namespace TheTimeApp.TimeData
                 }
             }
         }
-
-        #region pull data cyclic read
-
-        private void PullDataElapsed(object sender, ElapsedEventArgs e)
-        {
-            PullData();
-            StartCyclicSqlRead();
-        }
         
-        // your method to pull data from database to datatable   
-        private void PullData()
+        private static bool AreTablesTheSame( DataTable tbl1, DataTable tbl2)
         {
-            try
+            if (tbl1.Rows.Count != tbl2.Rows.Count || tbl1.Columns.Count != tbl2.Columns.Count)
+                return false;
+
+
+            for ( int i = 0; i < tbl1.Rows.Count; i++)
             {
-                string query = "SELECT * FROM Time_Server";
-
-                    using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
-                    {
-                        conn.Open();
-                    
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
-                        {
-                            using (SqlDataAdapter da = new SqlDataAdapter(cmd))
-                            {
-                                DataTable temp = new DataTable();
-                                da.Fill(temp);
-
-                                if (dataTable.Columns.Count != 0 && !AreDifferent(temp, dataTable))
-                                {
-                                    return;
-                                }
-
-                                dataTable = temp;
-
-                            LoadDataFromServer(AppSettings.DataPath);
-                        }
-                    }
+                for ( int c = 0; c < tbl1.Columns.Count; c++)
+                {
+                    if (!Equals(tbl1.Rows[i][c] ,tbl2.Rows[i][c]))
+                        return false;
                 }
             }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                Console.WriteLine(e);
-            }
+            return true;
         }
-        
-        private static bool AreDifferent(DataTable FirstDataTable, DataTable SecondDataTable)
-        {
-            //Create Empty Table   
-            DataTable ResultDataTable = new DataTable("ResultDataTable");
-
-            //use a Dataset to make use of a DataRelation object   
-            using (DataSet ds = new DataSet())
-            {
-                //Add tables   
-                ds.Tables.AddRange(new DataTable[] {FirstDataTable.Copy(), SecondDataTable.Copy()});
-
-                //Get Columns for DataRelation   
-                DataColumn[] firstColumns = new DataColumn[ds.Tables[0].Columns.Count];
-                for (int i = 0; i < firstColumns.Length; i++)
-                {
-                    firstColumns[i] = ds.Tables[0].Columns[i];
-                }
-
-                DataColumn[] secondColumns = new DataColumn[ds.Tables[1].Columns.Count];
-                for (int i = 0; i < secondColumns.Length; i++)
-                {
-                    secondColumns[i] = ds.Tables[1].Columns[i];
-                }
-
-                //Create DataRelation   
-                DataRelation r1 = new DataRelation(string.Empty, firstColumns, secondColumns, false);
-                ds.Relations.Add(r1);
-
-                DataRelation r2 = new DataRelation(string.Empty, secondColumns, firstColumns, false);
-                ds.Relations.Add(r2);
-
-                //Create columns for return table   
-                for (int i = 0; i < FirstDataTable.Columns.Count; i++)
-                {
-                    ResultDataTable.Columns.Add(FirstDataTable.Columns[i].ColumnName, FirstDataTable.Columns[i].DataType);
-                }
-
-                //If FirstDataTable Row not in SecondDataTable, Add to ResultDataTable.   
-                ResultDataTable.BeginLoadData();
-                foreach (DataRow parentrow in ds.Tables[0].Rows)
-                {
-                    DataRow[] childrows = parentrow.GetChildRows(r1);
-                    if (childrows == null || childrows.Length == 0)
-                        ResultDataTable.LoadDataRow(parentrow.ItemArray, true);
-                }
-
-                //If SecondDataTable Row not in FirstDataTable, Add to ResultDataTable.   
-                foreach (DataRow parentrow in ds.Tables[1].Rows)
-                {
-                    DataRow[] childrows = parentrow.GetChildRows(r2);
-                    if (childrows == null || childrows.Length == 0)
-                        ResultDataTable.LoadDataRow(parentrow.ItemArray, true);
-                }
-
-                ResultDataTable.EndLoadData();
-            }
-
-            return ResultDataTable.Rows.Count > 0;
-        }  
-
 
         #endregion
 
