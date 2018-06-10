@@ -13,7 +13,7 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeAppForm : Window
     {
-        private TimeData.TimeData _timeData = new TimeData.TimeData();
+        private TimeData.TimeData _timeData;
         private DateTime startTime;
         private DateTime StopTime;
         private DateTime _hours;

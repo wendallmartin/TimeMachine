@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -14,12 +15,26 @@ namespace TheTimeApp.TimeData
     [Serializable]
     public class TimeData : IDisposable
     {
-        private int _stateIndex = 0;
+        [NonSerialized]
         private static object readWrite = new object();
         
         public delegate void ConnectionChangedDel(bool connected);
     
         public delegate void TimeDataUpdatedDel(TimeData data);
+        
+        public string CurrentUser = string.Empty;
+        
+        public static List<SqlCommand> Commands = new List<SqlCommand>();
+
+        private List<Day> days;
+
+        private List<string> _userList = new List<string>();
+
+        [NonSerialized]
+        private static readonly byte[] IV = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xCD, 0xEF };
+        
+        [NonSerialized]
+        private static readonly byte[] bKey = { 27, 35, 75, 232, 73, 52, 87, 99 };
         
         [NonSerialized]
         public ConnectionChangedDel ConnectionChangedEvent;
@@ -30,35 +45,33 @@ namespace TheTimeApp.TimeData
         [NonSerialized] 
         public TimeDataUpdatedDel TimeDataUpdated;
         
-        public static List<SqlCommand> Commands = new List<SqlCommand>();
-
-        private List<Day> days;
-
         [NonSerialized]
-        private static readonly byte[] IV = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xCD, 0xEF };
-        
-        [NonSerialized]
-        private static readonly byte[] bKey = { 27, 35, 75, 232, 73, 52, 87, 99 };
-
         private Time _inprogress;
 
         [NonSerialized]
         private SqlServerHelper _sqlHelper;
-
-        public TimeData()
+        
+        public TimeData(bool sqlenabled)
         {
-            _sqlHelper = new SqlServerHelper(Commands);
-            
-            _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
-            _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
-            _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
+            if (AppSettings.MainPermission != "write")
+            {
+                Commands.Clear();
+            }
+
+            if (sqlenabled)
+            {
+                _sqlHelper = new SqlServerHelper(Commands);
+                _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
+                _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
+                _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
+            }
             
             days = new List<Day>();
             _inprogress = new Time();
         }
 
         [OnDeserialized]
-        private void InitSqlHelper(StreamingContext context)
+        private void OnDesirialize(StreamingContext context)
         {
             if (_sqlHelper == null)
             {
@@ -66,6 +79,31 @@ namespace TheTimeApp.TimeData
                 _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
                 _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
             }
+
+            if(_userList == null)
+                _userList = new List<string>();
+            _userList.RemoveAll(string.IsNullOrEmpty);
+            
+            // Add all missing users in database to local List of users.
+            days.ForEach(d =>
+            {
+                if (!_userList.Contains(d.User) && !string.IsNullOrEmpty(d.User))
+                {
+                    _userList.Add(d.User);
+                }
+            });
+            
+            if (days.Any(d => string.IsNullOrEmpty(d.User)))
+            {
+                MessageBox.Show(@"Forward compatibility not implented for user feature!!!");
+                // todo must add forward compatibility and make old user assign their user name
+            }
+        }
+
+        public List<string> UserList
+        {
+            get => _userList;
+            set => _userList = value;
         }
 
         public List<Day> Days
@@ -86,6 +124,7 @@ namespace TheTimeApp.TimeData
         
         private void OnTimeDataUpdate(TimeData data)
         {
+            Debug.WriteLine("Time data base update");
             TimeDataUpdated?.Invoke(data);
         }
 
@@ -154,6 +193,11 @@ namespace TheTimeApp.TimeData
             }
         }
 
+        /// <summary>
+        /// This calls TimeData constructer which sets
+        /// up the sql server.
+        /// </summary>
+        /// <returns></returns>
         public static TimeData Load()
         {
             lock (readWrite)
@@ -182,13 +226,13 @@ namespace TheTimeApp.TimeData
                     catch (Exception eDeserialize)
                     {
                         MessageBox.Show(eDeserialize.ToString());
-                        return new TimeData();
+                        return new TimeData(true);
                     }
                 }
                 else
                 {
                     // we assume this is the first instance of the app so the data file must be created
-                    return new TimeData();
+                    return new TimeData(true);
                 }
                 return data;   
             }
@@ -361,9 +405,12 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public static TimeData LoadDataFromSqlSever()
+        /// <summary>
+        /// Initualizes current TimeData from SQL server
+        /// </summary>
+        public void LoadDataFromSqlSever()
         {
-            return SqlServerHelper.LoadDataFromServer();
+            Days = _sqlHelper.LoadDataFromServer().Days;
         }
 
         /// <summary>

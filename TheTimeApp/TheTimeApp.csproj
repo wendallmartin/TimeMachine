@@ -80,6 +80,9 @@
     <Compile Include="Controls\TimeViewEdit.Designer.cs">
       <DependentUpon>TimeViewEdit.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\viewbar.xaml.cs">
+      <DependentUpon>ViewBar.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\WeekViewBar.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -159,6 +162,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\ViewBar.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\WPFDayViewBar.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

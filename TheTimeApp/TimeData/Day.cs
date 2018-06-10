@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace TheTimeApp.TimeData
 {
@@ -10,6 +11,11 @@ namespace TheTimeApp.TimeData
         private List<Time> times;
         private DateTime _date;
         internal bool Emailed;
+
+        /// <summary>
+        /// The user: Add with multiple user feature.
+        /// </summary>
+        [OptionalField] private string _user;
 
         public Day(DateTime date)
         {
@@ -27,6 +33,12 @@ namespace TheTimeApp.TimeData
         public void AddTime(Time time)
         {
             times.Add(time);
+        }
+
+        public string User
+        {
+            get => _user;
+            set => _user = value;
         }
 
         public void ClearTimes()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Linq;
@@ -39,15 +40,17 @@ namespace TheTimeApp
             InitializeComponent();
 
             AppSettings.Validate();
-
-            if (SqlServerHelper.IsConnected)
+           
+            if (AppSettings.SQLEnabled == "true" && SqlServerHelper.IsConnected)
             {
-                _timeData = TimeData.TimeData.LoadDataFromSqlSever();
+                _timeData = new TimeData.TimeData(true);
+                _timeData.LoadDataFromSqlSever();
                 ConnectionChanged(true);
                 UpdateChanged(true);
             }
             else
             {
+                _timeData = new TimeData.TimeData(false);
                 _timeData = TimeData.TimeData.Load();
             }
             
@@ -64,8 +67,8 @@ namespace TheTimeApp
         /// <param name="data"></param>
         private void OnTimeDataUpdate(TimeData.TimeData data)
         {
-            _timeData.Days.Clear();
-            data.Days.ForEach(d => _timeData.Days.Add(d));
+            Debug.WriteLine("Intualize view");
+            _timeData.Days = data.Days; // just copy the days to avoid having to reassociate all events
             Dispatcher.Invoke(InitualizeView);
         }
 

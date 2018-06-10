@@ -26,6 +26,7 @@ namespace TheTimeApp.TimeData
 
         public delegate void TimeDateUpdated(TimeData data);
 
+        public string CurrentUser = "Time_Server";
         public TimeDateUpdated TimeDateaUpdate;
         public ProgressChangedDel ProgressChangedEvent;
         public ProgressFinishDel ProgressFinishEvent;
@@ -80,7 +81,7 @@ namespace TheTimeApp.TimeData
             }
 
             // only start sql cyclic read if sql enabled and MainPermission is 'read'
-            if ( AppSettings.SQLEnabled == "true" && AppSettings.MainPermission == "read")
+            if ( AppSettings.SQLEnabled == "true" && AppSettings.MainPermission == "read" && IsConnected)
             {
                 _cylcicSQLRead.Elapsed += PullDataElapsed;
                 _cylcicSQLRead.AutoReset = false;
@@ -255,7 +256,7 @@ namespace TheTimeApp.TimeData
                     using (SqlConnection con = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                     {
                         con.Open();
-                        using (SqlCommand command = new SqlCommand($@"SELECT * FROM Time_Server WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", con))
+                        using (SqlCommand command = new SqlCommand($@"SELECT * FROM {CurrentUser} WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", con))
                         {
                             return command.ExecuteScalar() != null;
                         }                            
@@ -273,7 +274,7 @@ namespace TheTimeApp.TimeData
         {
             try
             {
-                using (SqlCommand command = new SqlCommand(@"SELECT * FROM Time_Server WHERE( Date = @Date AND TimeIn = @TimeIn AND 
+                using (SqlCommand command = new SqlCommand($@"SELECT * FROM {CurrentUser} WHERE( Date = @Date AND TimeIn = @TimeIn AND 
                                                                 TimeOut = @TimeOut AND CONVERT(VARCHAR,Details) = @Details)"))// todo, must add connection using statemnt
                 {
                     command.Parameters.AddWithValue("@Date", time.TimeIn.Date);
@@ -297,7 +298,7 @@ namespace TheTimeApp.TimeData
                 Days = days;
 
                 // removes deleted from server
-                SqlCommand dayCommand = new SqlCommand("SELECT * FROM Time_Server WHERE (TimeIn = '" + new TimeSpan() + "' AND TimeOut = '" + new TimeSpan() + "')");// todo, must add connection using statement
+                SqlCommand dayCommand = new SqlCommand($"SELECT * FROM {CurrentUser} WHERE (TimeIn = '" + new TimeSpan() + "' AND TimeOut = '" + new TimeSpan() + "')");// todo, must add connection using statement
                 SqlDataReader dayReader = dayCommand.ExecuteReader();
                 while (dayReader.Read())
                 {
@@ -323,7 +324,7 @@ namespace TheTimeApp.TimeData
                     }
                 }
 
-                SqlCommand timeCommand = new SqlCommand("SELECT * FROM Time_Server WHERE (TimeIn <> '" + new TimeSpan() + "' AND TimeOut <> '" + new TimeSpan() + "')");// todo must add connection using statement
+                SqlCommand timeCommand = new SqlCommand($"SELECT * FROM {CurrentUser} WHERE (TimeIn <> '" + new TimeSpan() + "' AND TimeOut <> '" + new TimeSpan() + "')");// todo must add connection using statement
                 SqlDataReader timeReader = timeCommand.ExecuteReader();
                 while (timeReader.Read())
                 {
@@ -341,7 +342,7 @@ namespace TheTimeApp.TimeData
 
                         if (!contains)
                         {
-                            using (SqlCommand command = new SqlCommand("DELETE FROM Time_Server WHERE( TimeIn = '" + (TimeSpan) timeReader["TimeIn"] + "' AND TimeOut = '" + (TimeSpan) timeReader["TimeOut"] + "')"))
+                            using (SqlCommand command = new SqlCommand($"DELETE FROM {CurrentUser} WHERE( TimeIn = '" + (TimeSpan) timeReader["TimeIn"] + "' AND TimeOut = '" + (TimeSpan) timeReader["TimeOut"] + "')"))
                             {
                                 AddCommand(command);
                             }
@@ -361,9 +362,9 @@ namespace TheTimeApp.TimeData
             {
                 lock (SqlServerLock)
                 {
-                    CreateCommand(@"IF EXISTS (SELECT * FROM sysobjects WHERE name='Time_Server' AND xtype='U') DROP TABLE Time_Server");
-                    CreateCommand(@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Time_Server' AND xtype='U')
-                                            CREATE TABLE Time_Server (Date date, TimeIn time, TimeOut time, Details text)");
+                    CreateCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U') DROP TABLE {CurrentUser}");
+                    CreateCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U')
+                                            CREATE TABLE {CurrentUser} (Date date, TimeIn time, TimeOut time, Details text)");
                     ProgressChangedEvent?.Invoke(0);
                     for (float i = 0; i < days.Count; i++)
                     {
@@ -386,7 +387,7 @@ namespace TheTimeApp.TimeData
         {
             Debug.WriteLine("Remove week");
             var datesInWeek = DatesInWeek(date);
-            AddCommand(new SqlCommand(@"DELETE FROM Time_Server WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
+            AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
                                       "' OR Date = '" + datesInWeek[5] + "' OR Date = '" + datesInWeek[6] + "')"));
         }
         
@@ -404,7 +405,7 @@ namespace TheTimeApp.TimeData
                 {
                     
                 }
-                using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
+                using (SqlCommand command = new SqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
                 {
                     command.Parameters.Add(new SqlParameter("Date", day.Date));
                     command.Parameters.Add(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
@@ -427,7 +428,7 @@ namespace TheTimeApp.TimeData
         public void RemoveDay(DateTime date)
         {
             Debug.WriteLine("Remove day");
-            AddCommand(new SqlCommand(@"DELETE FROM Time_Server WHERE( Date = '" + date + "')"));
+            AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + date + "')"));
         }
 
         /// <summary>
@@ -437,7 +438,7 @@ namespace TheTimeApp.TimeData
         public void RemoveDayHeader(Day day)
         {
             Debug.WriteLine("Remove day header");
-            AddCommand(new SqlCommand("DELETE FROM Time_Server WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"));
+            AddCommand(new SqlCommand($"DELETE FROM {CurrentUser} WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"));
         }
         
         public void InsertTime(Time time)
@@ -446,7 +447,7 @@ namespace TheTimeApp.TimeData
             if (time == null) return;
             try
             {
-                using (SqlCommand command = new SqlCommand("INSERT INTO Time_Server VALUES(@Date, @TimeIn, @TimeOut, @Details) "))
+                using (SqlCommand command = new SqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details) "))
                 {
                     command.Parameters.Add(new SqlParameter("Date", time.TimeIn.Date));
                     command.Parameters.Add(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
@@ -465,7 +466,7 @@ namespace TheTimeApp.TimeData
         public void RemoveTime(Time time)
         {
             Debug.WriteLine("Remove time");
-            AddCommand(new SqlCommand(@"DELETE FROM Time_Server WHERE( Date = '"+ time.TimeIn.Date +"' TimeIn = '" + time.TimeIn.TimeOfDay + "' AND TimeOut = '" + time.TimeOut.TimeOfDay + "')"));
+            AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '"+ time.TimeIn.Date +"' TimeIn = '" + time.TimeIn.TimeOfDay + "' AND TimeOut = '" + time.TimeOut.TimeOfDay + "')"));
         }
 
         public void UpdateDetails(Day day)
@@ -477,7 +478,7 @@ namespace TheTimeApp.TimeData
             }
             else
             {
-                using (SqlCommand cmd = new SqlCommand("UPDATE Time_Server SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"))
+                using (SqlCommand cmd = new SqlCommand($"UPDATE {CurrentUser} SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"))
                 {
                     cmd.Parameters.AddWithValue("@Details", day.Details);
                     AddCommand(cmd);
@@ -488,7 +489,7 @@ namespace TheTimeApp.TimeData
         public void UpdateTime(Time time)
         {
             Debug.WriteLine("Update time");
-            using (SqlCommand cmd = new SqlCommand("UPDATE Time_Server SET TimeIn = @TimeIn, TimeOut = @TimeOut WHERE( Date = '" + time.TimeIn.Date + "' AND TimeIn = '" + time.TimeIn.TimeOfDay + "' OR TimeOut = '" + time.TimeOut.TimeOfDay + "')"))
+            using (SqlCommand cmd = new SqlCommand($"UPDATE {CurrentUser} SET TimeIn = @TimeIn, TimeOut = @TimeOut WHERE( Date = '" + time.TimeIn.Date + "' AND TimeIn = '" + time.TimeIn.TimeOfDay + "' OR TimeOut = '" + time.TimeOut.TimeOfDay + "')"))
             {
                 cmd.Parameters.AddWithValue("@TimeIn", time.TimeIn.TimeOfDay);
                 cmd.Parameters.AddWithValue("@TimeOut", time.TimeOut.TimeOfDay);
@@ -498,86 +499,102 @@ namespace TheTimeApp.TimeData
         
         #endregion
 
+        private TimeData LoadTimeFromDataTable(DataTable temp)
+        {
+            TimeData data = new TimeData(false);
+            try
+            {
+                for (int i = 0; i < temp.Rows.Count; i++)
+                {
+                    DataRow row = temp.Rows[i];
+                    if (row.ItemArray[1] is TimeSpan)
+                    {
+                        if (((TimeSpan) row.ItemArray[1]) == new TimeSpan()) // if this is a day header
+                        {
+                            if (row.ItemArray[0] is DateTime)
+                            {
+                                if (!data.Days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
+                                {
+                                    data.Days.Add(new Day((DateTime) row.ItemArray[0]) {Details = row.ItemArray[3].ToString()});
+                                }
+                            }
+                        }
+                    }
+
+                    ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i);
+                }
+
+                foreach (Day day in data.Days)
+                {
+                    foreach (DataRow row in temp.Rows)
+                    {
+                        if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
+                        {
+                            if ((DateTime) row.ItemArray[0] == day.Date)
+                            {
+                                if (((TimeSpan) row.ItemArray[1]) != new TimeSpan()) // if this is not a day header
+                                {
+                                    TimeSpan intime = (TimeSpan) row.ItemArray[1];
+                                    TimeSpan outtime = (TimeSpan) row.ItemArray[2];
+                                    day.Times.Add(new Time(new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
+                                        new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ProgressChangedEvent?.Invoke(100);
+                OnTimeDataUpdate(data);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                Console.WriteLine(e);
+            }
+
+            return data;
+        }
+
+        private void OnTimeDataUpdate(TimeData data)
+        {
+            Debug.WriteLine("SQL server time data update");
+            TimeDateaUpdate?.Invoke(data); // Fire event for updating ui
+        }
+
         /// <summary>
         /// Returns timedata form server.
         /// Calls TimeDataUpdate event with data as arg.
         /// </summary>
         /// <returns></returns>
-        public static TimeData LoadDataFromServer()// todo, not finished!
+        public TimeData LoadDataFromServer()
         {
             lock (SqlServerLock)
             {
-                using (TimeData data = new TimeData())
+                Debug.WriteLine("Loading data from server");
+                DataTable temp = new DataTable();
+                try
                 {
-                    try
+                    string query = $"SELECT * FROM {CurrentUser}";
+                    
+                    using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                     {
-                        string query = "SELECT * FROM Time_Server";
-                        using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
+                        conn.Open();
+                        using (SqlCommand cmd = new SqlCommand(query, conn))
                         {
-                            conn.Open();
-                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                             {
-                                using (SqlDataAdapter da = new SqlDataAdapter(cmd))
-                                {
-                                    DataTable temp = new DataTable();
-                                    da.Fill(temp);
-                                    for (int i = 0; i < temp.Rows.Count; i++)
-                                    {
-                                        DataRow row = temp.Rows[i];
-                                        if (row.ItemArray[1] is TimeSpan)
-                                        {
-                                            if (((TimeSpan) row.ItemArray[1]) == new TimeSpan()) // if this is a day header
-                                            {
-                                                if (row.ItemArray[0] is DateTime)
-                                                {
-                                                    if (!data.Days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
-                                                    {
-                                                        data.Days.Add(new Day((DateTime) row.ItemArray[0]) {Details = row.ItemArray[3].ToString()});
-                                                    }
-                                                }
-                                            }
-                                        }
-
-//                                        ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i);
-                                    }
-
-                                    for (int i = 0; i < data.Days.Count; i++)
-                                    {
-                                        Day day = data.Days[i];
-                                        foreach (DataRow row in temp.Rows)
-                                        {
-                                            if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
-                                            {
-                                                if ((DateTime) row.ItemArray[0] == day.Date)
-                                                {
-                                                    if (((TimeSpan) row.ItemArray[1]) != new TimeSpan()) // if this is not a day header
-                                                    {
-                                                        TimeSpan intime = (TimeSpan) row.ItemArray[1];
-                                                        TimeSpan outtime = (TimeSpan) row.ItemArray[2];
-                                                        day.Times.Add(new Time(new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
-                                                            new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
-                                                    }
-                                                }
-                                            }
-                                        }
-
-//                                        ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i + 50);
-                                    }
-
-//                                    ProgressChangedEvent?.Invoke(100);
-                                }
+                                da.Fill(temp);
                             }
-
-//                            TimeDateaUpdate?.Invoke(data); // Fire event for updating ui
                         }
                     }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show(e.ToString());
-                        Console.WriteLine(e);
-                    }
-                    return data;
-                } 
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString());
+                    Console.WriteLine(e);
+                }
+                return LoadTimeFromDataTable(temp);
             }
         }
 
@@ -585,18 +602,23 @@ namespace TheTimeApp.TimeData
 
         private void PullDataElapsed(object sender, ElapsedEventArgs e)
         {
-            Debug.WriteLine("Pulldataeleapsed.");
+            Debug.WriteLine("Pull data eleapsed.");
             PullData();
+            StartCyclicSqlRead();
         }
         
         // your method to pull data from database to datatable   
-        private void PullData()
+        public void PullData()
         {
+            if (!IsConnected)
+                return;
+            
+            Debug.WriteLine("Pull data from server");
             lock (SqlPullLock)// must use seperate lock case sqlserverlock is used in loaddatafromserver()
             {
                 try
                 {
-                    string query = "SELECT * FROM Time_Server";
+                    string query = $"SELECT * FROM {CurrentUser}";
 
                     using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                     {
@@ -609,22 +631,13 @@ namespace TheTimeApp.TimeData
                                 DataTable temp = new DataTable();
                                 da.Fill(temp);
                                 
-                                Debug.WriteLine("");
-                                Debug.WriteLine("Before");
-                                Debug.WriteLine($"DataTable: R:{_dataTable.Rows.Count} L:{_dataTable.Columns.Count}");
-                                Debug.WriteLine($"Temp: R:{temp.Rows.Count} L:{temp.Columns.Count}");
-
                                 if (AreTablesTheSame(temp, _dataTable))
                                 {
                                     return;
                                 }
 
                                 _dataTable = temp.Copy();
-                                Debug.WriteLine("");
-                                Debug.WriteLine("After");
-                                Debug.WriteLine($"DataTable: R:{_dataTable.Rows.Count} L:{_dataTable.Columns.Count}");
-                                Debug.WriteLine($"Temp: R:{temp.Rows.Count} L:{temp.Columns.Count}");
-
+                                
                                 LoadDataFromServer();
                             }
                         }

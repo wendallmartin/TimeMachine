@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Win32;
+using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
 
 namespace TheTimeApp
@@ -30,6 +31,8 @@ namespace TheTimeApp
             InitializeComponent();
 
             _data = data;
+            
+            _data.UserList.ForEach(u => StackPanel.Children.Add(new ViewBar(){Text = u, Width = 110}));
 
             TextBoxFromAddress.Text = AppSettings.FromAddress;
             TextBoxUserName.Text = AppSettings.FromUser;
@@ -213,7 +216,8 @@ namespace TheTimeApp
             saveFileDialog.Filter = "Time file (*.dtf)|*.dtf";
             saveFileDialog.ShowDialog();
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-            TimeData.TimeData.LoadDataFromSqlSever().Save();
+            _data.LoadDataFromSqlSever();
+            _data.Save();
         }
 
         private void DataLocation_Click(object sender, RoutedEventArgs e)
@@ -222,6 +226,16 @@ namespace TheTimeApp
             openFileDialog.Filter = "Time file (*.dtf)|*.dtf";
             openFileDialog.ShowDialog();
             AppSettings.DataPath = openFileDialog.FileName;
+        }
+
+        private void btn_Remove_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void btn_Add_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
