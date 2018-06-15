@@ -125,14 +125,14 @@ namespace TheTimeApp
                 {
                     var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
                     var d2 = day.Date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(day.Date) + 1);
-                    WPFWeekViewBar weekViewBar = new WPFWeekViewBar(new Size(Width - 31, 26), d2, _timeData.HoursInWeek(d2)){Editable = false};
+                    WPFWeekViewBar weekViewBar = new WPFWeekViewBar( d2, _timeData.HoursInWeek(d2)){Editable = false};
                     weekViewBar.EmailWeekEvent += OnEmailWeek;
                     weekViewBar.PrintWeekEvent += OnPrintWeek;
                     weekViewBar.PreviewWeekEvent += OnPreviewWeek;
                     StackPanel.Children.Add(weekViewBar);
                 }
-                WPFDayViewBar datevViewBar = new WPFDayViewBar(new Size(Width - 31, 26), day){Editable = false};
-                datevViewBar.SelectedEvent += OnDateViewClick;
+                WPFDayViewBar datevViewBar = new WPFDayViewBar(day){Editable = false};
+                datevViewBar.DayClickEvent += OnDateViewDayClick;
                 StackPanel.Children.Add(datevViewBar);
 
                 prev = day;
@@ -144,7 +144,7 @@ namespace TheTimeApp
             }
         }
 
-        private void OnDateViewClick(DateTime date)
+        private void OnDateViewDayClick(DateTime date)
         {
             Day day = _timeData.Days.First(d => d.Date == date);
             if (day == null) return;

@@ -45,7 +45,7 @@ namespace TheTimeApp.TimeData
         [NonSerialized] 
         public TimeDataUpdatedDel TimeDataUpdated;
         
-        [NonSerialized]
+        [OptionalField]
         private Time _inprogress;
 
         [NonSerialized]
@@ -367,6 +367,11 @@ namespace TheTimeApp.TimeData
 
         public void PunchOut()
         {
+            if (_inprogress == null)
+            {
+                _inprogress = days.Last().Times.Last();
+            }
+            
             _inprogress.PunchOut();
             _sqlHelper.UpdateTime(_inprogress);
             
@@ -395,14 +400,14 @@ namespace TheTimeApp.TimeData
             _sqlHelper.UpdateDetails(day);
         }
 
-        public void UpdateDayTime(Time org, Time upd)// todo, must implement
+        public void UpdateDayTime(KeyValuePair<int, int> dayTime, Time upd)
         {
-            throw new NotImplementedException();
+            days[dayTime.Key].Times[dayTime.Value] = upd;
         }
 
-        public void UpdateDayDate(DateTime date, DateTime timeeditGetDate)// todo, must implement
+        public void UpdateDayDate(int dateIndex, DateTime newDate)
         {
-            throw new NotImplementedException();
+            days[dateIndex].Date = newDate;
         }
 
         /// <summary>

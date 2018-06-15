@@ -90,10 +90,9 @@
                         <ColumnDefinition Width="7*"/>
                         <ColumnDefinition Width="134*"/>
                     </Grid.ColumnDefinitions>
-                    <ScrollViewer x:Name="ScrollViewer" Background="Gray" Margin="10,10,34,86" HorizontalAlignment="Center" Width="Auto" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer x:Name="ScrollViewer" Background="Gray" Margin="10,10,34,86" HorizontalAlignment="Center" Width="150" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="StackPanel" Orientation="Vertical" Background="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"/>
                     </ScrollViewer>
-                    <Button Content="Remove" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="75" Margin="0,0,65,15" Click="btn_Remove_Click"/>
                     <Button Content="Add" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="75" Margin="42,0,0,47" Click="btn_Add_Click"/>
                 </Grid>
             </TabItem>

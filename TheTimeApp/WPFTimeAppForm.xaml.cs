@@ -18,8 +18,6 @@ namespace TheTimeApp
         private DateTime StopTime;
         private DateTime _hours;
 
-        private TimeViewWindow timeViewWindow;
-
         public delegate void Exit();
 
         public event Exit CloseApp;
@@ -105,15 +103,6 @@ namespace TheTimeApp
             });
         }
 
-        private void CloseTimeViewWindow(TimeData.TimeData data)
-        {
-            _timeData = data;
-            _timeData.Save();
-            timeViewWindow.Close();
-
-            DayDetailsBox.Text = _timeData.CurrentDay().Details;
-        }
-
         private void OnDayDetailsChanged(object sender, TextChangedEventArgs e)
         {
             _timeData.UpdateDetails(_timeData.CurrentDay(), DayDetailsBox.Text);
@@ -123,9 +112,8 @@ namespace TheTimeApp
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
             _timeData.SortDays();
-            timeViewWindow = new TimeViewWindow(_timeData);
-            timeViewWindow.CloseEvent += CloseTimeViewWindow;
-            timeViewWindow.ShowDialog();
+            new WPFTimeViewWindow(_timeData).ShowDialog();
+            DayDetailsBox.Text = _timeData.CurrentDay().Details;
         }
 
         private void btn_Settings_Click(object sender, RoutedEventArgs e)

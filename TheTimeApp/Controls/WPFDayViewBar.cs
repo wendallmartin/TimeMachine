@@ -23,7 +23,7 @@ namespace TheTimeApp.Controls
     /// <summary>
     /// Interaction logic for WPFDayViewBar.xaml
     /// </summary>
-    public partial class WPFDayViewBar : UserControl
+    public partial class WPFDayViewBar : ViewBar
     {
         private DateTime date;
 
@@ -31,29 +31,29 @@ namespace TheTimeApp.Controls
 
         public event DayDelegate DeleteDayEvent;
 
-        public event DayDelegate SelectedEvent;
+        public event DayDelegate DayClickEvent;
 
         public bool Editable { get; set; }
 
-        public WPFDayViewBar(Size size, TimeData.Day day)
+        public WPFDayViewBar(TimeData.Day day)
         {
-            InitializeComponent();
-
-            Width = size.Width;
-            Height = size.Height;
+            BrushSelected = Brushes.LightSkyBlue;
+            BrushUnselected = Brushes.CadetBlue;
             
             date = day.Date;
             
-            label.Content = date.Month + "//" + date.Day + "//" + date.Year + "                                              Hours: " + day.HoursAsDec();
+            Text = date.Month + "//" + date.Day + "//" + date.Year + "                                              Hours: " + day.HoursAsDec();
+
+            DeleteEvent += OnDeleteDay;
+            SelectedEvent += OnDayDayClick;
         }
 
-        private void OnDayClick(object sender, MouseEventArgs e)
+        private void OnDayDayClick()
         {
-            e.Handled = true;
-            SelectedEvent?.Invoke(date);
+            DayClickEvent?.Invoke(date);
         }
 
-        private void OnDeleteDay(object sender, MouseEventArgs e)
+        private void OnDeleteDay(ViewBar viewBar)
         {
             MessageBoxButton button = MessageBoxButton.YesNo;
             var sure = MessageBox.Show("Time will be deleted permenetly!", "Warning", button);
@@ -62,28 +62,6 @@ namespace TheTimeApp.Controls
             {
                 DeleteDayEvent?.Invoke(date);
             }
-        }
-
-        private void OnMouseLeave(object sender, EventArgs e)
-        {
-            if (!IsMouseOver && !delete.IsMouseOver)
-            {
-                Background = Brushes.Green;
-                if (Editable)
-                    delete.Visibility = Visibility.Hidden;
-            }
-        }
-
-        private void OnMouseEnter(object sender, EventArgs e)
-        {
-            Background = Brushes.LightGreen;
-            if (Editable)
-                delete.Visibility = Visibility.Visible;
-        }
-
-        public DateTime Date
-        {
-            get { return date; }
         }
     }
 }

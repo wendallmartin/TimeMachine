@@ -15,26 +15,29 @@ using System.Windows.Shapes;
 
 namespace TheTimeApp.Controls
 {
+    public delegate void SelectedDel();
+
+    public delegate void DeleteDel(ViewBar viewBar);
+    
     /// <summary>
     /// Interaction logic for ViewBar.xaml
     /// </summary>
-    public partial class ViewBar : UserControl
+    public partial class ViewBar
     {
         private Brush _brushSelected;
 
         private Brush _brushUnSelected;
 
-        public delegate void SelectedDel();
+        protected SelectedDel SelectedEvent;
 
-        public delegate void DeleteDel(ViewBar viewBar);
-
-        public SelectedDel SelectedEvent;
-
-        public DeleteDel DeleteEvent;
+        protected DeleteDel DeleteEvent;
+        
+        public bool Editable { get; set; }
 
         public ViewBar()
         {
             InitializeComponent();
+            btn_Delete.Visibility = Visibility.Hidden;
         }
 
         public string Text
@@ -46,10 +49,13 @@ namespace TheTimeApp.Controls
         public Brush BrushUnselected
         {
             get => _brushUnSelected;
-            set => _brushUnSelected = value;
+            set{
+                _brushUnSelected = value;
+                Background = _brushUnSelected;
+            }
         }
 
-        public Brush BackBrushSelected
+        public Brush BrushSelected
         {
             get => _brushSelected;
             set => _brushSelected = value;
@@ -57,8 +63,10 @@ namespace TheTimeApp.Controls
 
         private void OnMouseEnter(object sender, MouseEventArgs e)
         {
-            btn_Delete.Visibility = Visibility.Visible;
             Background = _brushSelected;
+            
+            if(Editable)
+                btn_Delete.Visibility = Visibility.Visible;
         }
 
         private void OnMouseLeave(object sender, MouseEventArgs e)
@@ -72,11 +80,13 @@ namespace TheTimeApp.Controls
 
         private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
+            e.Handled = true;
             SelectedEvent?.Invoke();
         }
 
         private void OnDeleteButtonDown(object sender, MouseButtonEventArgs e)
         {
+            e.Handled = true;
             DeleteEvent?.Invoke(this);
         }
     }
