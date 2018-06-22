@@ -371,9 +371,10 @@ namespace TheTimeApp.TimeData
             {
                 _inprogress = days.Last().Times.Last();
             }
-            
+
+            Time prev = new Time(){TimeIn = _inprogress.TimeIn, TimeOut = _inprogress.TimeOut};
             _inprogress.PunchOut();
-            _sqlHelper.UpdateTime(_inprogress);
+            _sqlHelper.SqlUpdateTime(prev, _inprogress);
             
             Save();
         }
@@ -400,14 +401,22 @@ namespace TheTimeApp.TimeData
             _sqlHelper.UpdateDetails(day);
         }
 
-        public void UpdateDayTime(KeyValuePair<int, int> dayTime, Time upd)
+        public void UpdateTime(Time prev, Time upd)
         {
-            days[dayTime.Key].Times[dayTime.Value] = upd;
-        }
-
-        public void UpdateDayDate(int dateIndex, DateTime newDate)
-        {
-            days[dateIndex].Date = newDate;
+            for (int dayIndex = 0; dayIndex < days.Count; dayIndex++)
+            {
+                Day day = days[dayIndex];
+                for (int timeIndex = 0; timeIndex < day.Times.Count; timeIndex++)
+                {
+                    Time time = day.Times[timeIndex];
+                    if (time.TimeIn == prev.TimeIn && time.TimeOut == prev.TimeOut)
+                    {
+                        days[dayIndex].Times[timeIndex] = upd;
+                    }
+                }
+            }
+            _sqlHelper.SqlUpdateTime(prev, upd);
+            Save();
         }
 
         /// <summary>

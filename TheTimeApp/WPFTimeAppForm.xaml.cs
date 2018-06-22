@@ -112,7 +112,7 @@ namespace TheTimeApp
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
             _timeData.SortDays();
-            new WPFTimeViewWindow(_timeData).ShowDialog();
+            new WpfTimeViewWindow(_timeData).ShowDialog();
             DayDetailsBox.Text = _timeData.CurrentDay().Details;
         }
 

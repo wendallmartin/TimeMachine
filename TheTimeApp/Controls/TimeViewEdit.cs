@@ -21,27 +21,17 @@ namespace TheTimeApp
         [System.Runtime.InteropServices.DllImportAttribute("user32.dll")]
         public static extern bool ReleaseCapture();
 
-        public const int WM_NCLBUTTONDOWN = 0xA1;
-        public const int HT_CAPTION = 0x2;
-        
-        private Time _time = new Time();
+        public const int WmNclbuttondown = 0xA1;
+        public const int HtCaption = 0x2;
 
         private TimeData.TimeData _data;
         
-        public Time GetTime
-        {
-            get{ return _time; }
-        }
-
-        public DateTime GetDate
-        {
-            get{ return _time.TimeIn.Date; }
-        }
+        public Time GetTime { get; } = new Time();
 
         public TimeViewEdit(Time time, TimeData.TimeData data,  bool _12hour)
         {
             _data = data;
-            _time = time;
+            GetTime = time;
             
             InitializeComponent();
             MouseDown += FormMouseDown;
@@ -84,8 +74,8 @@ namespace TheTimeApp
 
         private void bt_Save_Click(object sender, EventArgs e)
         {
-            _time.TimeIn = timeInPicker.Value;
-            _time.TimeOut = timeOutPicker.Value;
+            GetTime.TimeIn = timeInPicker.Value;
+            GetTime.TimeOut = timeOutPicker.Value;
             DialogResult = DialogResult.OK;
         }
         
@@ -94,7 +84,7 @@ namespace TheTimeApp
             if (e.Button == MouseButtons.Left)
             {
                 ReleaseCapture();
-                SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+                SendMessage(Handle, WmNclbuttondown, HtCaption, 0);
             }
         }
     }

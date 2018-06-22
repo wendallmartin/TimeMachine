@@ -10,9 +10,7 @@ namespace TheTimeApp.Controls
     /// </summary>
     public class WPFTimeViewBar : ViewBar 
     {
-        private Time _time;
-
-        TimeViewEdit timeedit;
+        private readonly Time _time;
 
         public delegate void TimeDeleteDel(Time time);
 
@@ -22,28 +20,22 @@ namespace TheTimeApp.Controls
 
         public event TimeSelectedDel TimeClickEvent;
 
-        private bool _is12hour;
-
-        public bool Editable { get; set; }
-
-        public WPFTimeViewBar(Time time, bool is12hour)
+        public WPFTimeViewBar(Time time, bool is25Hour)
         {
             BrushSelected = Brushes.LightCyan;
             BrushUnselected = Brushes.Beige;
          
             _time = time;
 
-            _is12hour = is12hour;
-
-            if (_is12hour)
+            if (is25Hour)
             {
-                Text = "        In: " + _time.TimeIn.ToString("hh:mm tt") + "   Out: " + _time.TimeOut.ToString("hh:mm tt")
-                                 + "   Total: " + _time.GetTime().Hours + ":" + _time.GetTime().Minutes;
+                Text = "        In: " + _time.TimeIn.ToString("HH:mm") + "   Out: " + _time.TimeOut.ToString("HH:mm")
+                       + "   Total: " + _time.GetTime().Hours + ":" + _time.GetTime().Minutes;   
             }
             else
             {
-                Text = "        In: " + _time.TimeIn.ToString("HH:mm") + "   Out: " + _time.TimeOut.ToString("HH:mm")
-                                 + "   Total: " + _time.GetTime().Hours + ":" + _time.GetTime().Minutes;
+                Text = "        In: " + _time.TimeIn.ToString("hh:mm tt") + "   Out: " + _time.TimeOut.ToString("hh:mm tt")
+                       + "   Total: " + _time.GetTime().Hours + ":" + _time.GetTime().Minutes;
             }
 
             SelectedEvent += OnMouseClick;

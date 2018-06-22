@@ -486,13 +486,14 @@ namespace TheTimeApp.TimeData
             }
         }
         
-        public void UpdateTime(Time time)
+        public void SqlUpdateTime(Time prev, Time upd)
         {
             Debug.WriteLine("Update time");
-            using (SqlCommand cmd = new SqlCommand($"UPDATE {CurrentUser} SET TimeIn = @TimeIn, TimeOut = @TimeOut WHERE( Date = '" + time.TimeIn.Date + "' AND TimeIn = '" + time.TimeIn.TimeOfDay + "' OR TimeOut = '" + time.TimeOut.TimeOfDay + "')"))
+            using (SqlCommand cmd = new SqlCommand($"UPDATE {CurrentUser} SET Date = @Date, TimeIn = @TimeIn, TimeOut = @TimeOut WHERE( Date = '" + prev.TimeIn.Date + "' AND TimeIn = '" + prev.TimeIn.TimeOfDay + "' AND TimeOut = '" + prev.TimeOut.TimeOfDay + "')"))
             {
-                cmd.Parameters.AddWithValue("@TimeIn", time.TimeIn.TimeOfDay);
-                cmd.Parameters.AddWithValue("@TimeOut", time.TimeOut.TimeOfDay);
+                cmd.Parameters.AddWithValue("@Date", upd.TimeIn.Date);
+                cmd.Parameters.AddWithValue("@TimeIn", upd.TimeIn.TimeOfDay);
+                cmd.Parameters.AddWithValue("@TimeOut", upd.TimeOut.TimeOfDay);
                 AddCommand(cmd);
             }   
         }

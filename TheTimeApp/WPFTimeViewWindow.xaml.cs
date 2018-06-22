@@ -1,16 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading;
-using System.Windows;
 using System.Windows.Forms;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
-using Control = System.Windows.Controls.Control;
+using Brushes = System.Windows.Media.Brushes;
+using Day = TheTimeApp.TimeData.Day;
 using MessageBox = System.Windows.MessageBox;
 
 namespace TheTimeApp
@@ -18,72 +18,85 @@ namespace TheTimeApp
     /// <summary>
     /// Interaction logic for WPFTimeViewWindow.xaml
     /// </summary>
-    public partial class WPFTimeViewWindow : Window
+    public partial class WpfTimeViewWindow
     {
-        private TimeData.TimeData _timeData;
+        private readonly TimeData.TimeData _timeData;
 
-        private int _lastScrollPos = 0;
+        private bool _24hour;
 
-        private bool _12hour = true;
+        TimeViewEdit _timeedit;
 
-        TimeViewEdit timeedit;
-
-        private List<WPFTimeViewBar> timeViews;
-
-        public WPFTimeViewWindow(TimeData.TimeData timeData)
+        public WpfTimeViewWindow(TimeData.TimeData timeData)
         {
             InitializeComponent();
+            
             _timeData = timeData;
 
-            _12hour = AppSettings.MilitaryTime != "true";
+            _24hour = AppSettings.MilitaryTime != "true";
+
+            if (_24hour)
+            {
+                TwentyFourHourButton.Background = Brushes.LightSkyBlue;
+                TwelveHourButton.Background = Brushes.Transparent;
+            }
+            else
+            {
+                TwelveHourButton.Background = Brushes.LightSkyBlue;
+                TwentyFourHourButton.Background = Brushes.Transparent;
+            }
+            
+            
             InitTimes(true);
         }
 
         private bool DatesAreInTheSameWeek(DateTime date1, DateTime date2)
         {
-            var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
-            var d1 = date1.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date1));
-            var d2 = date2.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date2));
+            Calendar cal = DateTimeFormatInfo.CurrentInfo?.Calendar;
+            if (cal == null)
+                return false;
 
+            var d1 = date1.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date1));
+            var d2 = date2.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date2));
             return d1 == d2;
         }
 
         private void InitTimes(bool scrolltoend = false)
         {
-            timeViews = new List<WPFTimeViewBar>();
-
             StackPanel.Children.Clear();
-            TimeData.Day prev = new TimeData.Day(new DateTime(2001,1,1));
-            foreach (TimeData.Day day in _timeData.Days)
+            Day prev = new Day(new DateTime(2001, 1, 1));
+            foreach (Day day in _timeData.Days)
             {
                 if (!DatesAreInTheSameWeek(day.Date, prev.Date))
                 {
-                    var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
-                    var d2 = day.Date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(day.Date) + 1);
-                    WPFWeekViewBar weekViewBar = new WPFWeekViewBar(d2, _timeData.HoursInWeek(d2));
-                    weekViewBar.DeleteWeekEvent += OnDeleteWeek;
-                    weekViewBar.EmailWeekEvent += OnEmailWeek;
-                    weekViewBar.PrintWeekEvent += OnPrintWeek;
-                    weekViewBar.PreviewWeekEvent += OnPreviewWeek;
-                    StackPanel.Children.Add(weekViewBar);
+                    if (DateTimeFormatInfo.CurrentInfo != null)
+                    {
+                        var cal = DateTimeFormatInfo.CurrentInfo.Calendar;
+                        var d2 = day.Date.Date.AddDays(-1 * (int) cal.GetDayOfWeek(day.Date) + 1);
+                        WPFWeekViewBar weekViewBar = new WPFWeekViewBar(d2, _timeData.HoursInWeek(d2));
+                        weekViewBar.DeleteWeekEvent += OnDeleteWeek;
+                        weekViewBar.EmailWeekEvent += OnEmailWeek;
+                        weekViewBar.PrintWeekEvent += OnPrintWeek;
+                        weekViewBar.PreviewWeekEvent += OnPreviewWeek;
+                        StackPanel.Children.Add(weekViewBar);
+                    }
                 }
+
                 WPFDayViewBar datevViewBar = new WPFDayViewBar(day);
                 datevViewBar.DayClickEvent += OnDateViewClick;
                 datevViewBar.DeleteDayEvent += OnDeleteDayClick;
-                StackPanel.Children.Add((Control) datevViewBar);
-
+                StackPanel.Children.Add(datevViewBar);
                 foreach (Time time in day.Times)
                 {
-                    WPFTimeViewBar timeView = new WPFTimeViewBar(time, _12hour);
+                    WPFTimeViewBar timeView = new WPFTimeViewBar(time, _24hour);
                     timeView.TimeDeleteEvent += TimeDeleteTime;
                     timeView.TimeClickEvent += TimeViewTimeClick;
                     StackPanel.Children.Add(timeView);
-                    timeViews.Add(timeView);
                 }
+
                 prev = day;
             }
-            if(scrolltoend)
-                ScrollViewer.ScrollToBottom();
+
+            if (scrolltoend) ScrollViewer.ScrollToBottom();
         }
 
         private void OnDeleteWeek(DateTime date)
@@ -100,7 +113,7 @@ namespace TheTimeApp
 
         private void OnDateViewClick(DateTime date)
         {
-            TimeData.Day day = _timeData.Days.First(d => d.Date == date);
+            Day day = _timeData.Days.First(d => d.Date == date);
             if (day == null) return;
 
             WpfDayViewEdit dayView = new WpfDayViewEdit(_timeData, day);
@@ -119,37 +132,15 @@ namespace TheTimeApp
 
         private void TimeViewTimeClick(WPFTimeViewBar view)
         {
-            int dayIndex = -1;
-            int timeIndex = -1;
-            for (int i = 0; i < _timeData.Days.Count; i++)
+            Time prevTime = new Time {TimeIn = view.GetTime().TimeIn, TimeOut = view.GetTime().TimeOut};
+            _timeedit = new TimeViewEdit(view.GetTime(), _timeData, _24hour);
+
+            if (_timeedit.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                if (_timeData.Days[i].Contains(view.GetTime()))
-                {
-                    dayIndex = i;
-                    for (int j = 0; j < _timeData.Days[i].Times.Count; j++)
-                    {
-                        if (_timeData.Days[i].Times[j] == view.GetTime())
-                        {
-                            timeIndex = j;
-                        }
-                    }
-                    break;
-                }
-            }
-            if (dayIndex == -1 || timeIndex == -1)
-            {
-                MessageBox.Show("Invalid operation!");
+                _timeData.UpdateTime(prevTime, _timeedit.GetTime);
             }
 
-            timeedit = new TimeViewEdit(view.GetTime(), _timeData, _12hour);
-
-            var result = timeedit.ShowDialog();
-            if (result == System.Windows.Forms.DialogResult.OK)
-            {
-                _timeData.UpdateDayDate(dayIndex, timeedit.GetDate);
-                _timeData.UpdateDayTime(new KeyValuePair<int, int>(dayIndex, timeIndex), timeedit.GetTime);
-            }
-            timeedit.Close();
+            _timeedit.Close();
             InitTimes();
         }
 
@@ -183,16 +174,14 @@ namespace TheTimeApp
         private void OnPrintWeek(DateTime date)
         {
             PrintDocument p = new PrintDocument();
-            p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
+            p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
+                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
-
             };
             try
             {
-                PrintDialog pdp = new PrintDialog();
-                pdp.Document = p;
+                PrintDialog pdp = new PrintDialog {Document = p};
 
                 if (pdp.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
@@ -208,16 +197,14 @@ namespace TheTimeApp
         private void OnPreviewWeek(DateTime date)
         {
             PrintDocument p = new PrintDocument();
-            p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
+            p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
+                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
-
             };
             try
             {
-                PrintPreviewDialog pdp = new PrintPreviewDialog();
-                pdp.Document = p;
+                PrintPreviewDialog pdp = new PrintPreviewDialog {Document = p};
 
                 if (pdp.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
@@ -230,17 +217,25 @@ namespace TheTimeApp
             }
         }
 
-        private void hToolStripMenuItem12hour_Click(object sender, EventArgs e)
+        private void Twelve_Hour_Click(object sender, EventArgs e)
         {
+            TwelveHourButton.Background = Brushes.LightSkyBlue;
+            TwentyFourHourButton.Background = Brushes.Transparent;
+            
+            TimeFormatExpander.IsExpanded = false;
             AppSettings.MilitaryTime = "false";
-            _12hour = true;
+            _24hour = false;
             InitTimes();
         }
 
-        private void hToolStripMenuItem24hour_Click(object sender, EventArgs e)
+        private void TwentyFour_Hour_Click(object sender, EventArgs e)
         {
+            TwentyFourHourButton.Background = Brushes.LightSkyBlue;
+            TwelveHourButton.Background = Brushes.Transparent;
+            
+            TimeFormatExpander.IsExpanded = false;
             AppSettings.MilitaryTime = "true";
-            _12hour = false;
+            _24hour = true;
             InitTimes();
         }
     }
