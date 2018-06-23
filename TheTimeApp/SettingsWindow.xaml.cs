@@ -1,18 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.Win32;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
@@ -32,7 +22,7 @@ namespace TheTimeApp
 
             _data = data;
             
-            _data.UserList.ForEach(u => StackPanel.Children.Add(new ViewBar(){Text = u, Width = 110}));
+            LoadUsers(data);
 
             TextBoxFromAddress.Text = AppSettings.FromAddress;
             TextBoxUserName.Text = AppSettings.FromUser;
@@ -52,6 +42,25 @@ namespace TheTimeApp
             btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
 
             AssociateEvents();
+        }
+
+        private void LoadUsers(TimeData.TimeData data)
+        {
+            StackPanel.Children.Clear();
+            foreach (string user in data.UserList)
+            {
+                ViewBar userbar = new ViewBar()
+                {
+                    BrushUnselected = Brushes.DarkGray,
+                    BrushSelected = Brushes.DimGray,
+                    Text = user, 
+                    Width = 220, 
+                    Height = 25, 
+                    Editable = true
+                };
+                userbar.DeleteEvent += OnDeleteUser;
+                StackPanel.Children.Add(userbar);
+            }
         }
 
         private void AssociateEvents()
@@ -228,14 +237,34 @@ namespace TheTimeApp
             AppSettings.DataPath = openFileDialog.FileName;
         }
 
-        private void btn_Remove_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
         private void btn_Add_Click(object sender, RoutedEventArgs e)
         {
+            if (!_data.UserList.Contains(AddUserBox.Text))
+            {
+                _data.UserList.Add(AddUserBox.Text);
+            }
+            else
+            {
+                MessageBox.Show("User already exists!!!");
+            }
 
+            AddUserBox.Text = "";
+            _data.Save();
+            LoadUsers(_data);
+        }
+
+        private void OnDeleteUser(ViewBar viewbar)
+        {
+            if (_data.UserList.Contains(viewbar.Text))
+            {
+                _data.UserList.Remove(viewbar.Text);
+            }
+            else
+            {
+                MessageBox.Show("User does not exist!!!");
+            }
+            _data.Save();
+            LoadUsers(_data);
         }
     }
 }

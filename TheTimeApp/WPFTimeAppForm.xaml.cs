@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using TheTimeApp.Controls;
 
 namespace TheTimeApp
 {
@@ -35,6 +36,23 @@ namespace TheTimeApp
             SetStartChecked();
             
             DayDetailsBox.Text = _timeData.CurrentDay().Details;
+
+            LoadUsers();
+        }
+
+        private void LoadUsers()
+        {
+            pnl_UserSelection.Children.Clear();
+            foreach (string user in _timeData.UserList)
+            {
+                ViewBar userBar = new ViewBar() {BrushUnselected = Brushes.DarkGray, BrushSelected = Brushes.DimGray, Text = user, Width = 100, Height = 26, Editable = false};
+                pnl_UserSelection.Children.Add(userBar);
+            }
+        }
+
+        private void btn_SelectedUser_Click(object sender, EventArgs e)
+        {
+            pnl_UserSelection.Visibility = Visibility.Visible;
         }
 
         private void SetStartChecked()

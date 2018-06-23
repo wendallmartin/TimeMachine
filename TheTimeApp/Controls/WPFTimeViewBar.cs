@@ -5,22 +5,23 @@ using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace TheTimeApp.Controls
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Interaction logic for WPFTimeViewBar.xaml
+    /// The time bar. Inherites ViewBar.
     /// </summary>
-    public class WPFTimeViewBar : ViewBar 
+    public class WpfTimeViewBar : ViewBar 
     {
         private readonly Time _time;
 
         public delegate void TimeDeleteDel(Time time);
 
-        public delegate void TimeSelectedDel(WPFTimeViewBar viewbar);
+        public delegate void TimeSelectedDel(WpfTimeViewBar viewbar);
         
         public event TimeDeleteDel TimeDeleteEvent;
 
         public event TimeSelectedDel TimeClickEvent;
 
-        public WPFTimeViewBar(Time time, bool is25Hour)
+        public WpfTimeViewBar(Time time, bool is25Hour)
         {
             BrushSelected = Brushes.LightCyan;
             BrushUnselected = Brushes.Beige;
@@ -46,7 +47,7 @@ namespace TheTimeApp.Controls
         private void OnDeleteClick(ViewBar viewBar)
         {
             MessageBoxButtons buttons = MessageBoxButtons.YesNo;
-            var sure = MessageBox.Show("Time will be deleted permenetly!", "Warning", buttons);
+            var sure = MessageBox.Show(@"Time will be deleted permenetly!", @"Warning", buttons);
 
             if (sure == DialogResult.Yes)
             {

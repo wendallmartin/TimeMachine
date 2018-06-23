@@ -31,5 +31,7 @@
             <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="82" Canvas.Left="10"/>
             <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
         </Canvas>
+        <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="282,10,0,0" Click="btn_SelectedUser_Click"/>
+        <StackPanel x:Name="pnl_UserSelection" HorizontalAlignment="Right" Height="Auto" Margin="265,35,0,0" VerticalAlignment="Top" Width="100"/>
     </Grid>
 </Window>

@@ -1,31 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Button = System.Windows.Controls.Button;
-using Control = System.Windows.Controls.Control;
-using Label = System.Windows.Controls.Label;
+using Day = TheTimeApp.TimeData.Day;
 using MessageBox = System.Windows.MessageBox;
-using MouseEventArgs = System.Windows.Input.MouseEventArgs;
-using UserControl = System.Windows.Controls.UserControl;
 
 namespace TheTimeApp.Controls
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Interaction logic for WPFDayViewBar.xaml
+    /// The day bar. Inherites ViewBar.
     /// </summary>
-    public partial class WPFDayViewBar : ViewBar
+    public class WpfDayViewBar : ViewBar
     {
-        private DateTime date;
+        private readonly DateTime _date;
 
         public delegate void DayDelegate(DateTime date);
 
@@ -33,16 +21,14 @@ namespace TheTimeApp.Controls
 
         public event DayDelegate DayClickEvent;
 
-        public bool Editable { get; set; }
-
-        public WPFDayViewBar(TimeData.Day day)
+        public WpfDayViewBar(Day day)
         {
             BrushSelected = Brushes.LightSkyBlue;
             BrushUnselected = Brushes.CadetBlue;
             
-            date = day.Date;
+            _date = day.Date;
             
-            Text = date.Month + "//" + date.Day + "//" + date.Year + "                                              Hours: " + day.HoursAsDec();
+            Text = _date.Month + "//" + _date.Day + "//" + _date.Year + "                                              Hours: " + day.HoursAsDec();
 
             DeleteEvent += OnDeleteDay;
             SelectedEvent += OnDayDayClick;
@@ -50,17 +36,16 @@ namespace TheTimeApp.Controls
 
         private void OnDayDayClick()
         {
-            DayClickEvent?.Invoke(date);
+            DayClickEvent?.Invoke(_date);
         }
 
         private void OnDeleteDay(ViewBar viewBar)
         {
             MessageBoxButton button = MessageBoxButton.YesNo;
-            var sure = MessageBox.Show("Time will be deleted permenetly!", "Warning", button);
 
-            if (sure == (MessageBoxResult) DialogResult.Yes)
+            if (MessageBox.Show("Time will be deleted permenetly!", "Warning", button) == (MessageBoxResult) DialogResult.Yes)
             {
-                DeleteDayEvent?.Invoke(date);
+                DeleteDayEvent?.Invoke(_date);
             }
         }
     }

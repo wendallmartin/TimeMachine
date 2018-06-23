@@ -1,34 +1,17 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Button = System.Windows.Controls.Button;
-using Color = System.Drawing.Color;
-using Control = System.Windows.Controls.Control;
-using Label = System.Windows.Controls.Label;
 using MessageBox = System.Windows.Forms.MessageBox;
-using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
-using UserControl = System.Windows.Controls.UserControl;
 
 namespace TheTimeApp.Controls
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Interaction logic for WPFWeekViewBar.xaml
+    /// The week bar. Inherits ViewBar.
     /// </summary>
-    public class WPFWeekViewBar : ViewBar 
+    public class WpfWeekViewBar : ViewBar 
     {
-        private Label seperaterLabel;
-        private DateTime date;
+        private readonly DateTime _date;
 
         public delegate void WeekDel(DateTime date);
 
@@ -40,12 +23,12 @@ namespace TheTimeApp.Controls
 
         public event WeekDel PreviewWeekEvent;
 
-        public WPFWeekViewBar(DateTime dateTime, double hoursinweek)
+        public WpfWeekViewBar(DateTime dateTime, double hoursinweek)
         {
             BrushSelected = Brushes.DimGray;
             BrushUnselected = Brushes.Gray;
             
-            date = dateTime;
+            _date = dateTime;
 
             Text = "Week - " + dateTime.Month + "//" +
                    dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + hoursinweek;
@@ -61,7 +44,7 @@ namespace TheTimeApp.Controls
 
             if (sure == DialogResult.Yes)
             {
-                DeleteWeekEvent?.Invoke(date);
+                DeleteWeekEvent?.Invoke(_date);
             }
         }
 
@@ -75,15 +58,15 @@ namespace TheTimeApp.Controls
 
             if (sure == DialogResult.Yes)
             {
-                EmailWeekEvent?.Invoke(date);
+                EmailWeekEvent?.Invoke(_date);
             }
             else if (sure == DialogResult.No)
             {
-                PrintWeekEvent?.Invoke(date);
+                PrintWeekEvent?.Invoke(_date);
             }
             else if (sure == DialogResult.OK)
             {
-                PreviewWeekEvent?.Invoke(date);
+                PreviewWeekEvent?.Invoke(_date);
             }
         }
     }

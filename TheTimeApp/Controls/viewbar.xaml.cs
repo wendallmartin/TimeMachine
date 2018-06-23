@@ -30,7 +30,7 @@ namespace TheTimeApp.Controls
 
         protected SelectedDel SelectedEvent;
 
-        protected DeleteDel DeleteEvent;
+        public DeleteDel DeleteEvent;
         
         public bool Editable { get; set; }
 
@@ -80,6 +80,9 @@ namespace TheTimeApp.Controls
 
         private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if(btn_Delete.IsMouseOver)
+                return;
+            
             e.Handled = true;
             SelectedEvent?.Invoke();
         }

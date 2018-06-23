@@ -90,10 +90,11 @@
                         <ColumnDefinition Width="7*"/>
                         <ColumnDefinition Width="134*"/>
                     </Grid.ColumnDefinitions>
-                    <ScrollViewer x:Name="ScrollViewer" Background="Gray" Margin="10,10,34,86" HorizontalAlignment="Center" Width="150" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer x:Name="ScrollViewer" Background="Gray" Margin="44,10,46,65" HorizontalAlignment="Center" Width="235" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="3">
                         <StackPanel x:Name="StackPanel" Orientation="Vertical" Background="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"/>
                     </ScrollViewer>
-                    <Button Content="Add" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="75" Margin="42,0,0,47" Click="btn_Add_Click"/>
+                    <TextBox x:Name="AddUserBox" SelectedText="NEW USER" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,35" Width="184" Height= "21" Grid.ColumnSpan="3"/>
+                    <Button x:Name ="btn_AddUser" Content="Add" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="96" Click="btn_Add_Click" Grid.ColumnSpan="3" Margin="0,0,0,5" />
                 </Grid>
             </TabItem>
 
@@ -108,7 +109,6 @@
                     <Button x:Name = "btn_Permission"  Content="Permission" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="91,10,0,0" Click="btn_EmployEmployer_Click"/>
                 </Grid>
             </TabItem>
-
         </TabControl>
 
     </Grid>

@@ -72,7 +72,8 @@ namespace TheTimeApp
                     {
                         var cal = DateTimeFormatInfo.CurrentInfo.Calendar;
                         var d2 = day.Date.Date.AddDays(-1 * (int) cal.GetDayOfWeek(day.Date) + 1);
-                        WPFWeekViewBar weekViewBar = new WPFWeekViewBar(d2, _timeData.HoursInWeek(d2));
+                        WpfWeekViewBar weekViewBar = new WpfWeekViewBar(d2, _timeData.HoursInWeek(d2));
+                        weekViewBar.Editable = true;
                         weekViewBar.DeleteWeekEvent += OnDeleteWeek;
                         weekViewBar.EmailWeekEvent += OnEmailWeek;
                         weekViewBar.PrintWeekEvent += OnPrintWeek;
@@ -81,13 +82,15 @@ namespace TheTimeApp
                     }
                 }
 
-                WPFDayViewBar datevViewBar = new WPFDayViewBar(day);
+                WpfDayViewBar datevViewBar = new WpfDayViewBar(day);
+                datevViewBar.Editable = true;
                 datevViewBar.DayClickEvent += OnDateViewClick;
                 datevViewBar.DeleteDayEvent += OnDeleteDayClick;
                 StackPanel.Children.Add(datevViewBar);
                 foreach (Time time in day.Times)
                 {
-                    WPFTimeViewBar timeView = new WPFTimeViewBar(time, _24hour);
+                    WpfTimeViewBar timeView = new WpfTimeViewBar(time, _24hour);
+                    timeView.Editable = true;
                     timeView.TimeDeleteEvent += TimeDeleteTime;
                     timeView.TimeClickEvent += TimeViewTimeClick;
                     StackPanel.Children.Add(timeView);
@@ -130,7 +133,7 @@ namespace TheTimeApp
             InitTimes();
         }
 
-        private void TimeViewTimeClick(WPFTimeViewBar view)
+        private void TimeViewTimeClick(WpfTimeViewBar view)
         {
             Time prevTime = new Time {TimeIn = view.GetTime().TimeIn, TimeOut = view.GetTime().TimeOut};
             _timeedit = new TimeViewEdit(view.GetTime(), _timeData, _24hour);

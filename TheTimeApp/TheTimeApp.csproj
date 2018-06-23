@@ -74,9 +74,6 @@
     <Compile Include="Controls\viewbar.xaml.cs">
       <DependentUpon>ViewBar.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\WeekViewBar.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="AppSettings.cs" />
     <Compile Include="Controls\WPFDayViewBar.cs">
       <DependentUpon>WPFDayViewBar.xaml</DependentUpon>
