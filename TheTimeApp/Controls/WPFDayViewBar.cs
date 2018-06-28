@@ -34,7 +34,7 @@ namespace TheTimeApp.Controls
             SelectedEvent += OnDayDayClick;
         }
 
-        private void OnDayDayClick()
+        private void OnDayDayClick(ViewBar view)
         {
             DayClickEvent?.Invoke(_date);
         }

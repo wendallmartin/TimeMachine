@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -47,13 +49,13 @@ namespace TheTimeApp
         private void LoadUsers(TimeData.TimeData data)
         {
             StackPanel.Children.Clear();
-            foreach (string user in data.UserList)
+            foreach (User user in data.Users)
             {
                 ViewBar userbar = new ViewBar()
                 {
                     BrushUnselected = Brushes.DarkGray,
                     BrushSelected = Brushes.DimGray,
-                    Text = user, 
+                    Text = user.UserName, 
                     Width = 220, 
                     Height = 25, 
                     Editable = true
@@ -239,9 +241,9 @@ namespace TheTimeApp
 
         private void btn_Add_Click(object sender, RoutedEventArgs e)
         {
-            if (!_data.UserList.Contains(AddUserBox.Text))
+            if (_data.Users.All(u => u.UserName != AddUserBox.Text))
             {
-                _data.UserList.Add(AddUserBox.Text);
+                _data.Users.Add(new User(AddUserBox.Text, "", new List<Day>()));
             }
             else
             {
@@ -255,9 +257,13 @@ namespace TheTimeApp
 
         private void OnDeleteUser(ViewBar viewbar)
         {
-            if (_data.UserList.Contains(viewbar.Text))
+            if (_data.Users.Any(u => u.UserName == viewbar.Text))
             {
-                _data.UserList.Remove(viewbar.Text);
+                for (int i = 0; i < _data.Users.Count; i++)
+                {
+                    if(_data.Users[i].UserName == viewbar.Text)
+                        _data.Users.RemoveAt(i);
+                }
             }
             else
             {

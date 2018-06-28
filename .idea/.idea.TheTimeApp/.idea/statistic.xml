@@ -7,10 +7,5 @@
     <option name="excludeGitArtifactDirectory" value="false" />
     <option name="excludeSubversionArtifactDirectory" value="false" />
     <option name="excludeTargetDirectories" value="false" />
-    <option name="excludedDirectories">
-      <list>
-        <option value="$PROJECT_DIR$" />
-      </list>
-    </option>
   </component>
 </project>

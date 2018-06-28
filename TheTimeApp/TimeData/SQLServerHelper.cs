@@ -26,7 +26,6 @@ namespace TheTimeApp.TimeData
 
         public delegate void TimeDateUpdated(TimeData data);
 
-        public string CurrentUser = "Time_Server";
         public TimeDateUpdated TimeDateaUpdate;
         public ProgressChangedDel ProgressChangedEvent;
         public ProgressFinishDel ProgressFinishEvent;
@@ -56,6 +55,8 @@ namespace TheTimeApp.TimeData
                 return times;
             }
         }
+
+        private string CurrentUser => TimeData.CurrentUserName.Replace(' ', '_') + "_TimeTable";
 
         private static SqlConnectionStringBuilder ConnectionStringBuilder =>
             new SqlConnectionStringBuilder() { 

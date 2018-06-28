@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using TheTimeApp.Controls;
+using TheTimeApp.TimeData;
 
 namespace TheTimeApp
 {
@@ -12,16 +11,9 @@ namespace TheTimeApp
     /// <summary>
     /// Interaction logic for WPFTimeAppForm.xaml
     /// </summary>
-    public partial class WPFTimeAppForm : Window
+    public partial class WPFTimeAppForm
     {
         private TimeData.TimeData _timeData;
-        private DateTime startTime;
-        private DateTime StopTime;
-        private DateTime _hours;
-
-        public delegate void Exit();
-
-        public event Exit CloseApp;
 
         public WPFTimeAppForm()
         {
@@ -30,6 +22,7 @@ namespace TheTimeApp
             AppSettings.Validate();
 
             _timeData = TimeData.TimeData.Load();
+            _timeData.Save();
             _timeData.ConnectionChangedEvent += ConnectionChanged;
             _timeData.UpdateChangedEvent += UpdateChanged;
             
@@ -37,22 +30,40 @@ namespace TheTimeApp
             
             DayDetailsBox.Text = _timeData.CurrentDay().Details;
 
-            LoadUsers();
+            btn_SelectedUser.Content = TimeData.TimeData.CurrentUserName;
         }
 
         private void LoadUsers()
         {
             pnl_UserSelection.Children.Clear();
-            foreach (string user in _timeData.UserList)
+            foreach (User user in _timeData.Users)
             {
-                ViewBar userBar = new ViewBar() {BrushUnselected = Brushes.DarkGray, BrushSelected = Brushes.DimGray, Text = user, Width = 100, Height = 26, Editable = false};
+                ViewBar userBar = new ViewBar()
+                {
+                    BrushUnselected = Brushes.DarkGray, 
+                    BrushSelected = Brushes.DimGray, 
+                    Text = user.UserName, 
+                    Width = 120, 
+                    Height = 26, 
+                    Editable = false
+                };
+                userBar.SelectedEvent += OnUserSelected;
                 pnl_UserSelection.Children.Add(userBar);
             }
         }
 
+        private void OnUserSelected(ViewBar view)
+        {
+            TimeData.TimeData.CurrentUserName = view.Text;
+            _timeData.Save();
+            btn_SelectedUser.Content = TimeData.TimeData.CurrentUserName;
+            scroll_UserSelection.Visibility = Visibility.Hidden;
+        }
+
         private void btn_SelectedUser_Click(object sender, EventArgs e)
         {
-            pnl_UserSelection.Visibility = Visibility.Visible;
+            LoadUsers();
+            scroll_UserSelection.Visibility = scroll_UserSelection.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
         }
 
         private void SetStartChecked()

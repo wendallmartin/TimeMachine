@@ -55,7 +55,7 @@ namespace TheTimeApp.Controls
             }
         }
 
-        private void OnMouseClick()
+        private void OnMouseClick(ViewBar view)
         {
             TimeClickEvent?.Invoke(this);
         }

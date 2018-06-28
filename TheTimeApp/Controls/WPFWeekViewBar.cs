@@ -48,7 +48,7 @@ namespace TheTimeApp.Controls
             }
         }
 
-        private void OnMouseDown()
+        private void OnMouseDown(ViewBar view)
         {
             EmailOrPrintWindow emailOrPrintWindow = new EmailOrPrintWindow();
 

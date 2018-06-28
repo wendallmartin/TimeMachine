@@ -90,6 +90,9 @@
     <Compile Include="EmailOrPrintWindow.Designer.cs">
       <DependentUpon>EmailOrPrintWindow.cs</DependentUpon>
     </Compile>
+    <Compile Include="EnterUser.xaml.cs">
+      <DependentUpon>EnterUser.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TimeData\CryptoEngine.cs" />
@@ -100,6 +103,7 @@
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TimeData\User.cs" />
     <Compile Include="WpfDayViewEdit.cs" />
     <Compile Include="WPFTimeAppForm.xaml.cs">
       <DependentUpon>WPFTimeAppForm.xaml</DependentUpon>
@@ -142,6 +146,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Controls\ViewBar.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EnterUser.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

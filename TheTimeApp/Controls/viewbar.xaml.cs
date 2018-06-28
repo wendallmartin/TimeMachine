@@ -15,9 +15,8 @@ using System.Windows.Shapes;
 
 namespace TheTimeApp.Controls
 {
-    public delegate void SelectedDel();
+    public delegate void ViewdDel(ViewBar view);
 
-    public delegate void DeleteDel(ViewBar viewBar);
     
     /// <summary>
     /// Interaction logic for ViewBar.xaml
@@ -28,9 +27,9 @@ namespace TheTimeApp.Controls
 
         private Brush _brushUnSelected;
 
-        protected SelectedDel SelectedEvent;
+        public ViewdDel SelectedEvent;
 
-        public DeleteDel DeleteEvent;
+        public ViewdDel DeleteEvent;
         
         public bool Editable { get; set; }
 
@@ -83,14 +82,14 @@ namespace TheTimeApp.Controls
             if(btn_Delete.IsMouseOver)
                 return;
             
+            SelectedEvent?.Invoke((ViewBar)sender);
             e.Handled = true;
-            SelectedEvent?.Invoke();
         }
 
         private void OnDeleteButtonDown(object sender, MouseButtonEventArgs e)
         {
-            e.Handled = true;
             DeleteEvent?.Invoke(this);
+            e.Handled = true;
         }
     }
 }

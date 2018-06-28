@@ -14,20 +14,22 @@ namespace TheTimeApp.TimeData
     [Serializable]
     public class TimeData : IDisposable
     {
-        [NonSerialized]
-        private static object readWrite = new object();
-        
         public delegate void ConnectionChangedDel(bool connected);
     
         public delegate void TimeDataUpdatedDel(TimeData data);
-        
-        public string CurrentUser = string.Empty;
-        
+
         public static List<SqlCommand> Commands = new List<SqlCommand>();
 
         private List<Day> days;
+        
+        [OptionalField]
+        public static string CurrentUserName;
 
-        private List<string> _userList = new List<string>();
+        [OptionalField]
+        private List<User> _users = new List<User>();
+        
+        [OptionalField]
+        private Time _inprogress;
 
         [NonSerialized]
         private static readonly byte[] Iv = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xCD, 0xEF };
@@ -44,9 +46,9 @@ namespace TheTimeApp.TimeData
         [NonSerialized] 
         public TimeDataUpdatedDel TimeDataUpdated;
         
-        [OptionalField]
-        private Time _inprogress;
-
+        [NonSerialized]
+        private static object readWrite = new object();
+        
         [NonSerialized]
         private SqlServerHelper _sqlHelper;
         
@@ -79,37 +81,52 @@ namespace TheTimeApp.TimeData
                 _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
             }
 
-            if(_userList == null)
-                _userList = new List<string>();
-            
-            _userList.RemoveAll(string.IsNullOrEmpty);
-            
-            // Add all missing users in database to local List of users.
-            days.ForEach(d =>
+            if(_users == null)
+                _users = new List<User>();
+
+            if (_users.Count == 0)
             {
-                if (!_userList.Contains(d.User) && !string.IsNullOrEmpty(d.User))
-                {
-                    _userList.Add(d.User);
-                }
-            });
-            
-            if (days.Any(d => string.IsNullOrEmpty(d.User)))
+                CurrentUserName = "";
+                InitUser();
+            }
+            if (string.IsNullOrEmpty(CurrentUserName))
             {
-                MessageBox.Show(@"Forward compatibility not implented for user feature!!!");
-                // todo must add forward compatibility and make old user assign their user name
+                CurrentUserName = _users[0].UserName;
             }
         }
 
-        public List<string> UserList
+        private void InitUser()
         {
-            get => _userList;
-            set => _userList = value;
+            while (true)
+            {
+                EnterUser newUserWin = new EnterUser();
+                newUserWin.ShowDialog();
+                if (_users.All(u => u.UserName != newUserWin.Text))
+                {
+                    _users.Add(new User(newUserWin.Text, "", days)); // pump day into user 
+                    days = new List<Day>();
+                    CurrentUserName = newUserWin.Text;
+                }
+                else
+                {
+                    MessageBox.Show(@"User already exists!!!");
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        public List<User> Users
+        {
+            get => _users;
+            set => _users = value;
         }
 
         public List<Day> Days
         {
-            get{ return days; }
-            set => days = value;
+            get{return _users.First(u => u.UserName == CurrentUserName).Days ;}
+            set{_users.First(u => u.UserName == CurrentUserName).Days = value;}
         }
 
         public void Revert()
@@ -182,15 +199,10 @@ namespace TheTimeApp.TimeData
         // orginizes the days by date
         public void SortDays()
         {
+            if (Days == null || Days.Count == 0)
+                return;
+            
             days.Sort((a, b) => a.Date.CompareTo(b.Date));
-
-            for(int i = 0; i < days.Count; i++)
-            {
-                if (!days[i].HasTime() && days[i].Details == "")
-                {
-                    days.RemoveAt(i);
-                }
-            }
         }
 
         /// <summary>
@@ -255,7 +267,7 @@ namespace TheTimeApp.TimeData
         public double HoursInWeek(DateTime weekdDateTime)
         {
             double total = 0;
-            foreach (Day day in days)
+            foreach (Day day in Days)
             {
                 if (DatesAreInTheSameWeek(weekdDateTime, day.Date))
                 {
@@ -312,11 +324,11 @@ namespace TheTimeApp.TimeData
         /// <param name="date"></param>
         public void DeleteWeek(DateTime date)
         {
-            for (int i = 0; i < days.Count; i++)
+            for (int i = 0; i < Days.Count; i++)
             {
-                if (DatesAreInTheSameWeek(date, days[i].Date))
+                if (DatesAreInTheSameWeek(date, Days[i].Date))
                 {
-                    days.RemoveAt(i);
+                    Days.RemoveAt(i);
                 }
             }
 
@@ -328,7 +340,7 @@ namespace TheTimeApp.TimeData
         {
             Day currentDay = new Day(new DateTime(2000,1,1));
             bool containsDay = false;
-            foreach (Day day in days)
+            foreach (Day day in Days)
             {
                 if (day.Date.Year == DateTime.Now.Year && day.Date.Month == DateTime.Now.Month && day.Date.Day == DateTime.Now.Day)
                 {
@@ -340,10 +352,10 @@ namespace TheTimeApp.TimeData
             if (!containsDay)
             {
                 _sqlHelper.InsertDay(new Day(DateTime.Now));
-                days.Add(new Day(DateTime.Now));
+                Days.Add(new Day(DateTime.Now));
             }
 
-            foreach (Day day in days)
+            foreach (Day day in Days)
             {
                 if (day.Date.Year == DateTime.Now.Year && day.Date.Month == DateTime.Now.Month && day.Date.Day == DateTime.Now.Day)
                 {
@@ -369,7 +381,7 @@ namespace TheTimeApp.TimeData
         {
             if (_inprogress == null)
             {
-                _inprogress = days.Last().Times.Last();
+                _inprogress = Days.Last().Times.Last();
             }
 
             Time prev = new Time(){TimeIn = _inprogress.TimeIn, TimeOut = _inprogress.TimeOut};
@@ -383,7 +395,7 @@ namespace TheTimeApp.TimeData
         {
             string result = "";
             result += "Week " + date.Date.Month + "\\" + date.Date.Day + "\\" + date.Date.Year;
-            List<Day> daysinweek = days.Where(d => DatesAreInTheSameWeek(d.Date, date)).ToList(); 
+            List<Day> daysinweek = Days.Where(d => DatesAreInTheSameWeek(d.Date, date)).ToList(); 
             foreach (Day day in daysinweek)
             {
                 result += "\n   " + day.Date.Month + "\\" + day.Date.Day + "\\" + day.Date.Year + " Hours = " + day.Hours().ToString(@"hh\:mm");
@@ -403,15 +415,15 @@ namespace TheTimeApp.TimeData
 
         public void UpdateTime(Time prev, Time upd)
         {
-            for (int dayIndex = 0; dayIndex < days.Count; dayIndex++)
+            for (int dayIndex = 0; dayIndex < Days.Count; dayIndex++)
             {
-                Day day = days[dayIndex];
+                Day day = Days[dayIndex];
                 for (int timeIndex = 0; timeIndex < day.Times.Count; timeIndex++)
                 {
                     Time time = day.Times[timeIndex];
                     if (time.TimeIn == prev.TimeIn && time.TimeOut == prev.TimeOut)
                     {
-                        days[dayIndex].Times[timeIndex] = upd;
+                        Days[dayIndex].Times[timeIndex] = upd;
                     }
                 }
             }
@@ -433,7 +445,7 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public bool ClockedIn()
         {
-            Day day = days.LastOrDefault();
+            Day day = Days.LastOrDefault();
             Time time = day?.Times.LastOrDefault();
             return time?. TimeOut.TimeOfDay == new TimeSpan();
         }
