@@ -19,16 +19,14 @@ namespace TheTimeApp
     /// <summary>
     /// Interaction logic for WpfDayViewEdit.xaml
     /// </summary>
-    public partial class WpfDayViewEdit : Window
+    public partial class WpfDayViewEdit
     {
-        private TimeData.TimeData _data;
         private Day _day;
 
         public bool Enabled { get; set; } = true;
         
-        public WpfDayViewEdit(TimeData.TimeData data, Day day)
+        public WpfDayViewEdit(Day day)
         {
-            _data = data;
             _day = day;
             InitializeComponent();
             dayDetails.Text = day.Details;
@@ -41,7 +39,7 @@ namespace TheTimeApp
 
             if (AppSettings.MainPermission == "write")
             {
-                _data.UpdateDetails(_day, dayDetails.Text);
+                TimeData.TimeData.TimeDataBase.UpdateDetails(_day, dayDetails.Text);
             }
         }
     }

@@ -32,7 +32,7 @@ namespace TheTimeApp
                 {
                     _myview = new WPFTimeViewForm();
                     _myview.ShowDialog();
-                    _myview._timeData.Save();
+                    TimeData.TimeData.TimeDataBase.Save();
                 }
             }
             catch (Exception e)

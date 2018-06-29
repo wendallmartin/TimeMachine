@@ -6,22 +6,12 @@ using System.Drawing.Printing;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
 using Brushes = System.Windows.Media.Brushes;
-using Color = System.Windows.Media.Color;
-using Size = System.Windows.Size;
+using DataBase = TheTimeApp.TimeData.TimeData;
 //To the top of my class file:
 using Forms = System.Windows.Forms;
 
@@ -32,43 +22,68 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeViewForm : Window
     {
-        public TimeData.TimeData _timeData;
-        private bool _12hour = true;
-
         public WPFTimeViewForm()
         {
             InitializeComponent();
 
             AppSettings.Validate();
            
+            DataBase.Load();
+            
             if (AppSettings.SQLEnabled == "true" && SqlServerHelper.IsConnected)
             {
-                _timeData = new TimeData.TimeData(true);
-                _timeData.LoadDataFromSqlSever();
+                DataBase.TimeDataBase.LoadDataFromSqlSever();
                 ConnectionChanged(true);
                 UpdateChanged(true);
             }
-            else
-            {
-                _timeData = new TimeData.TimeData(false);
-                _timeData = TimeData.TimeData.Load();
-            }
-            
+
             InitualizeView();
 
-            _timeData.TimeDataUpdated += OnTimeDataUpdate;
-            _timeData.ConnectionChangedEvent += ConnectionChanged;
-            _timeData.UpdateChangedEvent += UpdateChanged;
+            DataBase.TimeDataBase.TimeDataUpdated += OnTimeDataUpdate;
+            DataBase.TimeDataBase.ConnectionChangedEvent += ConnectionChanged;
+            DataBase.TimeDataBase.UpdateChangedEvent += UpdateChanged;
         }
 
+        private void LoadUsers()
+        {
+            pnl_UserSelection.Children.Clear();
+            foreach (User user in DataBase.TimeDataBase.Users)
+            {
+                ViewBar userBar = new ViewBar()
+                {
+                    BrushUnselected = Brushes.DarkGray, 
+                    BrushSelected = Brushes.DimGray, 
+                    Text = user.UserName, 
+                    Width = 120, 
+                    Height = 26, 
+                    Editable = false
+                };
+                userBar.SelectedEvent += OnUserSelected;
+                pnl_UserSelection.Children.Add(userBar);
+            }
+        }
+
+        private void OnUserSelected(ViewBar view)
+        {
+            DataBase.TimeDataBase.CurrentUserName = view.Text;
+            DataBase.TimeDataBase.Save();
+            btn_SelectedUser.Content = DataBase.TimeDataBase.CurrentUserName;
+            scroll_UserSelection.Visibility = Visibility.Hidden;
+        }
+
+        private void btn_SelectedUser_Click(object sender, RoutedEventArgs e)
+        {
+            LoadUsers();
+            pnl_UserSelection.Visibility = Visibility.Visible;
+        }
         /// <summary>
         /// Saves time to file and reinitualized the dispaly.
         /// </summary>
         /// <param name="data"></param>
-        private void OnTimeDataUpdate(TimeData.TimeData data)
+        private void OnTimeDataUpdate(List<Day> days)
         {
             Debug.WriteLine("Intualize view");
-            _timeData.Days = data.Days; // just copy the days to avoid having to reassociate all events
+            DataBase.TimeDataBase.Days = days; // just copy the days to avoid having to reassociate all events
             Dispatcher.Invoke(InitualizeView);
         }
 
@@ -119,13 +134,13 @@ namespace TheTimeApp
         {
             StackPanel.Children.Clear();
             Day prev = new Day(new DateTime(2001,1,1));
-            foreach (Day day in _timeData.Days)
+            foreach (Day day in DataBase.TimeDataBase.Days)
             {
                 if (!DatesAreInTheSameWeek(day.Date, prev.Date))
                 {
                     var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
                     var d2 = day.Date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(day.Date) + 1);
-                    WpfWeekViewBar weekViewBar = new WpfWeekViewBar( d2, _timeData.HoursInWeek(d2)){Editable = false};
+                    WpfWeekViewBar weekViewBar = new WpfWeekViewBar( d2, DataBase.TimeDataBase.HoursInWeek(d2)){Editable = false};
                     weekViewBar.EmailWeekEvent += OnEmailWeek;
                     weekViewBar.PrintWeekEvent += OnPrintWeek;
                     weekViewBar.PreviewWeekEvent += OnPreviewWeek;
@@ -137,7 +152,7 @@ namespace TheTimeApp
 
                 prev = day;
 
-                if (day == _timeData.Days[_timeData.Days.Count - 1])
+                if (day == DataBase.TimeDataBase.Days[DataBase.TimeDataBase.Days.Count - 1])
                 {
                     ScrollViewer.ScrollToBottom();
                 }
@@ -146,10 +161,10 @@ namespace TheTimeApp
 
         private void OnDateViewDayClick(DateTime date)
         {
-            Day day = _timeData.Days.First(d => d.Date == date);
+            Day day = DataBase.TimeDataBase.Days.First(d => d.Date == date);
             if (day == null) return;
 
-            WpfDayViewEdit dayView = new WpfDayViewEdit(_timeData, day){Enabled = false};
+            WpfDayViewEdit dayView = new WpfDayViewEdit(day){Enabled = false};
             dayView.ShowDialog();
         }
 
@@ -158,7 +173,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
+                e1.Graphics.DrawString(DataBase.TimeDataBase.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
 
             };
@@ -183,7 +198,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
+                e1.Graphics.DrawString(DataBase.TimeDataBase.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
 
             };
@@ -219,7 +234,7 @@ namespace TheTimeApp
                     smtp.Credentials = basicCredential;
                     smtp.Host = AppSettings.EmailHost;
                     msg.Subject = "Time";
-                    msg.Body = _timeData.ConverWeekToText(date);
+                    msg.Body = DataBase.TimeDataBase.ConverWeekToText(date);
                     smtp.Send(msg);
                     MessageBox.Show("Mail sent!");
                 }
@@ -232,7 +247,7 @@ namespace TheTimeApp
 
         private void btn_Settings_Click(object sender, RoutedEventArgs e)
         {
-            SettingsWindow settings = new SettingsWindow(_timeData);
+            SettingsWindow settings = new SettingsWindow();
             settings.ShowDialog();
         }
     }

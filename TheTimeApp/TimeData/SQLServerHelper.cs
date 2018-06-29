@@ -9,6 +9,7 @@ using System.Threading;
 using System.Timers;
 using System.Windows;
 using Timer = System.Timers.Timer;
+using DataBase = TheTimeApp.TimeData.TimeData;
 
 namespace TheTimeApp.TimeData
 {
@@ -24,7 +25,7 @@ namespace TheTimeApp.TimeData
 
         public delegate void ProgressFinishDel();
 
-        public delegate void TimeDateUpdated(TimeData data);
+        public delegate void TimeDateUpdated(List<Day> data);
 
         public TimeDateUpdated TimeDateaUpdate;
         public ProgressChangedDel ProgressChangedEvent;
@@ -56,7 +57,7 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        private string CurrentUser => TimeData.CurrentUserName.Replace(' ', '_') + "_TimeTable";
+        private string CurrentUser => DataBase.TimeDataBase.CurrentUserName.Replace(' ', '_') + "_TimeTable";
 
         private static SqlConnectionStringBuilder ConnectionStringBuilder =>
             new SqlConnectionStringBuilder() { 
@@ -228,6 +229,7 @@ namespace TheTimeApp.TimeData
                         }
                         catch (Exception e)
                         {
+                            MessageBox.Show(e.ToString());
                             Debug.WriteLine(e);
                         }
                     }
@@ -467,7 +469,8 @@ namespace TheTimeApp.TimeData
         public void RemoveTime(Time time)
         {
             Debug.WriteLine("Remove time");
-            AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '"+ time.TimeIn.Date +"' TimeIn = '" + time.TimeIn.TimeOfDay + "' AND TimeOut = '" + time.TimeOut.TimeOfDay + "')"));
+            SqlCommand command = new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' AND TimeOut = '{time.TimeOut.TimeOfDay}')");
+            AddCommand(command);
         }
 
         public void UpdateDetails(Day day)
@@ -501,67 +504,10 @@ namespace TheTimeApp.TimeData
         
         #endregion
 
-        private TimeData LoadTimeFromDataTable(DataTable temp)
-        {
-            TimeData data = new TimeData(false);
-            try
-            {
-                for (int i = 0; i < temp.Rows.Count; i++)
-                {
-                    DataRow row = temp.Rows[i];
-                    if (row.ItemArray[1] is TimeSpan)
-                    {
-                        if (((TimeSpan) row.ItemArray[1]) == new TimeSpan()) // if this is a day header
-                        {
-                            if (row.ItemArray[0] is DateTime)
-                            {
-                                if (!data.Days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
-                                {
-                                    data.Days.Add(new Day((DateTime) row.ItemArray[0]) {Details = row.ItemArray[3].ToString()});
-                                }
-                            }
-                        }
-                    }
-
-                    ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i);
-                }
-
-                foreach (Day day in data.Days)
-                {
-                    foreach (DataRow row in temp.Rows)
-                    {
-                        if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
-                        {
-                            if ((DateTime) row.ItemArray[0] == day.Date)
-                            {
-                                if (((TimeSpan) row.ItemArray[1]) != new TimeSpan()) // if this is not a day header
-                                {
-                                    TimeSpan intime = (TimeSpan) row.ItemArray[1];
-                                    TimeSpan outtime = (TimeSpan) row.ItemArray[2];
-                                    day.Times.Add(new Time(new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
-                                        new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                ProgressChangedEvent?.Invoke(100);
-                OnTimeDataUpdate(data);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                Console.WriteLine(e);
-            }
-
-            return data;
-        }
-
-        private void OnTimeDataUpdate(TimeData data)
+        private void OnTimeDataUpdate(List<Day> days)
         {
             Debug.WriteLine("SQL server time data update");
-            TimeDateaUpdate?.Invoke(data); // Fire event for updating ui
+            TimeDateaUpdate?.Invoke(days); // Fire event for updating ui
         }
 
         /// <summary>
@@ -569,8 +515,9 @@ namespace TheTimeApp.TimeData
         /// Calls TimeDataUpdate event with data as arg.
         /// </summary>
         /// <returns></returns>
-        public TimeData LoadDataFromServer()
+        public List<Day> LoadDataFromServer()
         {
+            var days = new List<Day>();
             lock (SqlServerLock)
             {
                 Debug.WriteLine("Loading data from server");
@@ -578,7 +525,6 @@ namespace TheTimeApp.TimeData
                 try
                 {
                     string query = $"SELECT * FROM {CurrentUser}";
-                    
                     using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                     {
                         conn.Open();
@@ -596,8 +542,61 @@ namespace TheTimeApp.TimeData
                     MessageBox.Show(e.ToString());
                     Console.WriteLine(e);
                 }
-                return LoadTimeFromDataTable(temp);
+
+                try
+                {
+                    for (int i = 0; i < temp.Rows.Count; i++)
+                    {
+                        DataRow row = temp.Rows[i];
+                        if (row.ItemArray[1] is TimeSpan)
+                        {
+                            if (((TimeSpan) row.ItemArray[1]) == new TimeSpan()) // if this is a day header
+                            {
+                                if (row.ItemArray[0] is DateTime)
+                                {
+                                    if (!days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
+                                    {
+                                        days.Add(new Day((DateTime) row.ItemArray[0]) {Details = row.ItemArray[3].ToString()});
+                                    }
+                                }
+                            }
+                        }
+
+                        ProgressChangedEvent?.Invoke(100f / temp.Rows.Count / 2 * i);
+                    }
+
+                    foreach (Day day in days)
+                    {
+                        foreach (DataRow row in temp.Rows)
+                        {
+                            if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
+                            {
+                                if ((DateTime) row.ItemArray[0] == day.Date)
+                                {
+                                    if (((TimeSpan) row.ItemArray[1]) != new TimeSpan()) // if this is not a day header
+                                    {
+                                        TimeSpan intime = (TimeSpan) row.ItemArray[1];
+                                        TimeSpan outtime = (TimeSpan) row.ItemArray[2];
+                                        day.Times.Add(new Time(new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
+                                            new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ProgressChangedEvent?.Invoke(100);
+                    days = days.OrderBy(d => d.Date).ToList();
+                    OnTimeDataUpdate(days);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString());
+                    Console.WriteLine(e);
+                }
             }
+
+            return days;
         }
 
         #region pull data cyclic read

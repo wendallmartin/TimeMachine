@@ -24,13 +24,10 @@ namespace TheTimeApp
         public const int WmNclbuttondown = 0xA1;
         public const int HtCaption = 0x2;
 
-        private TimeData.TimeData _data;
-        
-        public Time GetTime { get; } = new Time();
+        public Time GetTime { get; }
 
-        public TimeViewEdit(Time time, TimeData.TimeData data,  bool _12hour)
+        public TimeViewEdit(Time time, bool _12hour)
         {
-            _data = data;
             GetTime = time;
             
             InitializeComponent();

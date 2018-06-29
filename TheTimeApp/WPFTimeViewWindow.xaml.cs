@@ -12,6 +12,7 @@ using TheTimeApp.TimeData;
 using Brushes = System.Windows.Media.Brushes;
 using Day = TheTimeApp.TimeData.Day;
 using MessageBox = System.Windows.MessageBox;
+using DataBase = TheTimeApp.TimeData.TimeData;
 
 namespace TheTimeApp
 {
@@ -20,21 +21,17 @@ namespace TheTimeApp
     /// </summary>
     public partial class WpfTimeViewWindow
     {
-        private readonly TimeData.TimeData _timeData;
-
-        private bool _24hour;
+        private bool _24Hour;
 
         TimeViewEdit _timeedit;
 
-        public WpfTimeViewWindow(TimeData.TimeData timeData)
+        public WpfTimeViewWindow()
         {
             InitializeComponent();
             
-            _timeData = timeData;
+            _24Hour = AppSettings.MilitaryTime != "true";
 
-            _24hour = AppSettings.MilitaryTime != "true";
-
-            if (_24hour)
+            if (_24Hour)
             {
                 TwentyFourHourButton.Background = Brushes.LightSkyBlue;
                 TwelveHourButton.Background = Brushes.Transparent;
@@ -64,7 +61,7 @@ namespace TheTimeApp
         {
             StackPanel.Children.Clear();
             Day prev = new Day(new DateTime(2001, 1, 1));
-            foreach (Day day in _timeData.Days)
+            foreach (Day day in DataBase.TimeDataBase.Days)
             {
                 if (!DatesAreInTheSameWeek(day.Date, prev.Date))
                 {
@@ -72,7 +69,7 @@ namespace TheTimeApp
                     {
                         var cal = DateTimeFormatInfo.CurrentInfo.Calendar;
                         var d2 = day.Date.Date.AddDays(-1 * (int) cal.GetDayOfWeek(day.Date) + 1);
-                        WpfWeekViewBar weekViewBar = new WpfWeekViewBar(d2, _timeData.HoursInWeek(d2));
+                        WpfWeekViewBar weekViewBar = new WpfWeekViewBar(d2, DataBase.TimeDataBase.HoursInWeek(d2));
                         weekViewBar.Editable = true;
                         weekViewBar.DeleteWeekEvent += OnDeleteWeek;
                         weekViewBar.EmailWeekEvent += OnEmailWeek;
@@ -89,7 +86,7 @@ namespace TheTimeApp
                 StackPanel.Children.Add(datevViewBar);
                 foreach (Time time in day.Times)
                 {
-                    WpfTimeViewBar timeView = new WpfTimeViewBar(time, _24hour);
+                    WpfTimeViewBar timeView = new WpfTimeViewBar(time, _24Hour);
                     timeView.Editable = true;
                     timeView.TimeDeleteEvent += TimeDeleteTime;
                     timeView.TimeClickEvent += TimeViewTimeClick;
@@ -104,43 +101,43 @@ namespace TheTimeApp
 
         private void OnDeleteWeek(DateTime date)
         {
-            _timeData.DeleteWeek(date);
+            DataBase.TimeDataBase.DeleteWeek(date);
             InitTimes();
         }
 
         private void OnDeleteDayClick(DateTime date)
         {
-            _timeData.DeleteDay(date);
+            DataBase.TimeDataBase.DeleteDay(date);
             InitTimes();
         }
 
         private void OnDateViewClick(DateTime date)
         {
-            Day day = _timeData.Days.First(d => d.Date == date);
+            Day day = DataBase.TimeDataBase.Days.First(d => d.Date == date);
             if (day == null) return;
 
-            WpfDayViewEdit dayView = new WpfDayViewEdit(_timeData, day);
+            WpfDayViewEdit dayView = new WpfDayViewEdit(day);
             dayView.ShowDialog();
 
-            _timeData.Save();
+            DataBase.TimeDataBase.Save();
 
             InitTimes();
         }
 
         private void TimeDeleteTime(Time time)
         {
-            _timeData.DeleteTime(time);
+            DataBase.TimeDataBase.DeleteTime(time);
             InitTimes();
         }
 
         private void TimeViewTimeClick(WpfTimeViewBar view)
         {
             Time prevTime = new Time {TimeIn = view.GetTime().TimeIn, TimeOut = view.GetTime().TimeOut};
-            _timeedit = new TimeViewEdit(view.GetTime(), _timeData, _24hour);
+            _timeedit = new TimeViewEdit(view.GetTime(), _24Hour);
 
             if (_timeedit.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                _timeData.UpdateTime(prevTime, _timeedit.GetTime);
+                DataBase.TimeDataBase.UpdateTime(prevTime, _timeedit.GetTime);
             }
 
             _timeedit.Close();
@@ -163,7 +160,7 @@ namespace TheTimeApp
                     smtp.Credentials = basicCredential;
                     smtp.Host = AppSettings.EmailHost;
                     msg.Subject = "Time";
-                    msg.Body = _timeData.ConverWeekToText(date);
+                    msg.Body = DataBase.TimeDataBase.ConverWeekToText(date);
                     smtp.Send(msg);
                     MessageBox.Show("Mail sent!");
                 }
@@ -179,7 +176,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
+                e1.Graphics.DrawString(DataBase.TimeDataBase.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
             };
             try
@@ -202,7 +199,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(_timeData.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
+                e1.Graphics.DrawString(DataBase.TimeDataBase.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
             };
             try
@@ -227,7 +224,7 @@ namespace TheTimeApp
             
             TimeFormatExpander.IsExpanded = false;
             AppSettings.MilitaryTime = "false";
-            _24hour = false;
+            _24Hour = false;
             InitTimes();
         }
 
@@ -238,7 +235,7 @@ namespace TheTimeApp
             
             TimeFormatExpander.IsExpanded = false;
             AppSettings.MilitaryTime = "true";
-            _24hour = true;
+            _24Hour = true;
             InitTimes();
         }
     }

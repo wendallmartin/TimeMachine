@@ -13,30 +13,28 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeAppForm
     {
-        private TimeData.TimeData _timeData;
-
         public WPFTimeAppForm()
         {
             InitializeComponent();
 
             AppSettings.Validate();
 
-            _timeData = TimeData.TimeData.Load();
-            _timeData.Save();
-            _timeData.ConnectionChangedEvent += ConnectionChanged;
-            _timeData.UpdateChangedEvent += UpdateChanged;
+            TimeData.TimeData.Load();
+            TimeData.TimeData.TimeDataBase.Save();
+            TimeData.TimeData.TimeDataBase.ConnectionChangedEvent += ConnectionChanged;
+            TimeData.TimeData.TimeDataBase.UpdateChangedEvent += UpdateChanged;
             
             SetStartChecked();
             
-            DayDetailsBox.Text = _timeData.CurrentDay().Details;
+            DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
 
-            btn_SelectedUser.Content = TimeData.TimeData.CurrentUserName;
+            btn_SelectedUser.Content = TimeData.TimeData.TimeDataBase.CurrentUserName;
         }
 
         private void LoadUsers()
         {
             pnl_UserSelection.Children.Clear();
-            foreach (User user in _timeData.Users)
+            foreach (User user in TimeData.TimeData.TimeDataBase.Users)
             {
                 ViewBar userBar = new ViewBar()
                 {
@@ -54,9 +52,9 @@ namespace TheTimeApp
 
         private void OnUserSelected(ViewBar view)
         {
-            TimeData.TimeData.CurrentUserName = view.Text;
-            _timeData.Save();
-            btn_SelectedUser.Content = TimeData.TimeData.CurrentUserName;
+            TimeData.TimeData.TimeDataBase.CurrentUserName = view.Text;
+            TimeData.TimeData.TimeDataBase.Save();
+            btn_SelectedUser.Content = TimeData.TimeData.TimeDataBase.CurrentUserName;
             scroll_UserSelection.Visibility = Visibility.Hidden;
         }
 
@@ -68,7 +66,7 @@ namespace TheTimeApp
 
         private void SetStartChecked()
         {
-            if (_timeData.ClockedIn())
+            if (TimeData.TimeData.TimeDataBase.ClockedIn())
             {
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
@@ -84,13 +82,13 @@ namespace TheTimeApp
         {
             if (Equals(Start_Button.Background, Brushes.Green))
             {
-                _timeData.PunchIn();
+                TimeData.TimeData.TimeDataBase.PunchIn();
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
             }
             else
             {
-                _timeData.PunchOut();
+                TimeData.TimeData.TimeDataBase.PunchOut();
                 Start_Button.Background = Brushes.Green;
                 Start_Button.Content = "Start";
             }
@@ -134,25 +132,25 @@ namespace TheTimeApp
 
         private void OnDayDetailsChanged(object sender, TextChangedEventArgs e)
         {
-            _timeData.UpdateDetails(_timeData.CurrentDay(), DayDetailsBox.Text);
-            _timeData.Save();
+            TimeData.TimeData.TimeDataBase.UpdateDetails(TimeData.TimeData.TimeDataBase.CurrentDay(), DayDetailsBox.Text);
+            TimeData.TimeData.TimeDataBase.Save();
         }
 
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
-            _timeData.SortDays();
-            new WpfTimeViewWindow(_timeData).ShowDialog();
-            DayDetailsBox.Text = _timeData.CurrentDay().Details;
+            TimeData.TimeData.TimeDataBase.SortDays();
+            new WpfTimeViewWindow().ShowDialog();
+            DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
         }
 
         private void btn_Settings_Click(object sender, RoutedEventArgs e)
         {
-            SettingsWindow esettings = new SettingsWindow(_timeData);
+            SettingsWindow esettings = new SettingsWindow();
             esettings.ShowDialog();
             
-            _timeData = TimeData.TimeData.Load();
+            TimeData.TimeData.Load();
             SetStartChecked();
-            DayDetailsBox.Text = _timeData.CurrentDay().Details;
+            DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
         }
     }
 }

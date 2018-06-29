@@ -16,15 +16,10 @@ namespace TheTimeApp
     /// </summary>
     public partial class SettingsWindow : Window
     {
-        private TimeData.TimeData _data;
         private SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
-        public SettingsWindow(TimeData.TimeData data)
+        public SettingsWindow()
         {
             InitializeComponent();
-
-            _data = data;
-            
-            LoadUsers(data);
 
             TextBoxFromAddress.Text = AppSettings.FromAddress;
             TextBoxUserName.Text = AppSettings.FromUser;
@@ -44,12 +39,13 @@ namespace TheTimeApp
             btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
 
             AssociateEvents();
+            LoadUsers();
         }
 
-        private void LoadUsers(TimeData.TimeData data)
+        private void LoadUsers()
         {
             StackPanel.Children.Clear();
-            foreach (User user in data.Users)
+            foreach (User user in TimeData.TimeData.TimeDataBase.Users)
             {
                 ViewBar userbar = new ViewBar()
                 {
@@ -165,7 +161,7 @@ namespace TheTimeApp
         {
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
             btn_SQLSyncAll.IsEnabled = false;
-            _sqlHelper.RePushToServer(_data.Days);
+            _sqlHelper.RePushToServer(TimeData.TimeData.TimeDataBase.Days);
         }
 
         private void OnSqlProgressChanged(float value)
@@ -227,8 +223,8 @@ namespace TheTimeApp
             saveFileDialog.Filter = "Time file (*.dtf)|*.dtf";
             saveFileDialog.ShowDialog();
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-            _data.LoadDataFromSqlSever();
-            _data.Save();
+            TimeData.TimeData.TimeDataBase.LoadDataFromSqlSever();
+            TimeData.TimeData.TimeDataBase.Save();
         }
 
         private void DataLocation_Click(object sender, RoutedEventArgs e)
@@ -241,9 +237,9 @@ namespace TheTimeApp
 
         private void btn_Add_Click(object sender, RoutedEventArgs e)
         {
-            if (_data.Users.All(u => u.UserName != AddUserBox.Text))
+            if (TimeData.TimeData.TimeDataBase.Users.All(u => u.UserName != AddUserBox.Text))
             {
-                _data.Users.Add(new User(AddUserBox.Text, "", new List<Day>()));
+                TimeData.TimeData.TimeDataBase.Users.Add(new User(AddUserBox.Text, "", new List<Day>()));
             }
             else
             {
@@ -251,26 +247,26 @@ namespace TheTimeApp
             }
 
             AddUserBox.Text = "";
-            _data.Save();
-            LoadUsers(_data);
+            TimeData.TimeData.TimeDataBase.Save();
+            LoadUsers();
         }
 
         private void OnDeleteUser(ViewBar viewbar)
         {
-            if (_data.Users.Any(u => u.UserName == viewbar.Text))
+            if (TimeData.TimeData.TimeDataBase.Users.Any(u => u.UserName == viewbar.Text))
             {
-                for (int i = 0; i < _data.Users.Count; i++)
+                for (int i = 0; i < TimeData.TimeData.TimeDataBase.Users.Count; i++)
                 {
-                    if(_data.Users[i].UserName == viewbar.Text)
-                        _data.Users.RemoveAt(i);
+                    if(TimeData.TimeData.TimeDataBase.Users[i].UserName == viewbar.Text)
+                        TimeData.TimeData.TimeDataBase.Users.RemoveAt(i);
                 }
             }
             else
             {
                 MessageBox.Show("User does not exist!!!");
             }
-            _data.Save();
-            LoadUsers(_data);
+            TimeData.TimeData.TimeDataBase.Save();
+            LoadUsers();
         }
     }
 }

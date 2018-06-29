@@ -12,18 +12,18 @@ using System.Security.Cryptography;
 namespace TheTimeApp.TimeData
 {
     [Serializable]
-    public class TimeData : IDisposable
+    public class TimeData
     {
         public delegate void ConnectionChangedDel(bool connected);
     
-        public delegate void TimeDataUpdatedDel(TimeData data);
+        public delegate void TimeDataUpdatedDel(List<Day> data);
 
         public static List<SqlCommand> Commands = new List<SqlCommand>();
 
         private List<Day> days;
         
         [OptionalField]
-        public static string CurrentUserName;
+        public string CurrentUserName;
 
         [OptionalField]
         private List<User> _users = new List<User>();
@@ -51,6 +51,9 @@ namespace TheTimeApp.TimeData
         
         [NonSerialized]
         private SqlServerHelper _sqlHelper;
+
+        [NonSerialized] 
+        public static TimeData TimeDataBase;
         
         public TimeData(bool sqlenabled)
         {
@@ -62,9 +65,7 @@ namespace TheTimeApp.TimeData
             if (sqlenabled)
             {
                 _sqlHelper = new SqlServerHelper(Commands);
-                _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
-                _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
-                _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
+                AssociateSqlEvents();
             }
             
             days = new List<Day>();
@@ -77,8 +78,7 @@ namespace TheTimeApp.TimeData
             if (_sqlHelper == null)
             {
                 _sqlHelper = new SqlServerHelper(Commands);
-                _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
-                _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
+                AssociateSqlEvents();
             }
 
             if(_users == null)
@@ -93,6 +93,13 @@ namespace TheTimeApp.TimeData
             {
                 CurrentUserName = _users[0].UserName;
             }
+        }
+
+        private void AssociateSqlEvents()
+        {
+            _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
+            _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
+            _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
         }
 
         private void InitUser()
@@ -125,7 +132,7 @@ namespace TheTimeApp.TimeData
 
         public List<Day> Days
         {
-            get{return _users.First(u => u.UserName == CurrentUserName).Days ;}
+            get{return TimeDataBase._users.First(u => u.UserName == TimeDataBase.CurrentUserName).Days ;}
             set{_users.First(u => u.UserName == CurrentUserName).Days = value;}
         }
 
@@ -139,10 +146,10 @@ namespace TheTimeApp.TimeData
 
         }
         
-        private void OnTimeDataUpdate(TimeData data)
+        private void OnTimeDataUpdate(List<Day> list)
         {
             Debug.WriteLine("Time data base update");
-            TimeDataUpdated?.Invoke(data);
+            TimeDataUpdated?.Invoke(list);
         }
 
         private void OnUpdateChanged(bool uptodate)
@@ -210,13 +217,13 @@ namespace TheTimeApp.TimeData
         /// up the sql server.
         /// </summary>
         /// <returns></returns>
-        public static TimeData Load()
+        public static void Load()
         {
             lock (readWrite)
             {
                 string file = AppSettings.DataPath;
 
-                TimeData data;
+                TimeData data = new TimeData(false);
                 if (File.Exists(file))
                 {
                     //if files is not found, create file
@@ -238,15 +245,15 @@ namespace TheTimeApp.TimeData
                     catch (Exception eDeserialize)
                     {
                         MessageBox.Show(eDeserialize.ToString());
-                        return new TimeData(true);
+                        TimeDataBase = new TimeData(true);
                     }
                 }
                 else
                 {
                     // we assume this is the first instance of the app so the data file must be created
-                    return new TimeData(true);
+                    TimeDataBase = new TimeData(true);
                 }
-                return data;   
+                TimeDataBase = data;   
             }
         }
 
@@ -436,7 +443,7 @@ namespace TheTimeApp.TimeData
         /// </summary>
         public void LoadDataFromSqlSever()
         {
-            Days = _sqlHelper.LoadDataFromServer().Days;
+            Days = _sqlHelper.LoadDataFromServer().OrderBy(d => d.Date).ToList();
         }
 
         /// <summary>
@@ -448,11 +455,6 @@ namespace TheTimeApp.TimeData
             Day day = Days.LastOrDefault();
             Time time = day?.Times.LastOrDefault();
             return time?. TimeOut.TimeOfDay == new TimeSpan();
-        }
-
-        public void Dispose()// todo implement dispose method
-        {
-            
         }
     }
 }
