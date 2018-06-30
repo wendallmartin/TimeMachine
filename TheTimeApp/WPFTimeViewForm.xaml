@@ -11,7 +11,7 @@
              Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
              Width="520"
              Height="600"
-             Icon="Resources/timecardpic.png"
+             Icon="Resources/timecardpic.ico"
              Title="Time Clock">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <Button x:Name="btn_Settings" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Settings_Click" Margin="6,5,0,0" >

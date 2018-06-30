@@ -20,7 +20,7 @@ namespace TheTimeApp
     /// <summary>
     /// Interaction logic for WPFTimeViewForm.xaml
     /// </summary>
-    public partial class WPFTimeViewForm : Window
+    public partial class WPFTimeViewForm
     {
         public WPFTimeViewForm()
         {
@@ -32,16 +32,28 @@ namespace TheTimeApp
             
             if (AppSettings.SQLEnabled == "true" && SqlServerHelper.IsConnected)
             {
-                DataBase.TimeDataBase.LoadDataFromSqlSever();
+                DataBase.TimeDataBase.LoadCurrentUserFromSql();
                 ConnectionChanged(true);
                 UpdateChanged(true);
             }
 
             InitualizeView();
 
+            AssociateSqlEvents();
+        }
+
+        private void AssociateSqlEvents()
+        {
             DataBase.TimeDataBase.TimeDataUpdated += OnTimeDataUpdate;
             DataBase.TimeDataBase.ConnectionChangedEvent += ConnectionChanged;
             DataBase.TimeDataBase.UpdateChangedEvent += UpdateChanged;
+        }
+        
+        private void UnAssociateSqlEvents()
+        {
+            DataBase.TimeDataBase.TimeDataUpdated = null;
+            DataBase.TimeDataBase.ConnectionChangedEvent = null;
+            DataBase.TimeDataBase.UpdateChangedEvent = null;
         }
 
         private void LoadUsers()
@@ -65,16 +77,29 @@ namespace TheTimeApp
 
         private void OnUserSelected(ViewBar view)
         {
-            DataBase.TimeDataBase.CurrentUserName = view.Text;
-            DataBase.TimeDataBase.Save();
             btn_SelectedUser.Content = DataBase.TimeDataBase.CurrentUserName;
             scroll_UserSelection.Visibility = Visibility.Hidden;
+            
+            UnAssociateSqlEvents();
+            bool connectedAndEnabled = AppSettings.SQLEnabled == "true" && SqlServerHelper.IsConnected; 
+            if (connectedAndEnabled)
+            {
+                DataBase.TimeDataBase.CurrentUserName = view.Text;
+                DataBase.TimeDataBase.LoadCurrentUserFromSql();
+                DataBase.TimeDataBase.Save();
+
+            }
+            ConnectionChanged(connectedAndEnabled);
+            UpdateChanged(connectedAndEnabled);            
+            
+            AssociateSqlEvents();
+            InitualizeView();
         }
 
         private void btn_SelectedUser_Click(object sender, RoutedEventArgs e)
         {
             LoadUsers();
-            pnl_UserSelection.Visibility = Visibility.Visible;
+            scroll_UserSelection.Visibility = Visibility.Visible;
         }
         /// <summary>
         /// Saves time to file and reinitualized the dispaly.
@@ -157,6 +182,8 @@ namespace TheTimeApp
                     ScrollViewer.ScrollToBottom();
                 }
             }
+
+            btn_SelectedUser.Content = DataBase.TimeDataBase.CurrentUserName;
         }
 
         private void OnDateViewDayClick(DateTime date)

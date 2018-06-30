@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace TheTimeApp.TimeData
@@ -29,38 +26,44 @@ namespace TheTimeApp.TimeData
         {
             if (punchin != new DateTime())
             {
-                MessageBox.Show("Punch in failed!");
+                MessageBox.Show(@"Punch in failed!");
                 return;
             }
 
-            punchin = DateTime.Now;
+            punchin = punchout = DateTime.Now;
         }
 
         public void PunchOut()
         {
-            if (punchout != new DateTime())
-            {
-                MessageBox.Show("Punch out failed!");
-                return;
-            }
             punchout = DateTime.Now;
         }
 
         public DateTime TimeIn
         {
-            get{ return punchin;}
-            set{ punchin = value; }
+            get => punchin;
+            set => punchin = value;
         }
 
         public DateTime TimeOut
         {
-            get{ return punchout;}
-            set{ punchout = value; }
+            get => punchout;
+            set => punchout = value;
         }
 
         public TimeSpan GetTime()
         {
             return punchout - punchin;
+        }
+
+        /// <summary>
+        /// Since both timin and timeout are
+        /// set at punchin, if the equal eachouther we
+        /// are still pucnhed in.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsPunchedIn()
+        {
+            return TimeIn.TimeOfDay.ToString() == TimeOut.TimeOfDay.ToString();
         }
     }
 }

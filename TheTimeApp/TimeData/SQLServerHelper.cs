@@ -169,7 +169,29 @@ namespace TheTimeApp.TimeData
         {
             AddCommand(new SqlCommand(sqlstring));
         }
+        
+        public List<string> GetAllTables()
+        {
+            var tables = new List<string>();
 
+            using (SqlConnection connection = new SqlConnection(ConnectionStringBuilder.ConnectionString))
+            {
+                connection.Open();
+                DataTable names = connection.GetSchema("Tables");
+                foreach (DataRow dataRow in names.Rows)
+                {
+                    string tableName = dataRow[2].ToString();
+                    if (tableName.Contains("_TimeTable"))
+                    {
+                        tableName = tableName.Replace("_TimeTable", "");
+                        tables.Add(tableName);
+                    }
+                }
+            }
+
+            return tables;
+        }
+        
         /// <summary>
         /// Add command to list and trys to flush commands
         /// </summary>
@@ -511,11 +533,11 @@ namespace TheTimeApp.TimeData
         }
 
         /// <summary>
-        /// Returns timedata form server.
-        /// Calls TimeDataUpdate event with data as arg.
+        /// Takes a full user data table name and returns his days from server
         /// </summary>
+        /// <param name="user"></param>
         /// <returns></returns>
-        public List<Day> LoadDataFromServer()
+        public List<Day> Load(string user)
         {
             var days = new List<Day>();
             lock (SqlServerLock)
@@ -524,7 +546,7 @@ namespace TheTimeApp.TimeData
                 DataTable temp = new DataTable();
                 try
                 {
-                    string query = $"SELECT * FROM {CurrentUser}";
+                    string query = $"SELECT * FROM {user}";
                     using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                     {
                         conn.Open();
@@ -599,6 +621,16 @@ namespace TheTimeApp.TimeData
             return days;
         }
 
+        /// <summary>
+        /// Returns timedata form server.
+        /// Calls TimeDataUpdate event with data as arg.
+        /// </summary>
+        /// <returns></returns>
+        public List<Day> LoadCurrentUser()
+        {
+            return Load(CurrentUser);
+        }
+
         #region pull data cyclic read
 
         private void PullDataElapsed(object sender, ElapsedEventArgs e)
@@ -608,7 +640,9 @@ namespace TheTimeApp.TimeData
             StartCyclicSqlRead();
         }
         
-        // your method to pull data from database to datatable   
+        /// <summary>
+        /// Pulls current user days from SQL
+        /// </summary>
         public void PullData()
         {
             if (!IsConnected)
@@ -639,7 +673,7 @@ namespace TheTimeApp.TimeData
 
                                 _dataTable = temp.Copy();
                                 
-                                LoadDataFromServer();
+                                LoadCurrentUser();
                             }
                         }
                     }

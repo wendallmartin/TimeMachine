@@ -11,7 +11,7 @@
              Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
              Width="375"
              Height="354.667"
-             Icon="Resources/timecardpic.png"
+             Icon="Resources/timecardpic.ico"
              Title="Time Clock">
     <Grid Height="336" VerticalAlignment="Top">
         <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="Auto" Height="85" Margin="10,0,10,57" FontSize="36" Click="btn_Start_CheckedChanged" MinHeight="80"/>

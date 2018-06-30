@@ -1,13 +1,8 @@
-﻿using System;
-using System.IO;
-using System.IO.Packaging;
+﻿using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
 using DataEncrypterDecrypter;
 
 namespace TheTimeApp

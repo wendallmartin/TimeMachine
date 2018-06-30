@@ -22,6 +22,9 @@ namespace TheTimeApp.TimeData
 
         private List<Day> days;
         
+        /// <summary>
+        /// This is the UI user name.
+        /// </summary>
         [OptionalField]
         public string CurrentUserName;
 
@@ -102,6 +105,13 @@ namespace TheTimeApp.TimeData
             _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
         }
 
+        private void UnAssociateSqlEvents()
+        {
+            _sqlHelper.ConnectionChangedEvent = null;
+            _sqlHelper.UpdateChangedEvent = null;    
+            _sqlHelper.TimeDateaUpdate = null;
+        }
+
         private void InitUser()
         {
             while (true)
@@ -133,7 +143,17 @@ namespace TheTimeApp.TimeData
         public List<Day> Days
         {
             get{return TimeDataBase._users.First(u => u.UserName == TimeDataBase.CurrentUserName).Days ;}
-            set{_users.First(u => u.UserName == CurrentUserName).Days = value;}
+            set{
+                try
+                {
+                    _users.First(u => u.UserName == CurrentUserName).Days = value;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
+            }
         }
 
         public void Revert()
@@ -208,6 +228,11 @@ namespace TheTimeApp.TimeData
         {
             if (Days == null || Days.Count == 0)
                 return;
+
+            foreach (Day day in days)
+            {
+                day.Times.Sort();// sort times within days
+            }
             
             days.Sort((a, b) => a.Date.CompareTo(b.Date));
         }
@@ -439,11 +464,16 @@ namespace TheTimeApp.TimeData
         }
 
         /// <summary>
-        /// Initualizes current TimeData from SQL server
+        /// Initualizes current User from SQL server
         /// </summary>
-        public void LoadDataFromSqlSever()
+        public void LoadCurrentUserFromSql()
         {
-            Days = _sqlHelper.LoadDataFromServer().OrderBy(d => d.Date).ToList();
+            var users = _sqlHelper.GetAllTables();
+            Users.Clear();
+            foreach (string name in users)
+            {
+                Users.Add(new User(name, "", _sqlHelper.Load(name+"_TimeTable").OrderBy(d => d.Date).ToList()));
+            }
         }
 
         /// <summary>
@@ -452,9 +482,8 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public bool ClockedIn()
         {
-            Day day = Days.LastOrDefault();
-            Time time = day?.Times.LastOrDefault();
-            return time?. TimeOut.TimeOfDay == new TimeSpan();
+            Time time = Days.LastOrDefault()?.Times.LastOrDefault();
+            return time != null && time.IsPunchedIn();
         }
     }
 }

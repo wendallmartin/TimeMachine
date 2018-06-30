@@ -138,7 +138,6 @@ namespace TheTimeApp
 
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
-            TimeData.TimeData.TimeDataBase.SortDays();
             new WpfTimeViewWindow().ShowDialog();
             DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
         }

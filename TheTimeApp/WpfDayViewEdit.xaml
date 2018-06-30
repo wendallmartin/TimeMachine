@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:TheTimeApp"
-             mc:Ignorable="d" Height="225" BorderBrush="Blue" Width="225" Icon="Resources/timecardpic.png" WindowStartupLocation="CenterScreen" ForceCursor="True" WindowStyle="ThreeDBorderWindow" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" SizeToContent="WidthAndHeight">
+             mc:Ignorable="d" Height="225" BorderBrush="Blue" Width="225" Icon="Resources/timecardpic.ico" WindowStartupLocation="CenterScreen" ForceCursor="True" WindowStyle="ThreeDBorderWindow" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" SizeToContent="WidthAndHeight">
     <Grid Margin="0,0,0,113">
         <TextBox x:Name="dayDetails" Height="225" Width="500" TextWrapping="Wrap" HorizontalAlignment="Center" Margin="10,10,10,10" VerticalAlignment="Stretch" TextChanged="RichTextBox_TextChanged" MinHeight="10" Background="{DynamicResource {x:Static SystemColors.ScrollBarBrushKey}}">
         </TextBox>

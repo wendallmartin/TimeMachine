@@ -223,7 +223,7 @@ namespace TheTimeApp
             saveFileDialog.Filter = "Time file (*.dtf)|*.dtf";
             saveFileDialog.ShowDialog();
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-            TimeData.TimeData.TimeDataBase.LoadDataFromSqlSever();
+            TimeData.TimeData.TimeDataBase.LoadCurrentUserFromSql();
             TimeData.TimeData.TimeDataBase.Save();
         }
 
