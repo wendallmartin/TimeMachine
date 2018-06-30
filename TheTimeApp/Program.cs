@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace TheTimeApp
@@ -14,6 +18,13 @@ namespace TheTimeApp
         [STAThread]
         static void Main()
         {
+            var processes = Process.GetProcessesByName("TheTimeApp");
+            List<Process> orderedEnumerable = new List<Process>(processes.OrderBy(p => p.StartTime));
+            for(int i = 0; i < orderedEnumerable.Count() - 1; i++)
+            {
+                orderedEnumerable[i].Kill();
+            }
+            
             UpDater.RemoveOldMoveNewFiles();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

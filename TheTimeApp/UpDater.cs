@@ -311,7 +311,7 @@ namespace TheTimeApp
             }
         }
 
-        public static void CheckForUpdates()
+        public static bool CheckForUpdates()
         {
             List<Version> versions;
             try
@@ -321,7 +321,7 @@ namespace TheTimeApp
             catch (Exception)
             {
                 MessageBox.Show("There is a problem on our end. Try again later.");
-                return;
+                return false;
             }
 
             if (versions.Count > 0)
@@ -334,17 +334,20 @@ namespace TheTimeApp
                     if (downloadUpdate == MessageBoxResult.Yes)
                     {
                         Update(latest);
+                        return true;
                     }
                 }
                 else
                 {
-                    MessageBox.Show("You are up to date! \n You must restart TimeApp to finish update.");
+                    MessageBox.Show("You are up to date!");
                 }
             }
             else
             {
                 MessageBox.Show("No updates on server!");
             }
+
+            return false;
         }
     }
 }

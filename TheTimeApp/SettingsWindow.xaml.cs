@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -275,7 +277,19 @@ namespace TheTimeApp
 
         private void Btn_CheckUpdates_Click(object sender, RoutedEventArgs e)
         {
-            UpDater.CheckForUpdates();
+            new Thread(() =>
+            {
+                if (UpDater.CheckForUpdates())
+                {
+                    string path = Directory.GetCurrentDirectory() + "\\TheTimeApp.exe";
+                    MessageBox.Show("You must restart TimeApp to finish update.");
+                    new Thread(() =>
+                    {
+                        Thread.Sleep(5000);
+                        Process.Start(path);    
+                    }).Start();
+                }    
+            }).Start();
         }
     }
 }
