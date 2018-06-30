@@ -11,11 +11,12 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Data" Foreground="Black" />
+                        <TextBlock Text="Main" Foreground="Black" />
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
                     <Button x:Name="btn_ChangeDataLocation"  Content="Data path" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75"  Click="DataLocation_Click" Margin="20,20,0,0"/>
+                    <Button Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="Auto" Margin="24,72,0,0" Click="Btn_CheckUpdates_Click"/>
                 </Grid>
             </TabItem>
             <TabItem>

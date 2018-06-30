@@ -142,7 +142,13 @@ namespace TheTimeApp.TimeData
 
         public List<Day> Days
         {
-            get{return TimeDataBase._users.First(u => u.UserName == TimeDataBase.CurrentUserName).Days ;}
+            get{
+                if (TimeDataBase._users.Any(u => u.UserName == TimeDataBase.CurrentUserName))
+                {
+                    return TimeDataBase._users.First(u => u.UserName == TimeDataBase.CurrentUserName).Days ;    
+                }
+                return new List<Day>();
+            }
             set{
                 try
                 {
@@ -247,38 +253,39 @@ namespace TheTimeApp.TimeData
             lock (readWrite)
             {
                 string file = AppSettings.DataPath;
+                if (!File.Exists(file))
+                {
+                    file = AppSettings.DataPath = "time.tdf";
+                    File.Create(file);
+                    // we assume this is the first instance of the app so the data file must be created
+                    TimeDataBase = new TimeData(true);
+                    return;
+                }
 
                 TimeData data = new TimeData(false);
-                if (File.Exists(file))
+                //if files is not found, create file
+                // Profile exists and can be loaded.
+                try
                 {
-                    //if files is not found, create file
-                    // Profile exists and can be loaded.
-                    try
+                    using (var fs = new FileStream(file, FileMode.Open))
                     {
-                        using (var fs = new FileStream(file, FileMode.Open))
+                        using (var des = new DESCryptoServiceProvider())
                         {
-                            using (var des = new DESCryptoServiceProvider())
+                            using (Stream cryptoStream = new CryptoStream(fs, des.CreateDecryptor(BKey, Iv), CryptoStreamMode.Read))
                             {
-                                using (Stream cryptoStream = new CryptoStream(fs, des.CreateDecryptor(BKey, Iv), CryptoStreamMode.Read))
-                                {
-                                    var binaryFormatter = new BinaryFormatter();
-                                    data = (TimeData) binaryFormatter.Deserialize(cryptoStream);
-                                }
+                                var binaryFormatter = new BinaryFormatter();
+                                data = (TimeData) binaryFormatter.Deserialize(cryptoStream);
                             }
                         }
                     }
-                    catch (Exception eDeserialize)
-                    {
-                        MessageBox.Show(eDeserialize.ToString());
-                        TimeDataBase = new TimeData(true);
-                    }
                 }
-                else
+                catch (Exception eDeserialize)
                 {
-                    // we assume this is the first instance of the app so the data file must be created
+                    MessageBox.Show(eDeserialize.ToString());
                     TimeDataBase = new TimeData(true);
                 }
-                TimeDataBase = data;   
+
+                TimeDataBase = data;
             }
         }
 

@@ -5,18 +5,22 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Microsoft.Win32;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
+using Day = TheTimeApp.TimeData.Day;
+using MessageBox = System.Windows.MessageBox;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace TheTimeApp
 {
     /// <summary>
     /// Interaction logic for w.xaml
     /// </summary>
-    public partial class SettingsWindow : Window
+    public partial class SettingsWindow
     {
-        private SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
+        private readonly SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
         public SettingsWindow()
         {
             InitializeComponent();
@@ -267,6 +271,11 @@ namespace TheTimeApp
             }
             TimeData.TimeData.TimeDataBase.Save();
             LoadUsers();
+        }
+
+        private void Btn_CheckUpdates_Click(object sender, RoutedEventArgs e)
+        {
+            UpDater.CheckForUpdates();
         }
     }
 }

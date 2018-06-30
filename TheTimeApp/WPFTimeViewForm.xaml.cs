@@ -104,7 +104,7 @@ namespace TheTimeApp
         /// <summary>
         /// Saves time to file and reinitualized the dispaly.
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="days"></param>
         private void OnTimeDataUpdate(List<Day> days)
         {
             Debug.WriteLine("Intualize view");

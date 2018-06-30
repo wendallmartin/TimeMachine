@@ -14,9 +14,9 @@ namespace TheTimeApp
         [STAThread]
         static void Main()
         {
+            UpDater.RemoveOldMoveNewFiles();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
             try
             {
                 if (AppSettings.MainPermission == "write")
