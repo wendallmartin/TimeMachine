@@ -22,6 +22,7 @@ namespace TheTimeApp
     /// </summary>
     public partial class SettingsWindow
     {
+        private readonly object _update = new object();
         private readonly SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
         public SettingsWindow()
         {
@@ -279,16 +280,20 @@ namespace TheTimeApp
         {
             new Thread(() =>
             {
-                if (UpDater.CheckForUpdates())
+                lock (_update)
                 {
-                    string path = Directory.GetCurrentDirectory() + "\\TheTimeApp.exe";
-                    MessageBox.Show("You must restart TimeApp to finish update.");
-                    new Thread(() =>
+                    try
                     {
-                        Thread.Sleep(5000);
-                        Process.Start(path);    
-                    }).Start();
-                }    
+                        ProcessStartInfo info = new ProcessStartInfo();
+                        info.FileName = Path.Combine(Directory.GetCurrentDirectory(), "FTPUpdater.exe");
+                        info.Arguments = Program.CurrentVersion + $" \"{Directory.GetCurrentDirectory()}\"" + " TheTimeApp";
+                        Process.Start(info);
+                    }
+                    catch (Exception exception)
+                    {
+                        MessageBox.Show($"Cannot update! {exception.Message}.");
+                    }
+                }
             }).Start();
         }
     }

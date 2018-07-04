@@ -26,7 +26,7 @@ namespace TheTimeApp
         {
             InitializeComponent();
 
-            lb_VersionNumber.Content = UpDater.CurrentVersion;
+            lb_VersionNumber.Content = Program.CurrentVersion;
 
             AppSettings.Validate();
            

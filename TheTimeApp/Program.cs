@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Deployment.Application;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
+using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace TheTimeApp
@@ -18,14 +18,11 @@ namespace TheTimeApp
         [STAThread]
         static void Main()
         {
-            var processes = Process.GetProcessesByName("TheTimeApp");
-            List<Process> orderedEnumerable = new List<Process>(processes.OrderBy(p => p.StartTime));
-            for(int i = 0; i < orderedEnumerable.Count() - 1; i++)
-            {
-                orderedEnumerable[i].Kill();
-            }
+            ProcessStartInfo info = new ProcessStartInfo();
+            info.FileName = Path.Combine(Directory.GetCurrentDirectory(), "FTPUpdater.exe");
+            info.Arguments = CurrentVersion + $" \"{Directory.GetCurrentDirectory()}\"" + " TheTimeApp false";
+            Process.Start(info);
             
-            UpDater.RemoveOldMoveNewFiles();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             try
@@ -48,5 +45,17 @@ namespace TheTimeApp
                 throw;
             }
         }
+        
+        //using System.Deployment.Application;
+        //using System.Reflection;
+        public static string CurrentVersion
+        {
+            get
+            {
+                return ApplicationDeployment.IsNetworkDeployed
+                    ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString()
+                    : Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            }
+        } 
     }
 }

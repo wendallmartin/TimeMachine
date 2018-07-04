@@ -108,7 +108,6 @@
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="TimeData\User.cs" />
-    <Compile Include="UpDater.cs" />
     <Compile Include="WpfDayViewEdit.cs" />
     <Compile Include="WPFTimeAppForm.xaml.cs">
       <DependentUpon>WPFTimeAppForm.xaml</DependentUpon>

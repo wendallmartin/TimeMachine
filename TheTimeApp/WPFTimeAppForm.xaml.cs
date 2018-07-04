@@ -16,7 +16,7 @@ namespace TheTimeApp
         public WPFTimeAppForm()
         {
             InitializeComponent();
-            lb_VersionNumber.Content = UpDater.CurrentVersion;
+            lb_VersionNumber.Content = Program.CurrentVersion;
             AppSettings.Validate();
 
             TimeData.TimeData.Load();
