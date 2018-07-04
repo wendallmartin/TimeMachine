@@ -73,7 +73,7 @@ namespace TheTimeApp.TimeData
             _commands = sqlCommands;
             _connectionRetry.Elapsed += OnConnectionRetry;
             _connectionRetry.Enabled = true;
-            if (AppSettings.MainPermission == "write")
+            if (AppSettings.MainPermission == "write" && AppSettings.SQLEnabled == "true")
             {
                 new Thread(() =>
                 {
@@ -167,11 +167,17 @@ namespace TheTimeApp.TimeData
 
         private void CreateCommand(string sqlstring)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             AddCommand(new SqlCommand(sqlstring));
         }
         
         public List<string> GetAllTables()
         {
+            if (AppSettings.SQLEnabled != "true")
+                return null;
+            
             var tables = new List<string>();
 
             using (SqlConnection connection = new SqlConnection(ConnectionStringBuilder.ConnectionString))
@@ -198,7 +204,9 @@ namespace TheTimeApp.TimeData
         /// <param name="command"></param>
         private void AddCommand(SqlCommand command)
         {
-            if (AppSettings.SQLEnabled == "false") return;
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             new Thread(() =>
             {
                 lock (SqlServerLock)
@@ -220,7 +228,7 @@ namespace TheTimeApp.TimeData
 
         private void FlushCommands()
         {
-            if (AppSettings.SQLEnabled != "true") 
+            if (AppSettings.SQLEnabled != "true")
                 return;
             
             lock (SqlServerLock)
@@ -274,6 +282,9 @@ namespace TheTimeApp.TimeData
         
         private bool ServerContainsDay(Day day)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return false;
+            
             try
             {
                 lock (SqlServerLock)
@@ -297,6 +308,8 @@ namespace TheTimeApp.TimeData
 
         private bool ServerContainsTime(Time time)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return false;
             try
             {
                 using (SqlCommand command = new SqlCommand($@"SELECT * FROM {CurrentUser} WHERE( Date = @Date AND TimeIn = @TimeIn AND 
@@ -318,6 +331,9 @@ namespace TheTimeApp.TimeData
 
         public void PullFromServer(List<Day> days)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             lock (SqlServerLock)
             {
                 Days = days;
@@ -383,6 +399,11 @@ namespace TheTimeApp.TimeData
         /// <param name="days"></param>
         public void RePushToServer(List<Day> days)
         {
+            if (AppSettings.SQLEnabled != "true")
+            {
+                MessageBox.Show("SQL not enabled!");
+                return;
+            }
             new Thread(() =>
             {
                 lock (SqlServerLock)
@@ -404,12 +425,16 @@ namespace TheTimeApp.TimeData
                     }
 
                     ProgressFinishEvent?.Invoke();
+                    MessageBox.Show("Push successful!");
                 }
             }).Start();
         }
 
         public void RemoveWeek(DateTime date)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Remove week");
             var datesInWeek = DatesInWeek(date);
             AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
@@ -422,6 +447,9 @@ namespace TheTimeApp.TimeData
         /// <param name="day"></param>
         public void InsertDay(Day day)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Insert day");
             if (day == null) return;
             try
@@ -452,6 +480,9 @@ namespace TheTimeApp.TimeData
         /// <param name="date"></param>
         public void RemoveDay(DateTime date)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Remove day");
             AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + date + "')"));
         }
@@ -462,12 +493,18 @@ namespace TheTimeApp.TimeData
         /// <param name="day"></param>
         public void RemoveDayHeader(Day day)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Remove day header");
             AddCommand(new SqlCommand($"DELETE FROM {CurrentUser} WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"));
         }
         
         public void InsertTime(Time time)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Insert time");
             if (time == null) return;
             try
@@ -490,6 +527,9 @@ namespace TheTimeApp.TimeData
 
         public void RemoveTime(Time time)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Remove time");
             SqlCommand command = new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' AND TimeOut = '{time.TimeOut.TimeOfDay}')");
             AddCommand(command);
@@ -497,6 +537,9 @@ namespace TheTimeApp.TimeData
 
         public void UpdateDetails(Day day)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Update details");
             if (day.Details == "" && day.Times.Count == 0)// day is removed in local data if no time and details == ""
             {
@@ -514,6 +557,9 @@ namespace TheTimeApp.TimeData
         
         public void SqlUpdateTime(Time prev, Time upd)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Update time");
             using (SqlCommand cmd = new SqlCommand($"UPDATE {CurrentUser} SET Date = @Date, TimeIn = @TimeIn, TimeOut = @TimeOut WHERE( Date = '" + prev.TimeIn.Date + "' AND TimeIn = '" + prev.TimeIn.TimeOfDay + "' AND TimeOut = '" + prev.TimeOut.TimeOfDay + "')"))
             {
@@ -528,6 +574,8 @@ namespace TheTimeApp.TimeData
 
         private void OnTimeDataUpdate(List<Day> days)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
             Debug.WriteLine("SQL server time data update");
             TimeDateaUpdate?.Invoke(days); // Fire event for updating ui
         }
@@ -539,6 +587,9 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public List<Day> Load(string user)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return null;
+            
             var days = new List<Day>();
             lock (SqlServerLock)
             {
@@ -628,6 +679,11 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public List<Day> LoadCurrentUser()
         {
+            if (AppSettings.SQLEnabled != "true")
+            {
+                MessageBox.Show("SQL not enabled!");
+                return null;
+            }
             return Load(CurrentUser);
         }
 
@@ -635,6 +691,9 @@ namespace TheTimeApp.TimeData
 
         private void PullDataElapsed(object sender, ElapsedEventArgs e)
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             Debug.WriteLine("Pull data eleapsed.");
             PullData();
             StartCyclicSqlRead();
@@ -645,6 +704,9 @@ namespace TheTimeApp.TimeData
         /// </summary>
         public void PullData()
         {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
             if (!IsConnected)
                 return;
             
@@ -686,6 +748,8 @@ namespace TheTimeApp.TimeData
             }
         }
         
+        #endregion
+        
         private static bool AreTablesTheSame( DataTable tbl1, DataTable tbl2)
         {
             if (tbl1.Rows.Count != tbl2.Rows.Count || tbl1.Columns.Count != tbl2.Columns.Count)
@@ -702,8 +766,5 @@ namespace TheTimeApp.TimeData
             }
             return true;
         }
-
-        #endregion
-
     }
 }

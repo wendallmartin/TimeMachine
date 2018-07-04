@@ -166,6 +166,12 @@ namespace TheTimeApp
         
         private void Btn_SQLPushAll_Click(object sender, RoutedEventArgs e)
         {
+            if (AppSettings.SQLEnabled != "true")
+            {
+                MessageBox.Show("SQL not enabled!");
+                return;
+            }
+            
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
             btn_SQLSyncAll.IsEnabled = false;
             _sqlHelper.RePushToServer(TimeData.TimeData.TimeDataBase.Days);
@@ -226,6 +232,11 @@ namespace TheTimeApp
 
         private void Btn_SQLDownload_Click(object sender, RoutedEventArgs e)
         {
+            if (AppSettings.SQLEnabled != "true")
+            {
+                MessageBox.Show("SQL not enabled!");
+                return;
+            }
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "Time file (*.dtf)|*.dtf";
             saveFileDialog.ShowDialog();

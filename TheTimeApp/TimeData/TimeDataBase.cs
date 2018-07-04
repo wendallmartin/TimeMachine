@@ -333,9 +333,10 @@ namespace TheTimeApp.TimeData
                     }
                 }
             }
-
-            _sqlHelper.RemoveTime(time);
+            
             Save();
+            
+            _sqlHelper.RemoveTime(time);
         }
 
         /// <summary>
@@ -352,9 +353,11 @@ namespace TheTimeApp.TimeData
                     break;
                 }
             }
-
-            _sqlHelper.RemoveDay(date);
+            
             Save();
+            
+            _sqlHelper.RemoveDay(date);
+            
         }
         
         /// <summary>
@@ -370,9 +373,10 @@ namespace TheTimeApp.TimeData
                     Days.RemoveAt(i);
                 }
             }
-
-            _sqlHelper.RemoveWeek(date);
             Save();
+            
+            _sqlHelper.RemoveWeek(date);
+            
         }
 
         public Day CurrentDay()
@@ -411,9 +415,10 @@ namespace TheTimeApp.TimeData
             _inprogress.PunchIn();
             
             CurrentDay().AddTime(_inprogress);
-            _sqlHelper.InsertTime(_inprogress);
             
             Save();
+            
+            _sqlHelper.InsertTime(_inprogress);
         }
 
         public void PunchOut()
@@ -425,9 +430,10 @@ namespace TheTimeApp.TimeData
 
             Time prev = new Time(){TimeIn = _inprogress.TimeIn, TimeOut = _inprogress.TimeOut};
             _inprogress.PunchOut();
-            _sqlHelper.SqlUpdateTime(prev, _inprogress);
             
             Save();
+            
+            _sqlHelper.SqlUpdateTime(prev, _inprogress);
         }
 
         public string ConverWeekToText(DateTime date)
@@ -449,6 +455,9 @@ namespace TheTimeApp.TimeData
         public void UpdateDetails(Day day, string details)
         {
             day.Details = details;
+            
+            Save();
+            
             _sqlHelper.UpdateDetails(day);
         }
 
@@ -466,8 +475,11 @@ namespace TheTimeApp.TimeData
                     }
                 }
             }
-            _sqlHelper.SqlUpdateTime(prev, upd);
+            
             Save();
+            
+            _sqlHelper.SqlUpdateTime(prev, upd);
+            
         }
 
         /// <summary>
