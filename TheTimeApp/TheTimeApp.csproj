@@ -179,15 +179,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\report.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\settings.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\timecardpic.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="timecardpic.ico" />
   </ItemGroup>
   <ItemGroup>

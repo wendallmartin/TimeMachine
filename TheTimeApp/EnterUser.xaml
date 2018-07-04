@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:TheTimeApp"
              mc:Ignorable="d" 
              Height="114.546" 
+             Icon="C:/Users/Wendall Martin/Pictures/timecardpic.ico"
              Width="150">
     <Grid Height="82" VerticalAlignment="Top">
         <Label Content="Enter user name" HorizontalAlignment="Left" VerticalAlignment="Top" Height="27"/>
