@@ -18,7 +18,7 @@ namespace TheTimeApp.TimeData
     
         public delegate void TimeDataUpdatedDel(List<Day> data);
 
-        public List<SqlCommand> Commands = new List<SqlCommand>();
+        public List<string> CommandStrings = new List<string>();
 
         private List<Day> days;
         
@@ -69,7 +69,7 @@ namespace TheTimeApp.TimeData
             if(SqlHelper != null)
                 return;
             
-            SqlHelper = new SqlServerHelper(Commands);
+            SqlHelper = new SqlServerHelper(CommandStrings);
             
             if(string.IsNullOrEmpty(CurrentUserName))
                 AddUser();

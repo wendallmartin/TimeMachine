@@ -79,9 +79,12 @@ namespace TheTimeApp.TimeData
                 MultipleActiveResultSets = true,
             };
 
-        public SqlServerHelper(List<SqlCommand> sqlCommands)
+        public SqlServerHelper(List<string> sqlCommands)
         {
-            _commands = sqlCommands;
+            _commands = new List<SqlCommand>();
+
+            sqlCommands?.ForEach(s => _commands.Add(new SqlCommand(s)));
+
             _connectionRetry.Elapsed += OnConnectionRetry;
             _connectionRetry.Enabled = true;
             if (AppSettings.MainPermission == "write" && AppSettings.SQLEnabled == "true")
@@ -270,12 +273,17 @@ namespace TheTimeApp.TimeData
                     _commands.Remove(success);
                 }
 
-                TimeData.TimeDataBase.Commands = _commands;
+                TimeData.TimeDataBase.CommandStrings = new List<string>();
+                _commands.ForEach(c => TimeData.TimeDataBase.CommandStrings.Add(c.CommandText));
+                
                 UpdateChangedEvent?.Invoke(_commands.Count == 0);
             }
             catch (Exception e)
             {
-                using (StreamWriter logger = new StreamWriter($"log\\{DateTime.Now.Date}sqlerrors.log", true))
+                if (!Directory.Exists("log"))
+                    Directory.CreateDirectory("log");
+                
+                using (StreamWriter logger = new StreamWriter($"log\\{DateTime.Now.Date.Month}-{DateTime.Now.Date.Day}-{DateTime.Now.Date.Year}sqlerrors.log", true))
                 {
                     logger.WriteLine($"{DateTime.Now}: {e.Message}");
                 }
