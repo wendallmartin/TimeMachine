@@ -18,6 +18,12 @@ namespace TheTimeApp
         [STAThread]
         static void Main()
         {
+            foreach (Process process in Process.GetProcessesByName("TheTimeApp"))
+            {
+                if(process.StartTime != Process.GetCurrentProcess().StartTime)
+                    process.Kill();
+            }
+            
             ProcessStartInfo info = new ProcessStartInfo();
             info.FileName = Path.Combine(Directory.GetCurrentDirectory(), "FTPUpdater.exe");
             info.Arguments = CurrentVersion + $" \"{Directory.GetCurrentDirectory()}\"" + " TheTimeApp false";

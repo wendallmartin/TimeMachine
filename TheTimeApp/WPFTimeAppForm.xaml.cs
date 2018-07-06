@@ -24,6 +24,11 @@ namespace TheTimeApp
             TimeData.TimeData.TimeDataBase.ConnectionChangedEvent += ConnectionChanged;
             TimeData.TimeData.TimeDataBase.UpdateChangedEvent += UpdateChanged;
             
+            if (AppSettings.SQLEnabled == "true")
+            {
+                TimeData.TimeData.TimeDataBase.SetUpSqlServer();
+            }
+            
             SetStartChecked();
             
             DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;

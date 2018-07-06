@@ -12,7 +12,7 @@ namespace TheTimeApp
             InitializeComponent();
         }
 
-        public string Text => txt_User.Text;
+        public string UserText => txt_User.Text;
 
         private void OnSaveClick(object sender, RoutedEventArgs e)
         {

@@ -23,7 +23,7 @@ namespace TheTimeApp
     public partial class SettingsWindow
     {
         private readonly object _update = new object();
-        private readonly SqlServerHelper _sqlHelper = new SqlServerHelper(TimeData.TimeData.Commands);
+        
         public SettingsWindow()
         {
             InitializeComponent();
@@ -86,8 +86,11 @@ namespace TheTimeApp
             TextBoxSqlPort.TextChanged += TextBoxSqlPort_TextChanged;
 
             // sql server progress changed
-            _sqlHelper.ProgressChangedEvent += OnSqlProgressChanged;
-            _sqlHelper.ProgressFinishEvent += OnProgressFinish;
+            if (TimeData.TimeData.TimeDataBase.SqlHelper != null)
+            {
+                TimeData.TimeData.TimeDataBase.SqlHelper.ProgressChangedEvent += OnSqlProgressChanged;
+                TimeData.TimeData.TimeDataBase.SqlHelper.ProgressFinishEvent += OnProgressFinish;    
+            }
         }
 
         private void TextBoxSqlDataSource_TextChanged(object sender, TextChangedEventArgs e)
@@ -174,7 +177,7 @@ namespace TheTimeApp
             
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
             btn_SQLSyncAll.IsEnabled = false;
-            _sqlHelper.RePushToServer(TimeData.TimeData.TimeDataBase.Days);
+            TimeData.TimeData.TimeDataBase.SqlHelper?.RePushToServer(TimeData.TimeData.TimeDataBase.Days);
         }
 
         private void OnSqlProgressChanged(float value)
@@ -255,15 +258,8 @@ namespace TheTimeApp
 
         private void btn_Add_Click(object sender, RoutedEventArgs e)
         {
-            if (TimeData.TimeData.TimeDataBase.Users.All(u => u.UserName != AddUserBox.Text))
-            {
-                TimeData.TimeData.TimeDataBase.Users.Add(new User(AddUserBox.Text, "", new List<Day>()));
-            }
-            else
-            {
-                MessageBox.Show("User already exists!!!");
-            }
-
+            TimeData.TimeData.TimeDataBase.AddUser(AddUserBox.Text);
+            
             AddUserBox.Text = "";
             TimeData.TimeData.TimeDataBase.Save();
             LoadUsers();
@@ -271,18 +267,7 @@ namespace TheTimeApp
 
         private void OnDeleteUser(ViewBar viewbar)
         {
-            if (TimeData.TimeData.TimeDataBase.Users.Any(u => u.UserName == viewbar.Text))
-            {
-                for (int i = 0; i < TimeData.TimeData.TimeDataBase.Users.Count; i++)
-                {
-                    if(TimeData.TimeData.TimeDataBase.Users[i].UserName == viewbar.Text)
-                        TimeData.TimeData.TimeDataBase.Users.RemoveAt(i);
-                }
-            }
-            else
-            {
-                MessageBox.Show("User does not exist!!!");
-            }
+            TimeData.TimeData.TimeDataBase.DeleteUser(viewbar.Text);
             TimeData.TimeData.TimeDataBase.Save();
             LoadUsers();
         }

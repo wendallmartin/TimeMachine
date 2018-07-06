@@ -35,6 +35,7 @@ namespace TheTimeApp
             if (AppSettings.SQLEnabled == "true" && SqlServerHelper.IsConnected)
             {
                 DataBase.TimeDataBase.LoadCurrentUserFromSql();
+                DataBase.TimeDataBase.SetUpSqlServer();
                 ConnectionChanged(true);
                 UpdateChanged(true);
             }

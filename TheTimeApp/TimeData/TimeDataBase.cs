@@ -18,7 +18,7 @@ namespace TheTimeApp.TimeData
     
         public delegate void TimeDataUpdatedDel(List<Day> data);
 
-        public static List<SqlCommand> Commands = new List<SqlCommand>();
+        public List<SqlCommand> Commands = new List<SqlCommand>();
 
         private List<Day> days;
         
@@ -52,45 +52,43 @@ namespace TheTimeApp.TimeData
         [NonSerialized]
         private static object readWrite = new object();
         
-        [NonSerialized]
-        private SqlServerHelper _sqlHelper;
+        [NonSerialized] 
+        public SqlServerHelper SqlHelper;
 
         [NonSerialized] 
         public static TimeData TimeDataBase;
         
-        public TimeData(bool sqlenabled)
+        public TimeData()
         {
-            if (AppSettings.MainPermission != "write")
-            {
-                Commands.Clear();
-            }
-
-            if (sqlenabled)
-            {
-                _sqlHelper = new SqlServerHelper(Commands);
-                AssociateSqlEvents();
-            }
-            
             days = new List<Day>();
             _inprogress = new Time();
+        }
+
+        public void SetUpSqlServer()
+        {
+            if(SqlHelper != null)
+                return;
+            
+            SqlHelper = new SqlServerHelper(Commands);
+            
+            if(string.IsNullOrEmpty(CurrentUserName))
+                AddUser();
+            
+            SqlHelper.ConnectionChangedEvent += OnConnectionChanged;
+            SqlHelper.UpdateChangedEvent += OnUpdateChanged;
+            SqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
         }
 
         [OnDeserialized]
         private void OnDesirialize(StreamingContext context)
         {
-            if (_sqlHelper == null)
-            {
-                _sqlHelper = new SqlServerHelper(Commands);
-                AssociateSqlEvents();
-            }
-
             if(_users == null)
                 _users = new List<User>();
 
             if (_users.Count == 0)
             {
                 CurrentUserName = "";
-                InitUser();
+                AddUser();
             }
             if (string.IsNullOrEmpty(CurrentUserName))
             {
@@ -98,47 +96,38 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        private void AssociateSqlEvents()
+        public void AddUser()
         {
-            _sqlHelper.ConnectionChangedEvent += OnConnectionChanged;
-            _sqlHelper.UpdateChangedEvent += OnUpdateChanged;
-            _sqlHelper.TimeDateaUpdate += OnTimeDataUpdate;
-        }
-
-        private void UnAssociateSqlEvents()
-        {
-            _sqlHelper.ConnectionChangedEvent = null;
-            _sqlHelper.UpdateChangedEvent = null;    
-            _sqlHelper.TimeDateaUpdate = null;
-        }
-
-        private void InitUser()
-        {
-            while (true)
+            if(AppSettings.SQLEnabled == "true" && SqlHelper == null)
+                SetUpSqlServer();
+            
+            while (_users.Count == 0)
             {
                 EnterUser newUserWin = new EnterUser();
                 newUserWin.ShowDialog();
-                if (_users.All(u => u.UserName != newUserWin.Text))
+                if (newUserWin.UserText != "new user")// todo must perform more professional check for user input
                 {
-                    _users.Add(new User(newUserWin.Text, "", days)); // pump day into user 
-                    days = new List<Day>();
-                    CurrentUserName = newUserWin.Text;
+                    AddUser(newUserWin.UserText);    
                 }
-                else
-                {
-                    MessageBox.Show(@"User already exists!!!");
-                    continue;
-                }
-
-                break;
+            }
+        }
+        
+        public void AddUser(string text)
+        {
+            if (_users.All(u => u.UserName != text))
+            {
+                _users.Add(new User(text, "", days)); // pump day into user 
+                days = new List<Day>();
+                CurrentUserName = text;
+                SqlHelper?.CreateUser(CurrentUserName);
+            }
+            else
+            {
+                MessageBox.Show(@"User already exists!!!");
             }
         }
 
-        public List<User> Users
-        {
-            get => _users;
-            set => _users = value;
-        }
+        public List<User> Users => _users;
 
         public List<Day> Days
         {
@@ -188,6 +177,20 @@ namespace TheTimeApp.TimeData
             ConnectionChangedEvent?.Invoke(connected);
         }
 
+        // orginizes the days by date
+        public void SortDays()
+        {
+            if (Days == null || Days.Count == 0)
+                return;
+
+            foreach (Day day in days)
+            {
+                day.Times.Sort();// sort times within days
+            }
+            
+            days.Sort((a, b) => a.Date.CompareTo(b.Date));
+        }
+        
         /// <summary>
         /// serializes the class to file
         /// arg given as string
@@ -229,20 +232,6 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        // orginizes the days by date
-        public void SortDays()
-        {
-            if (Days == null || Days.Count == 0)
-                return;
-
-            foreach (Day day in days)
-            {
-                day.Times.Sort();// sort times within days
-            }
-            
-            days.Sort((a, b) => a.Date.CompareTo(b.Date));
-        }
-
         /// <summary>
         /// This calls TimeData constructer which sets
         /// up the sql server.
@@ -255,14 +244,14 @@ namespace TheTimeApp.TimeData
                 string file = AppSettings.DataPath;
                 if (!File.Exists(file))
                 {
-                    file = AppSettings.DataPath = "time.tdf";
-                    File.Create(file);
+                    MessageBox.Show(@"File not found! Starting over with new data in default location.");
+                    AppSettings.DataPath = "time.tdf";
                     // we assume this is the first instance of the app so the data file must be created
-                    TimeDataBase = new TimeData(true);
+                    TimeDataBase = new TimeData();
                     return;
                 }
 
-                TimeData data = new TimeData(false);
+                TimeData data = new TimeData();
                 //if files is not found, create file
                 // Profile exists and can be loaded.
                 try
@@ -282,7 +271,7 @@ namespace TheTimeApp.TimeData
                 catch (Exception eDeserialize)
                 {
                     MessageBox.Show(eDeserialize.ToString());
-                    TimeDataBase = new TimeData(true);
+                    TimeDataBase = new TimeData();
                 }
 
                 TimeDataBase = data;
@@ -336,7 +325,7 @@ namespace TheTimeApp.TimeData
             
             Save();
             
-            _sqlHelper.RemoveTime(time);
+            SqlHelper?.RemoveTime(time);
         }
 
         /// <summary>
@@ -356,7 +345,7 @@ namespace TheTimeApp.TimeData
             
             Save();
             
-            _sqlHelper.RemoveDay(date);
+            SqlHelper?.RemoveDay(date);
             
         }
         
@@ -375,7 +364,7 @@ namespace TheTimeApp.TimeData
             }
             Save();
             
-            _sqlHelper.RemoveWeek(date);
+            SqlHelper?.RemoveWeek(date);
             
         }
 
@@ -394,7 +383,7 @@ namespace TheTimeApp.TimeData
 
             if (!containsDay)
             {
-                _sqlHelper.InsertDay(new Day(DateTime.Now));
+                SqlHelper?.InsertDay(new Day(DateTime.Now));
                 Days.Add(new Day(DateTime.Now));
             }
 
@@ -418,7 +407,7 @@ namespace TheTimeApp.TimeData
             
             Save();
             
-            _sqlHelper.InsertTime(_inprogress);
+            SqlHelper?.InsertTime(_inprogress);
         }
 
         public void PunchOut()
@@ -433,7 +422,7 @@ namespace TheTimeApp.TimeData
             
             Save();
             
-            _sqlHelper.SqlUpdateTime(prev, _inprogress);
+            SqlHelper?.SqlUpdateTime(prev, _inprogress);
         }
 
         public string ConverWeekToText(DateTime date)
@@ -458,7 +447,7 @@ namespace TheTimeApp.TimeData
             
             Save();
             
-            _sqlHelper.UpdateDetails(day);
+            SqlHelper?.UpdateDetails(day);
         }
 
         public void UpdateTime(Time prev, Time upd)
@@ -478,20 +467,24 @@ namespace TheTimeApp.TimeData
             
             Save();
             
-            _sqlHelper.SqlUpdateTime(prev, upd);
+            SqlHelper?.SqlUpdateTime(prev, upd);
             
         }
 
         /// <summary>
-        /// Initualizes current User from SQL server
+        /// Initualizes users from SQL server by erasing all
+        /// users and reloading.
         /// </summary>
         public void LoadCurrentUserFromSql()
         {
-            var users = _sqlHelper.GetAllTables();
-            Users.Clear();
-            foreach (string name in users)
+            var sqLusers = SqlHelper?.GetAllTables();
+            _users.Clear();
+            if (sqLusers != null)
             {
-                Users.Add(new User(name, "", _sqlHelper.Load(name+"_TimeTable").OrderBy(d => d.Date).ToList()));
+                foreach (string name in sqLusers)
+                {
+                    _users.Add(new User(name, "", SqlHelper?.Load(name + "_TimeTable").OrderBy(d => d.Date).ToList()));
+                }
             }
         }
 
@@ -503,6 +496,27 @@ namespace TheTimeApp.TimeData
         {
             Time time = Days.LastOrDefault()?.Times.LastOrDefault();
             return time != null && time.IsPunchedIn();
+        }
+
+        public void DeleteUser(string username)
+        {
+            if(TimeDataBase._users.Any(u => u.UserName == username))
+            {
+                TimeDataBase._users.Remove(_users.Find(u => u.UserName == username));
+
+                if (AppSettings.SQLEnabled == "true")
+                {
+                    var result = MessageBox.Show(@"Do you want to remove user from SQL as well?", @"Warning", MessageBoxButtons.YesNo);
+                    if (result == DialogResult.Yes)
+                    {
+                        SqlHelper?.RemoveUser(username);
+                    }    
+                }
+            }
+            else
+            {
+                MessageBox.Show(@"User does not exist!");
+            }
         }
     }
 }

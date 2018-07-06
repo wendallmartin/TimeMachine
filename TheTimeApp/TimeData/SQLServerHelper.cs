@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -57,7 +58,17 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        private string CurrentUser => DataBase.TimeDataBase.CurrentUserName.Replace(' ', '_') + "_TimeTable";
+        private string CurrentUser => ToTableName(DataBase.TimeDataBase.CurrentUserName);
+
+        /// <summary>
+        /// Returns user name converted to table name.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        private string ToTableName(string username)
+        {
+            return username.Replace(' ', '_') + "_TimeTable";
+        }
 
         private static SqlConnectionStringBuilder ConnectionStringBuilder =>
             new SqlConnectionStringBuilder() { 
@@ -75,11 +86,7 @@ namespace TheTimeApp.TimeData
             _connectionRetry.Enabled = true;
             if (AppSettings.MainPermission == "write" && AppSettings.SQLEnabled == "true")
             {
-                new Thread(() =>
-                {
-                    TestConnection();
-                    FlushCommands();
-                }).Start();    
+                new Thread(TestConnection).Start();    
             }
 
             // only start sql cyclic read if sql enabled and MainPermission is 'read'
@@ -164,14 +171,6 @@ namespace TheTimeApp.TimeData
         #endregion
 
         #region SQL message pump
-
-        private void CreateCommand(string sqlstring)
-        {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
-            AddCommand(new SqlCommand(sqlstring));
-        }
         
         public List<string> GetAllTables()
         {
@@ -197,6 +196,36 @@ namespace TheTimeApp.TimeData
 
             return tables;
         }
+
+        /// <summary>
+        /// Creates user table if it doesn't exist
+        /// EXCEPTS USER NAME NOT USER TABLE NAME!!
+        /// </summary>
+        /// <param name="user"></param>
+        public void CreateUser(string user)
+        {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
+            AddCommand(new SqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(user)}' AND xtype='U')
+                                            CREATE TABLE {ToTableName(user)} (Date date, TimeIn time, TimeOut time, Details text)"));
+        }
+        
+        
+        
+        /// <summary>
+        /// Deletes user table if it exist
+        /// EXCEPTS USER NAME NOT USER TABLE NAME!!
+        /// </summary>
+        /// <param name="username"></param>
+        public void RemoveUser(string username)
+        {
+            if (AppSettings.SQLEnabled != "true")
+                return;
+            
+            AddCommand(new SqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(username)}' AND xtype='U') DROP TABLE {ToTableName(username)}"));            
+        }
+
         
         /// <summary>
         /// Add command to list and trys to flush commands
@@ -204,64 +233,34 @@ namespace TheTimeApp.TimeData
         /// <param name="command"></param>
         private void AddCommand(SqlCommand command)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (AppSettings.SQLEnabled != "true") return;
             new Thread(() =>
             {
                 lock (SqlServerLock)
                 {
-                    try
-                    {
-                        UpdateChangedEvent?.Invoke(false);
-                        _commands.Add(command);
-                        FlushCommands();
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show(e.ToString());
-                        throw;
-                    }
-                }       
+                    UpdateChangedEvent?.Invoke(false);
+                    _commands.Add(command);
+                    FlushCommands();
+                }
             }).Start();
         }
 
         private void FlushCommands()
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
-            lock (SqlServerLock)
+            try
             {
                 var successful = new List<SqlCommand>();
                 using (SqlConnection connection = new SqlConnection(ConnectionStringBuilder.ConnectionString))
                 {
-                    try
-                    {
-                        connection.Open();
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show(e.Message);
-                        Console.WriteLine(e);
-                    }
-                    
+                    connection.Open();
                     foreach (SqlCommand c in _commands)
                     {
-                        try
-                        {
-                            UpdateChangedEvent?.Invoke(false);
-                            SqlCommand sqlCommand = c;
-                            sqlCommand.Connection = connection;
-                            int value = sqlCommand.ExecuteNonQuery();
-                            Debug.WriteLine($"Excecute: {value}");
-                            successful.Add(c);
-                        }
-                        catch (Exception e)
-                        {
-                            MessageBox.Show(e.ToString());
-                            Debug.WriteLine(e);
-                        }
+                        UpdateChangedEvent?.Invoke(false);
+                        SqlCommand sqlCommand = c;
+                        sqlCommand.Connection = connection;
+                        int value = sqlCommand.ExecuteNonQuery();
+                        Debug.WriteLine($"Excecute: {value}");
+                        successful.Add(c);
                     }
                 }
 
@@ -271,15 +270,24 @@ namespace TheTimeApp.TimeData
                     _commands.Remove(success);
                 }
 
-                TimeData.Commands = _commands;
+                TimeData.TimeDataBase.Commands = _commands;
                 UpdateChangedEvent?.Invoke(_commands.Count == 0);
+            }
+            catch (Exception e)
+            {
+                using (StreamWriter logger = new StreamWriter($"log\\{DateTime.Now.Date}sqlerrors.log", true))
+                {
+                    logger.WriteLine($"{DateTime.Now}: {e.Message}");
+                }
             }
         }
 
         #endregion
 
         #region Message generators
-        
+
+        #region unused
+
         private bool ServerContainsDay(Day day)
         {
             if (AppSettings.SQLEnabled != "true")
@@ -392,7 +400,10 @@ namespace TheTimeApp.TimeData
                 }
             }
         }
+        
 
+        #endregion
+        
         /// <summary>
         /// Delete sql table and repushes everything
         /// </summary>
@@ -408,9 +419,9 @@ namespace TheTimeApp.TimeData
             {
                 lock (SqlServerLock)
                 {
-                    CreateCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U') DROP TABLE {CurrentUser}");
-                    CreateCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U')
-                                            CREATE TABLE {CurrentUser} (Date date, TimeIn time, TimeOut time, Details text)");
+                    AddCommand(new SqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U') DROP TABLE {CurrentUser}"));
+                    AddCommand(new SqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U')
+                                            CREATE TABLE {CurrentUser} (Date date, TimeIn time, TimeOut time, Details text)"));
                     ProgressChangedEvent?.Invoke(0);
                     for (float i = 0; i < days.Count; i++)
                     {
@@ -454,10 +465,6 @@ namespace TheTimeApp.TimeData
             if (day == null) return;
             try
             {
-                using (_connectionRetry)
-                {
-                    
-                }
                 using (SqlCommand command = new SqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
                 {
                     command.Parameters.Add(new SqlParameter("Date", day.Date));
