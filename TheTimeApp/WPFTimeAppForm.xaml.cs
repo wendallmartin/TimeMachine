@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -13,6 +16,8 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeAppForm
     {
+        private System.Timers.Timer _detailsChanged;
+        
         public WPFTimeAppForm()
         {
             InitializeComponent();
@@ -22,14 +27,19 @@ namespace TheTimeApp
             TimeData.TimeData.Load();
             TimeData.TimeData.TimeDataBase.Save();
             TimeData.TimeData.TimeDataBase.ConnectionChangedEvent += ConnectionChanged;
-            TimeData.TimeData.TimeDataBase.UpdateChangedEvent += UpdateChanged;
+            TimeData.TimeData.TimeDataBase.SqlUpdateChanged += SqlUpdateChanged;
             
             if (AppSettings.SQLEnabled == "true")
             {
                 TimeData.TimeData.TimeDataBase.SetUpSqlServer();
+                SqlUpdateChanged(TimeData.TimeData.TimeDataBase.SerilizableCommands);
             }
             
             SetStartChecked();
+            
+            _detailsChanged = new System.Timers.Timer(){Interval = 2000};
+            _detailsChanged.Elapsed += OnDetailsChangeTick;
+            _detailsChanged.AutoReset = false;
             
             DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
 
@@ -48,7 +58,7 @@ namespace TheTimeApp
                     Text = user.UserName, 
                     Width = 120, 
                     Height = 26, 
-                    Editable = false
+                    Deletable = false
                 };
                 userBar.SelectedEvent += OnUserSelected;
                 pnl_UserSelection.Children.Add(userBar);
@@ -98,24 +108,25 @@ namespace TheTimeApp
                 Start_Button.Content = "Start";
             }
         }
-        
-        
-        private void UpdateChanged(bool connected)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                if (connected)
-                {
-                    lbl_UpToDate.Content = "Up to date";
-                    lbl_UpToDate.Foreground = Brushes.Green;
-                }
-                else
-                {
-                    lbl_UpToDate.Content = "NOT up to date";
-                    lbl_UpToDate.Foreground = Brushes.Red;
-                }
-            });
 
+        private void SqlUpdateChanged(List<SerilizeSqlCommand> value)
+        {
+            new Thread(() =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (value == null || value.Count == 0)
+                    {
+                        lbl_UpToDate.Content = "Up to date";
+                        lbl_UpToDate.Foreground = Brushes.Green;
+                    }
+                    else
+                    {
+                        lbl_UpToDate.Content = $"{value.Count} Not up to date ";
+                        lbl_UpToDate.Foreground = Brushes.Red;
+                    }
+                });
+            }).Start();
         }
 
         private void ConnectionChanged(bool con)
@@ -137,8 +148,22 @@ namespace TheTimeApp
 
         private void OnDayDetailsChanged(object sender, TextChangedEventArgs e)
         {
-            TimeData.TimeData.TimeDataBase.UpdateDetails(TimeData.TimeData.TimeDataBase.CurrentDay(), DayDetailsBox.Text);
             TimeData.TimeData.TimeDataBase.Save();
+            
+            if (AppSettings.SQLEnabled == "true")
+            {
+                if(_detailsChanged.Enabled)// Stop any previous timers
+                    _detailsChanged.Stop();
+            
+                _detailsChanged.Start();    
+            }
+        }
+        
+        private void OnDetailsChangeTick(object sender, ElapsedEventArgs e)
+        {
+            string details = "";
+            Dispatcher.Invoke(() => { details = DayDetailsBox.Text; });
+            TimeData.TimeData.TimeDataBase.UpdateDetails(TimeData.TimeData.TimeDataBase.CurrentDay(), details);
         }
 
         private void btn_Report_Click(object sender, RoutedEventArgs e)

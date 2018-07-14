@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -19,9 +20,11 @@ namespace TheTimeApp.Controls
         public ViewdDel SelectedEvent;
 
         public ViewdDel DeleteEvent;
-        
-        public bool Editable { get; set; }
 
+        public bool Deletable { get; set; } = true;
+
+        public bool ReadOnly { get; set; }
+        
         public ViewBar()
         {
             InitializeComponent();
@@ -53,7 +56,7 @@ namespace TheTimeApp.Controls
         {
             Background = _brushSelected;
             
-            if(Editable)
+            if(Deletable)
                 btn_Delete.Visibility = Visibility.Visible;
         }
 
@@ -68,7 +71,7 @@ namespace TheTimeApp.Controls
 
         private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if(btn_Delete.IsMouseOver)
+            if(btn_Delete.IsMouseOver || ReadOnly)
                 return;
             
             SelectedEvent?.Invoke((ViewBar)sender);

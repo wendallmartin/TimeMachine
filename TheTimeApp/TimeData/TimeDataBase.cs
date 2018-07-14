@@ -14,12 +14,16 @@ namespace TheTimeApp.TimeData
     [Serializable]
     public class TimeData
     {
+        public delegate void SqlUpToDateChanged(List<SerilizeSqlCommand> sqlBehind);
+        
         public delegate void ConnectionChangedDel(bool connected);
     
         public delegate void TimeDataUpdatedDel(List<Day> data);
 
-        public List<string> CommandStrings = new List<string>();
+        [OptionalField]
+        public List<SerilizeSqlCommand> SerilizableCommands;
 
+        [OptionalField]
         private List<Day> days;
         
         /// <summary>
@@ -33,7 +37,7 @@ namespace TheTimeApp.TimeData
         
         [OptionalField]
         private Time _inprogress;
-
+        
         [NonSerialized]
         private static readonly byte[] Iv = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xCD, 0xEF };
         
@@ -44,13 +48,13 @@ namespace TheTimeApp.TimeData
         public ConnectionChangedDel ConnectionChangedEvent;
         
         [NonSerialized]
-        public ConnectionChangedDel UpdateChangedEvent;
+        public SqlUpToDateChanged SqlUpdateChanged;
 
         [NonSerialized] 
         public TimeDataUpdatedDel TimeDataUpdated;
         
         [NonSerialized]
-        private static object readWrite = new object();
+        private static readonly object ReadWrite = new object();
         
         [NonSerialized] 
         public SqlServerHelper SqlHelper;
@@ -68,8 +72,29 @@ namespace TheTimeApp.TimeData
         {
             if(SqlHelper != null)
                 return;
+
+            SqlConnectionStringBuilder stringBuilder = new SqlConnectionStringBuilder()
+            {
+                DataSource = AppSettings.SQLDataSource,
+                UserID = AppSettings.SQLUserId,
+                Password = AppSettings.SQLPassword,
+                InitialCatalog = AppSettings.SQLCatelog,
+                MultipleActiveResultSets = true,
+            };
+
+            SqlMode sqlMode = new SqlMode();
             
-            SqlHelper = new SqlServerHelper(CommandStrings);
+            if (AppSettings.MainPermission == "write")
+                sqlMode.Write = true;
+            else
+                sqlMode.Read = true;                
+            
+            SqlHelper = new SqlServerHelper(stringBuilder, sqlMode, SerilizableCommands)
+            {
+                SqlEnabled = AppSettings.SQLEnabled == "true",
+                Port = Convert.ToInt32(AppSettings.SQLPortNumber)
+            };
+            
             
             if(string.IsNullOrEmpty(CurrentUserName))
                 AddUser();
@@ -167,9 +192,18 @@ namespace TheTimeApp.TimeData
             TimeDataUpdated?.Invoke(list);
         }
 
-        private void OnUpdateChanged(bool uptodate)
+        private void OnUpdateChanged(List<SerilizeSqlCommand> behindCommands)
         {
-            UpdateChangedEvent?.Invoke(uptodate);
+            SerilizableCommands = behindCommands;
+            
+            List<string> commands = new List<string>();
+            foreach (SerilizeSqlCommand sqlCommand in SerilizableCommands)
+            {
+                commands.Add(sqlCommand.CommandText);
+            }
+            Logger.OverWriteToFile(commands, "SqlBehindCommands");
+            
+            SqlUpdateChanged?.Invoke(behindCommands);
         }
         
         private void OnConnectionChanged(bool connected)
@@ -196,14 +230,13 @@ namespace TheTimeApp.TimeData
         /// arg given as string
         /// </summary>
         /// <param name="toFile"> Optional file path arg.</param>
-        public void Save(string toFile = "")
+        public void Save()
         {
-            lock (readWrite)
+            lock (ReadWrite)
             {
-                string file = toFile;
-
-                if (file == "")
-                    file = AppSettings.DataPath;
+                AppSettings.DataPath = Path.GetFileNameWithoutExtension(AppSettings.DataPath) + ".tdf";
+                
+                string file = AppSettings.DataPath;
 
                 SortDays();
             
@@ -239,7 +272,7 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public static void Load()
         {
-            lock (readWrite)
+            lock (ReadWrite)
             {
                 string file = AppSettings.DataPath;
                 if (!File.Exists(file))
@@ -370,32 +403,20 @@ namespace TheTimeApp.TimeData
 
         public Day CurrentDay()
         {
-            Day currentDay = new Day(new DateTime(2000,1,1));
-            bool containsDay = false;
-            foreach (Day day in Days)
+            for(int i = Days.Count - 1; i >= 0; i++)
             {
+                Day day = Days[i]; 
                 if (day.Date.Year == DateTime.Now.Year && day.Date.Month == DateTime.Now.Month && day.Date.Day == DateTime.Now.Day)
                 {
-                    containsDay = true;
-                    break;
+                    return day;
                 }
             }
 
-            if (!containsDay)
-            {
-                SqlHelper?.InsertDay(new Day(DateTime.Now));
-                Days.Add(new Day(DateTime.Now));
-            }
+            // day does not exist, Inset new day.
+            SqlHelper?.InsertDay(new Day(DateTime.Now));
+            Days.Add(new Day(DateTime.Now));
 
-            foreach (Day day in Days)
-            {
-                if (day.Date.Year == DateTime.Now.Year && day.Date.Month == DateTime.Now.Month && day.Date.Day == DateTime.Now.Day)
-                {
-                    currentDay =  day;
-                }
-            }
-
-            return currentDay;
+            return Days.Last();
         }
 
         public void PunchIn()
@@ -446,10 +467,10 @@ namespace TheTimeApp.TimeData
             day.Details = details;
             
             Save();
-            
+
             SqlHelper?.UpdateDetails(day);
         }
-
+        
         public void UpdateTime(Time prev, Time upd)
         {
             for (int dayIndex = 0; dayIndex < Days.Count; dayIndex++)

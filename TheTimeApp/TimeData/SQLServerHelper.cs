@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -16,45 +15,77 @@ namespace TheTimeApp.TimeData
 {
     public class SqlServerHelper
     {
+        private static readonly object IsConnectedLock = new object();
         private static readonly object SqlServerLock = new object();
-        
         private static readonly object SqlPullLock = new object();
+        private static readonly object SqlPushLock = new object();
+        
+        private SqlConnection _connection = new SqlConnection();// Only referenced from SqlConnection property!
+        
+        public List<SerilizeSqlCommand> Commands;
+
+        #region Delegates
 
         public delegate void ProgressChangedDel(float value);
+        
+        public delegate void UpdateChangeDel(List<SerilizeSqlCommand> value);
 
         public delegate void ConnectionChangedDel(bool value);
 
         public delegate void ProgressFinishDel();
 
-        public delegate void TimeDateUpdated(List<Day> data);
+        public delegate void TimeDateUpdatedDel(List<Day> data);
 
-        public TimeDateUpdated TimeDateaUpdate;
+        #endregion
+
+        #region Events
+
+        public TimeDateUpdatedDel TimeDateaUpdate;
         public ProgressChangedDel ProgressChangedEvent;
         public ProgressFinishDel ProgressFinishEvent;
         public ConnectionChangedDel ConnectionChangedEvent;
-        public ConnectionChangedDel UpdateChangedEvent;
-        private List<Day> Days { get; set; }
-        private List<SqlCommand> _commands;
+        public UpdateChangeDel UpdateChangedEvent;
+
+        #endregion
+        
         private bool _wasConnected;
         private readonly Timer _connectionRetry = new Timer(1000);
-        private Timer _cylcicSQLRead = new Timer(5000);
+        private readonly Timer _cylcicSqlRead = new Timer(5000);
+
+        public SqlConnectionStringBuilder ConnectionStringBuilder { get; set; }
+        
+        public int Port { get; set; }
+        
+        public SqlMode SqlMode { get; set; }
         
         // your data table
         private DataTable _dataTable = new DataTable();
 
-        private List<Time> Times
+        public bool SqlEnabled { get; set; } = true;
+
+        /// <summary>
+        /// If connection == null we are not
+        /// connected to server.
+        /// </summary>
+        private SqlConnection SqlConnection
         {
             get{
-                var times = new List<Time>();
-                foreach (Day day in Days)
+                try
                 {
-                    foreach (Time dayTime in day.Times)
+                    if (!IsConnected) return null;
+                    
+                    if (_connection.State != ConnectionState.Open)
                     {
-                        times.Add(dayTime);
+                        _connection = new SqlConnection(ConnectionStringBuilder.ConnectionString);
+                        _connection.Open();
                     }
+                    return _connection;
                 }
-
-                return times;
+                catch (Exception e)
+                {
+                    Logger.LogException(e, "SqlConnectionExceptions");
+                    return null;
+                }
             }
         }
 
@@ -70,33 +101,28 @@ namespace TheTimeApp.TimeData
             return username.Replace(' ', '_') + "_TimeTable";
         }
 
-        private static SqlConnectionStringBuilder ConnectionStringBuilder =>
-            new SqlConnectionStringBuilder() { 
-                DataSource = AppSettings.SQLDataSource,
-                UserID = AppSettings.SQLUserId,
-                Password = AppSettings.SQLPassword,
-                InitialCatalog = AppSettings.SQLCatelog,
-                MultipleActiveResultSets = true,
-            };
-
-        public SqlServerHelper(List<string> sqlCommands)
+        public SqlServerHelper(SqlConnectionStringBuilder conStringBuilder, SqlMode sqlMode, List<SerilizeSqlCommand> commands)
         {
-            _commands = new List<SqlCommand>();
-
-            sqlCommands?.ForEach(s => _commands.Add(new SqlCommand(s)));
-
+            ConnectionStringBuilder = conStringBuilder;
+            SqlMode = sqlMode;
+            Commands = commands;
+            
+            if(Commands == null)
+                Commands = new List<SerilizeSqlCommand>();
+            
             _connectionRetry.Elapsed += OnConnectionRetry;
             _connectionRetry.Enabled = true;
-            if (AppSettings.MainPermission == "write" && AppSettings.SQLEnabled == "true")
+            if (SqlMode.Write && SqlEnabled)
             {
-                new Thread(TestConnection).Start();    
+                new Thread(TestConnection).Start();
+                CreateUser(TimeData.TimeDataBase.CurrentUserName);
             }
 
             // only start sql cyclic read if sql enabled and MainPermission is 'read'
-            if ( AppSettings.SQLEnabled == "true" && AppSettings.MainPermission == "read" && IsConnected)
+            if (SqlEnabled && SqlMode.Read && IsConnected)
             {
-                _cylcicSQLRead.Elapsed += PullDataElapsed;
-                _cylcicSQLRead.AutoReset = false;
+                _cylcicSqlRead.Elapsed += PullDataElapsed;
+                _cylcicSqlRead.AutoReset = false;
                 StartCyclicSqlRead();
             }
         }
@@ -120,14 +146,8 @@ namespace TheTimeApp.TimeData
 
         public void StartCyclicSqlRead()
         {
-            _cylcicSQLRead.Start();
+            _cylcicSqlRead.Start();
         }
-
-        public void StopCyclicSqlRead()
-        {
-            _cylcicSQLRead.Stop();
-        }
-        
 
         private void OnConnectionRetry(object sender, ElapsedEventArgs e)
         {
@@ -136,18 +156,24 @@ namespace TheTimeApp.TimeData
             _connectionRetry.Start();
         }
 
-        public static bool IsConnected
+        public bool IsConnected
         {
             get{
-                try
+
+                lock (IsConnectedLock)
                 {
-                    AppSettings.Validate();
-                    if (AppSettings.SQLPortNumber == "") return false;
-                    using (new TcpClient(AppSettings.SQLDataSource, Convert.ToInt32(AppSettings.SQLPortNumber)) {SendTimeout = 1000}) return true;
-                }
-                catch (SocketException)
-                {
-                    return false;
+                    try
+                    {
+                        if (Port == 0) return false;
+                        using (new TcpClient(ConnectionStringBuilder.DataSource, Port) {SendTimeout = 1000})
+                        {
+                            return true;
+                        }
+                    }
+                    catch (SocketException)
+                    {
+                        return false;
+                    }
                 }
             }
         }
@@ -164,36 +190,39 @@ namespace TheTimeApp.TimeData
                 _wasConnected = connected;
                 OnConnectionChanged(connected);
             }
+
+            if (connected)
+            {
+                lock (SqlServerLock)
+                {
+                    FlushCommands();    
+                }
+            }
         }
 
         private void OnConnectionChanged(bool connected)
         {
             ConnectionChangedEvent?.Invoke(connected);
         }
-        
+
         #endregion
 
         #region SQL message pump
-        
+
         public List<string> GetAllTables()
         {
-            if (AppSettings.SQLEnabled != "true")
+            if (!SqlEnabled || SqlConnection == null)
                 return null;
-            
             var tables = new List<string>();
-
-            using (SqlConnection connection = new SqlConnection(ConnectionStringBuilder.ConnectionString))
+            
+            DataTable names = SqlConnection.GetSchema("Tables");
+            foreach (DataRow dataRow in names.Rows)
             {
-                connection.Open();
-                DataTable names = connection.GetSchema("Tables");
-                foreach (DataRow dataRow in names.Rows)
+                string tableName = dataRow[2].ToString();
+                if (tableName.Contains("_TimeTable"))
                 {
-                    string tableName = dataRow[2].ToString();
-                    if (tableName.Contains("_TimeTable"))
-                    {
-                        tableName = tableName.Replace("_TimeTable", "");
-                        tables.Add(tableName);
-                    }
+                    tableName = tableName.Replace("_TimeTable", "");
+                    tables.Add(tableName);
                 }
             }
 
@@ -207,15 +236,11 @@ namespace TheTimeApp.TimeData
         /// <param name="user"></param>
         public void CreateUser(string user)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
-            AddCommand(new SqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(user)}' AND xtype='U')
+            if (!SqlEnabled) return;
+            AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(user)}')
                                             CREATE TABLE {ToTableName(user)} (Date date, TimeIn time, TimeOut time, Details text)"));
         }
-        
-        
-        
+
         /// <summary>
         /// Deletes user table if it exist
         /// EXCEPTS USER NAME NOT USER TABLE NAME!!
@@ -223,70 +248,63 @@ namespace TheTimeApp.TimeData
         /// <param name="username"></param>
         public void RemoveUser(string username)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
-            AddCommand(new SqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(username)}' AND xtype='U') DROP TABLE {ToTableName(username)}"));            
+            if (!SqlEnabled) return;
+            AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(username)}' AND xtype='U') DROP TABLE {ToTableName(username)}"));
         }
 
-        
         /// <summary>
         /// Add command to list and trys to flush commands
         /// </summary>
         /// <param name="command"></param>
-        private void AddCommand(SqlCommand command)
+        private void AddCommand(SerilizeSqlCommand command)
         {
-            if (AppSettings.SQLEnabled != "true") return;
+            if (!SqlEnabled) return;
+            command.CommandAddTime = DateTime.Now;
             new Thread(() =>
             {
-                lock (SqlServerLock)
+                lock (SqlServerLock) // Moving the lock here as keeps the SerilizableCommands list from changing while flushing. THE ONLY PLACE FLUSHCOMMANDS IS CALLED!
                 {
-                    UpdateChangedEvent?.Invoke(false);
-                    _commands.Add(command);
-                    FlushCommands();
+                    Commands.Add(command);
+                    UpdateChangedEvent?.Invoke(Commands);
                 }
             }).Start();
         }
 
         private void FlushCommands()
         {
+            if (!SqlEnabled || SqlConnection == null || SqlConnection.State != ConnectionState.Open)
+                return;
+            
             try
             {
-                var successful = new List<SqlCommand>();
-                using (SqlConnection connection = new SqlConnection(ConnectionStringBuilder.ConnectionString))
+                var successful = new List<SerilizeSqlCommand>();
+                Commands = Commands.OrderBy(c => c.CommandAddTime).ToList();
+                foreach (SerilizeSqlCommand serilizedCommand in Commands)
                 {
-                    connection.Open();
-                    foreach (SqlCommand c in _commands)
+                    try
                     {
-                        UpdateChangedEvent?.Invoke(false);
-                        SqlCommand sqlCommand = c;
-                        sqlCommand.Connection = connection;
-                        int value = sqlCommand.ExecuteNonQuery();
-                        Debug.WriteLine($"Excecute: {value}");
-                        successful.Add(c);
+
+                        SqlCommand command = serilizedCommand.GetSqlCommand;
+                        command.Connection = SqlConnection;
+                        command.ExecuteNonQuery();
+                        successful.Add(serilizedCommand);
                     }
+                    catch (Exception e)
+                    {
+                        Logger.LogException(e, "SqlExeptions");
+                    }
+                    UpdateChangedEvent?.Invoke(Commands.Where(s => !successful.Contains(s)).ToList());
                 }
 
                 // there is no exceptions
-                foreach (SqlCommand success in successful)
+                foreach (SerilizeSqlCommand success in successful)
                 {
-                    _commands.Remove(success);
+                    Commands.Remove(success);
                 }
-
-                TimeData.TimeDataBase.CommandStrings = new List<string>();
-                _commands.ForEach(c => TimeData.TimeDataBase.CommandStrings.Add(c.CommandText));
-                
-                UpdateChangedEvent?.Invoke(_commands.Count == 0);
             }
             catch (Exception e)
             {
-                if (!Directory.Exists("log"))
-                    Directory.CreateDirectory("log");
-                
-                using (StreamWriter logger = new StreamWriter($"log\\{DateTime.Now.Date.Month}-{DateTime.Now.Date.Day}-{DateTime.Now.Date.Year}sqlerrors.log", true))
-                {
-                    logger.WriteLine($"{DateTime.Now}: {e.Message}");
-                }
+                Logger.LogException(e, "FlushExceptions");
             }
         }
 
@@ -294,141 +312,24 @@ namespace TheTimeApp.TimeData
 
         #region Message generators
 
-        #region unused
-
-        private bool ServerContainsDay(Day day)
-        {
-            if (AppSettings.SQLEnabled != "true")
-                return false;
-            
-            try
-            {
-                lock (SqlServerLock)
-                {
-                    using (SqlConnection con = new SqlConnection(ConnectionStringBuilder.ConnectionString))
-                    {
-                        con.Open();
-                        using (SqlCommand command = new SqlCommand($@"SELECT * FROM {CurrentUser} WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new DateTime().TimeOfDay + "')", con))
-                        {
-                            return command.ExecuteScalar() != null;
-                        }                            
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                throw;
-            }
-        }
-
-        private bool ServerContainsTime(Time time)
-        {
-            if (AppSettings.SQLEnabled != "true")
-                return false;
-            try
-            {
-                using (SqlCommand command = new SqlCommand($@"SELECT * FROM {CurrentUser} WHERE( Date = @Date AND TimeIn = @TimeIn AND 
-                                                                TimeOut = @TimeOut AND CONVERT(VARCHAR,Details) = @Details)"))// todo, must add connection using statemnt
-                {
-                    command.Parameters.AddWithValue("@Date", time.TimeIn.Date);
-                    command.Parameters.AddWithValue("@TimeIn", time.TimeIn.TimeOfDay);
-                    command.Parameters.AddWithValue("@TimeOut", time.TimeOut.TimeOfDay);
-                    command.Parameters.AddWithValue("@Details", "");
-                    return command.ExecuteScalar() != null;
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                throw;
-            }
-        }
-
-        public void PullFromServer(List<Day> days)
-        {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
-            lock (SqlServerLock)
-            {
-                Days = days;
-
-                // removes deleted from server
-                SqlCommand dayCommand = new SqlCommand($"SELECT * FROM {CurrentUser} WHERE (TimeIn = '" + new TimeSpan() + "' AND TimeOut = '" + new TimeSpan() + "')");// todo, must add connection using statement
-                SqlDataReader dayReader = dayCommand.ExecuteReader();
-                while (dayReader.Read())
-                {
-                    if (dayReader["TimeIn"] is TimeSpan && dayReader["TimeOut"] is TimeSpan)
-                    {
-                        if ((TimeSpan) dayReader["TimeIn"] == new TimeSpan() && (TimeSpan) dayReader["TimeOut"] == new TimeSpan()) // day header
-                        {
-                            bool contains = false;
-                            foreach (Day d in Days)
-                            {
-                                if (d.Date == (DateTime) dayReader["Date"] && (TimeSpan) dayReader["TimeIn"] == new TimeSpan())
-                                {
-                                    contains = true;
-                                    break;
-                                }
-                            }
-
-                            if (!contains)
-                            {
-                                days.Add(new Day((DateTime) dayReader["Date"]));
-                            }
-                        }
-                    }
-                }
-
-                SqlCommand timeCommand = new SqlCommand($"SELECT * FROM {CurrentUser} WHERE (TimeIn <> '" + new TimeSpan() + "' AND TimeOut <> '" + new TimeSpan() + "')");// todo must add connection using statement
-                SqlDataReader timeReader = timeCommand.ExecuteReader();
-                while (timeReader.Read())
-                {
-                    if (timeReader["TimeIn"] is TimeSpan && timeReader["TimeOut"] is TimeSpan)
-                    {
-                        bool contains = false;
-                        foreach (Time t in Times)
-                        {
-                            if (t.TimeIn.TimeOfDay == (TimeSpan) timeReader["TimeIn"] && t.TimeOut.TimeOfDay == (TimeSpan) timeReader["TimeOut"])
-                            {
-                                contains = true;
-                                break;
-                            }
-                        }
-
-                        if (!contains)
-                        {
-                            using (SqlCommand command = new SqlCommand($"DELETE FROM {CurrentUser} WHERE( TimeIn = '" + (TimeSpan) timeReader["TimeIn"] + "' AND TimeOut = '" + (TimeSpan) timeReader["TimeOut"] + "')"))
-                            {
-                                AddCommand(command);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-
-        #endregion
-        
         /// <summary>
         /// Delete sql table and repushes everything
         /// </summary>
         /// <param name="days"></param>
         public void RePushToServer(List<Day> days)
         {
-            if (AppSettings.SQLEnabled != "true")
+            if (!SqlEnabled)
             {
                 MessageBox.Show("SQL not enabled!");
                 return;
             }
+
             new Thread(() =>
             {
-                lock (SqlServerLock)
+                lock (SqlPushLock)
                 {
-                    AddCommand(new SqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U') DROP TABLE {CurrentUser}"));
-                    AddCommand(new SqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U')
+                    AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U') DROP TABLE {CurrentUser}"));
+                    AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U')
                                             CREATE TABLE {CurrentUser} (Date date, TimeIn time, TimeOut time, Details text)"));
                     ProgressChangedEvent?.Invoke(0);
                     for (float i = 0; i < days.Count; i++)
@@ -451,34 +352,30 @@ namespace TheTimeApp.TimeData
 
         public void RemoveWeek(DateTime date)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Remove week");
             var datesInWeek = DatesInWeek(date);
-            AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
+            AddCommand(new SerilizeSqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
                                       "' OR Date = '" + datesInWeek[5] + "' OR Date = '" + datesInWeek[6] + "')"));
         }
-        
+
         /// <summary>
         /// Inserts day into data base
         /// </summary>
         /// <param name="day"></param>
         public void InsertDay(Day day)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Insert day");
             if (day == null) return;
             try
             {
-                using (SqlCommand command = new SqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
+                using (SerilizeSqlCommand command = new SerilizeSqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
                 {
-                    command.Parameters.Add(new SqlParameter("Date", day.Date));
-                    command.Parameters.Add(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
-                    command.Parameters.Add(new SqlParameter("TimeOut", new DateTime().TimeOfDay));
-                    command.Parameters.Add(new SqlParameter("Details", day.Details));
+                    command.AddParameter(new SqlParameter("Date", day.Date));
+                    command.AddParameter(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
+                    command.AddParameter(new SqlParameter("TimeOut", new DateTime().TimeOfDay));
+                    command.AddParameter(new SqlParameter("Details", day.Details));
                     AddCommand(command);
                 }
             }
@@ -495,41 +392,25 @@ namespace TheTimeApp.TimeData
         /// <param name="date"></param>
         public void RemoveDay(DateTime date)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Remove day");
-            AddCommand(new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + date + "')"));
+            var command = new SerilizeSqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '{date}' )");
+            AddCommand(command);
         }
 
-        /// <summary>
-        /// Just removes the day row.
-        /// </summary>
-        /// <param name="day"></param>
-        public void RemoveDayHeader(Day day)
-        {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
-            Debug.WriteLine("Remove day header");
-            AddCommand(new SqlCommand($"DELETE FROM {CurrentUser} WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"));
-        }
-        
         public void InsertTime(Time time)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Insert time");
             if (time == null) return;
             try
             {
-                using (SqlCommand command = new SqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details) "))
+                using (SerilizeSqlCommand command = new SerilizeSqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
                 {
-                    command.Parameters.Add(new SqlParameter("Date", time.TimeIn.Date));
-                    command.Parameters.Add(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
-                    command.Parameters.Add(new SqlParameter("TimeOut", time.TimeOut.TimeOfDay));
-                    command.Parameters.Add(new SqlParameter("Details", ""));
+                    command.AddParameter(new SqlParameter("Date", time.TimeIn.Date));
+                    command.AddParameter(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
+                    command.AddParameter(new SqlParameter("TimeOut", time.TimeOut.TimeOfDay));
+                    command.AddParameter(new SqlParameter("Details", ""));
                     AddCommand(command);
                 }
             }
@@ -542,55 +423,49 @@ namespace TheTimeApp.TimeData
 
         public void RemoveTime(Time time)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Remove time");
-            SqlCommand command = new SqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' AND TimeOut = '{time.TimeOut.TimeOfDay}')");
+            SerilizeSqlCommand command = new SerilizeSqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' AND TimeOut = '{time.TimeOut.TimeOfDay}')");
             AddCommand(command);
         }
 
         public void UpdateDetails(Day day)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Update details");
-            if (day.Details == "" && day.Times.Count == 0)// day is removed in local data if no time and details == ""
+            if (day.Details == "" && day.Times.Count == 0) // day is removed in local data if no time and details == ""
             {
-                RemoveDayHeader(day);
+                RemoveDay(day.Date);
             }
             else
             {
-                using (SqlCommand cmd = new SqlCommand($"UPDATE {CurrentUser} SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"))
+                using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {CurrentUser} SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"))
                 {
-                    cmd.Parameters.AddWithValue("@Details", day.Details);
+                    cmd.AddParameter(new SqlParameter("Details", day.Details));
+                    cmd.Type = SerilizeSqlCommand.CommandType.UpdateDetails;
+                    
                     AddCommand(cmd);
-                }                    
+                }
             }
         }
-        
+
         public void SqlUpdateTime(Time prev, Time upd)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Update time");
-            using (SqlCommand cmd = new SqlCommand($"UPDATE {CurrentUser} SET Date = @Date, TimeIn = @TimeIn, TimeOut = @TimeOut WHERE( Date = '" + prev.TimeIn.Date + "' AND TimeIn = '" + prev.TimeIn.TimeOfDay + "' AND TimeOut = '" + prev.TimeOut.TimeOfDay + "')"))
+            using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {CurrentUser} SET Date = '{upd.TimeIn.Date}', TimeIn = '{upd.TimeIn.TimeOfDay}', TimeOut = '{upd.TimeOut.TimeOfDay}' WHERE( Date = '" + prev.TimeIn.Date + "' AND TimeIn = '" +prev.TimeIn.TimeOfDay + "' AND TimeOut = '" + prev.TimeOut.TimeOfDay + "')"))
             {
-                cmd.Parameters.AddWithValue("@Date", upd.TimeIn.Date);
-                cmd.Parameters.AddWithValue("@TimeIn", upd.TimeIn.TimeOfDay);
-                cmd.Parameters.AddWithValue("@TimeOut", upd.TimeOut.TimeOfDay);
+                cmd.Type = SerilizeSqlCommand.CommandType.UpdateTime;
+               
                 AddCommand(cmd);
-            }   
+            }
         }
-        
+
         #endregion
 
         private void OnTimeDataUpdate(List<Day> days)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
+            if (!SqlEnabled) return;
             Debug.WriteLine("SQL server time data update");
             TimeDateaUpdate?.Invoke(days); // Fire event for updating ui
         }
@@ -602,9 +477,7 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public List<Day> Load(string user)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return null;
-            
+            if (!SqlEnabled || SqlConnection == null) return null;
             var days = new List<Day>();
             lock (SqlServerLock)
             {
@@ -613,17 +486,13 @@ namespace TheTimeApp.TimeData
                 try
                 {
                     string query = $"SELECT * FROM {user}";
-                    using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
-                    {
-                        conn.Open();
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
+                        using (SqlCommand cmd = new SqlCommand(query, SqlConnection))
                         {
                             using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                             {
                                 da.Fill(temp);
                             }
                         }
-                    }
                 }
                 catch (Exception e)
                 {
@@ -636,15 +505,15 @@ namespace TheTimeApp.TimeData
                     for (int i = 0; i < temp.Rows.Count; i++)
                     {
                         DataRow row = temp.Rows[i];
-                        if (row.ItemArray[1] is TimeSpan)
+                        if (row.ItemArray[1] is TimeSpan span)
                         {
-                            if (((TimeSpan) row.ItemArray[1]) == new TimeSpan()) // if this is a day header
+                            if (span == new TimeSpan()) // if this is a day header
                             {
-                                if (row.ItemArray[0] is DateTime)
+                                if (row.ItemArray[0] is DateTime time)
                                 {
                                     if (!days.Exists(d => d.Date == (DateTime) row.ItemArray[0]))
                                     {
-                                        days.Add(new Day((DateTime) row.ItemArray[0]) {Details = row.ItemArray[3].ToString()});
+                                        days.Add(new Day(time) {Details = row.ItemArray[3].ToString()});
                                     }
                                 }
                             }
@@ -657,14 +526,12 @@ namespace TheTimeApp.TimeData
                     {
                         foreach (DataRow row in temp.Rows)
                         {
-                            if (row.ItemArray[0] is DateTime && row.ItemArray[1] is TimeSpan && row.ItemArray[2] is TimeSpan)
+                            if (row.ItemArray[0] is DateTime time && row.ItemArray[1] is TimeSpan intime && row.ItemArray[2] is TimeSpan outtime)
                             {
-                                if ((DateTime) row.ItemArray[0] == day.Date)
+                                if (time == day.Date)
                                 {
-                                    if (((TimeSpan) row.ItemArray[1]) != new TimeSpan()) // if this is not a day header
+                                    if (intime != new TimeSpan()) // if this is not a day header
                                     {
-                                        TimeSpan intime = (TimeSpan) row.ItemArray[1];
-                                        TimeSpan outtime = (TimeSpan) row.ItemArray[2];
                                         day.Times.Add(new Time(new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, intime.Hours, intime.Minutes, intime.Seconds),
                                             new DateTime(day.Date.Year, day.Date.Month, day.Date.Day, outtime.Hours, outtime.Minutes, outtime.Seconds)));
                                     }
@@ -694,7 +561,7 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public List<Day> LoadCurrentUser()
         {
-            if (AppSettings.SQLEnabled != "true")
+            if (!SqlEnabled)
             {
                 MessageBox.Show("SQL not enabled!");
                 return null;
@@ -706,52 +573,37 @@ namespace TheTimeApp.TimeData
 
         private void PullDataElapsed(object sender, ElapsedEventArgs e)
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
+            if (!SqlEnabled) return;
             Debug.WriteLine("Pull data eleapsed.");
             PullData();
             StartCyclicSqlRead();
         }
-        
+
         /// <summary>
         /// Pulls current user days from SQL
         /// </summary>
         public void PullData()
         {
-            if (AppSettings.SQLEnabled != "true")
-                return;
-            
-            if (!IsConnected)
-                return;
-            
+            if (!SqlEnabled || SqlConnection == null) return;
             Debug.WriteLine("Pull data from server");
-            lock (SqlPullLock)// must use seperate lock case sqlserverlock is used in loaddatafromserver()
+            lock (SqlPullLock) // must use seperate lock case sqlserverlock is used in loaddatafromserver()
             {
                 try
                 {
                     string query = $"SELECT * FROM {CurrentUser}";
-
-                    using (SqlConnection conn = new SqlConnection(ConnectionStringBuilder.ConnectionString))
+                    using (SqlCommand cmd = new SqlCommand(query, SqlConnection))
                     {
-                        conn.Open();
-
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
+                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                         {
-                            using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                            DataTable temp = new DataTable();
+                            da.Fill(temp);
+                            if (AreTablesTheSame(temp, _dataTable))
                             {
-                                DataTable temp = new DataTable();
-                                da.Fill(temp);
-                                
-                                if (AreTablesTheSame(temp, _dataTable))
-                                {
-                                    return;
-                                }
-
-                                _dataTable = temp.Copy();
-                                
-                                LoadCurrentUser();
+                                return;
                             }
+
+                            _dataTable = temp.Copy();
+                            LoadCurrentUser();
                         }
                     }
                 }
@@ -762,23 +614,20 @@ namespace TheTimeApp.TimeData
                 }
             }
         }
-        
+
         #endregion
-        
-        private static bool AreTablesTheSame( DataTable tbl1, DataTable tbl2)
+
+        private static bool AreTablesTheSame(DataTable tbl1, DataTable tbl2)
         {
-            if (tbl1.Rows.Count != tbl2.Rows.Count || tbl1.Columns.Count != tbl2.Columns.Count)
-                return false;
-
-
-            for ( int i = 0; i < tbl1.Rows.Count; i++)
+            if (tbl1.Rows.Count != tbl2.Rows.Count || tbl1.Columns.Count != tbl2.Columns.Count) return false;
+            for (int i = 0; i < tbl1.Rows.Count; i++)
             {
-                for ( int c = 0; c < tbl1.Columns.Count; c++)
+                for (int c = 0; c < tbl1.Columns.Count; c++)
                 {
-                    if (!Equals(tbl1.Rows[i][c] ,tbl2.Rows[i][c]))
-                        return false;
+                    if (!Equals(tbl1.Rows[i][c], tbl2.Rows[i][c])) return false;
                 }
             }
+
             return true;
         }
     }

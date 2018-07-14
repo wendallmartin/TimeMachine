@@ -27,9 +27,9 @@
                           <Image Source="C:/Users/Wendall Martin/Pictures/settings.png" Height="23"></Image>
                       </StackPanel>
                 </Button>
-        <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="367" Margin="0,0,0,21" >
-            <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="82" Canvas.Left="10"/>
-            <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
+        <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="Auto" Margin="0,0,0,21" >
+            <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="Auto" Canvas.Left="10"/>
+            <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="Auto"  Canvas.Right="10" />
         </Canvas>
         <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Margin="0,10,0,0" Click="btn_SelectedUser_Click"/>
         <ScrollViewer x:Name = "scroll_UserSelection" HorizontalAlignment="Center" Margin="0,35,0,0" VerticalAlignment="Top" Width="150" Visibility="Hidden" VerticalScrollBarVisibility="Auto">

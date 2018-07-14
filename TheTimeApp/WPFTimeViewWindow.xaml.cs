@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -59,6 +60,7 @@ namespace TheTimeApp
 
         private void InitTimes(bool scrolltoend = false)
         {
+            bool honest = File.Exists("honest.txt");
             StackPanel.Children.Clear();
             Day prev = new Day(new DateTime(2001, 1, 1));
             foreach (Day day in DataBase.TimeDataBase.Days)
@@ -70,7 +72,6 @@ namespace TheTimeApp
                         var cal = DateTimeFormatInfo.CurrentInfo.Calendar;
                         var d2 = day.Date.Date.AddDays(-1 * (int) cal.GetDayOfWeek(day.Date) + 1);
                         WpfWeekViewBar weekViewBar = new WpfWeekViewBar(d2, DataBase.TimeDataBase.HoursInWeek(d2));
-                        weekViewBar.Editable = true;
                         weekViewBar.DeleteWeekEvent += OnDeleteWeek;
                         weekViewBar.EmailWeekEvent += OnEmailWeek;
                         weekViewBar.PrintWeekEvent += OnPrintWeek;
@@ -80,14 +81,12 @@ namespace TheTimeApp
                 }
 
                 WpfDayViewBar datevViewBar = new WpfDayViewBar(day);
-                datevViewBar.Editable = true;
                 datevViewBar.DayClickEvent += OnDateViewClick;
                 datevViewBar.DeleteDayEvent += OnDeleteDayClick;
                 StackPanel.Children.Add(datevViewBar);
                 foreach (Time time in day.Times)
                 {
-                    WpfTimeViewBar timeView = new WpfTimeViewBar(time, _24Hour);
-                    timeView.Editable = true;
+                    WpfTimeViewBar timeView = new WpfTimeViewBar(time, _24Hour){ReadOnly = !honest};
                     timeView.TimeDeleteEvent += TimeDeleteTime;
                     timeView.TimeClickEvent += TimeViewTimeClick;
                     StackPanel.Children.Add(timeView);

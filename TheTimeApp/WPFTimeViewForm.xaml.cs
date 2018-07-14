@@ -32,12 +32,11 @@ namespace TheTimeApp
            
             DataBase.Load();
             
-            if (AppSettings.SQLEnabled == "true" && SqlServerHelper.IsConnected)
+            if (AppSettings.SQLEnabled == "true" && TimeData.TimeData.TimeDataBase.SqlHelper.IsConnected)
             {
                 DataBase.TimeDataBase.LoadCurrentUserFromSql();
                 DataBase.TimeDataBase.SetUpSqlServer();
                 ConnectionChanged(true);
-                UpdateChanged(true);
             }
 
             InitualizeView();
@@ -49,14 +48,14 @@ namespace TheTimeApp
         {
             DataBase.TimeDataBase.TimeDataUpdated += OnTimeDataUpdate;
             DataBase.TimeDataBase.ConnectionChangedEvent += ConnectionChanged;
-            DataBase.TimeDataBase.UpdateChangedEvent += UpdateChanged;
+            DataBase.TimeDataBase.SqlUpdateChanged += UpdateChanged;
         }
         
         private void UnAssociateSqlEvents()
         {
             DataBase.TimeDataBase.TimeDataUpdated = null;
             DataBase.TimeDataBase.ConnectionChangedEvent = null;
-            DataBase.TimeDataBase.UpdateChangedEvent = null;
+            DataBase.TimeDataBase.SqlUpdateChanged = null;
         }
 
         private void LoadUsers()
@@ -71,7 +70,7 @@ namespace TheTimeApp
                     Text = user.UserName, 
                     Width = 120, 
                     Height = 26, 
-                    Editable = false
+                    Deletable = false
                 };
                 userBar.SelectedEvent += OnUserSelected;
                 pnl_UserSelection.Children.Add(userBar);
@@ -84,7 +83,7 @@ namespace TheTimeApp
             scroll_UserSelection.Visibility = Visibility.Hidden;
             
             UnAssociateSqlEvents();
-            bool connectedAndEnabled = AppSettings.SQLEnabled == "true" && SqlServerHelper.IsConnected; 
+            bool connectedAndEnabled = AppSettings.SQLEnabled == "true" && DataBase.TimeDataBase.SqlHelper.IsConnected; 
             if (connectedAndEnabled)
             {
                 DataBase.TimeDataBase.CurrentUserName = view.Text;
@@ -93,7 +92,6 @@ namespace TheTimeApp
 
             }
             ConnectionChanged(connectedAndEnabled);
-            UpdateChanged(connectedAndEnabled);            
             
             AssociateSqlEvents();
             InitualizeView();
@@ -115,18 +113,18 @@ namespace TheTimeApp
             Dispatcher.Invoke(InitualizeView);
         }
 
-        private void UpdateChanged(bool connected)
+        private void UpdateChanged(List<SerilizeSqlCommand> sqlBehind)
         {
             Dispatcher.Invoke(() =>
             {
-                if (connected)
+                if (sqlBehind.Count == 0)
                 {
                     lbl_UpToDate.Content = "Up to date";
                     lbl_UpToDate.Foreground = Brushes.Green;
                 }
                 else
                 {
-                    lbl_UpToDate.Content = "NOT up to date";
+                    lbl_UpToDate.Content = $"NOT up to date: {sqlBehind.Count}";
                     lbl_UpToDate.Foreground = Brushes.Red;
                 }
             });
@@ -168,13 +166,13 @@ namespace TheTimeApp
                 {
                     var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
                     var d2 = day.Date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(day.Date) + 1);
-                    WpfWeekViewBar weekViewBar = new WpfWeekViewBar( d2, DataBase.TimeDataBase.HoursInWeek(d2)){Editable = false};
+                    WpfWeekViewBar weekViewBar = new WpfWeekViewBar( d2, DataBase.TimeDataBase.HoursInWeek(d2)){Deletable = false};
                     weekViewBar.EmailWeekEvent += OnEmailWeek;
                     weekViewBar.PrintWeekEvent += OnPrintWeek;
                     weekViewBar.PreviewWeekEvent += OnPreviewWeek;
                     StackPanel.Children.Add(weekViewBar);
                 }
-                WpfDayViewBar datevViewBar = new WpfDayViewBar(day){Editable = false};
+                WpfDayViewBar datevViewBar = new WpfDayViewBar(day){Deletable = false};
                 datevViewBar.DayClickEvent += OnDateViewDayClick;
                 StackPanel.Children.Add(datevViewBar);
 

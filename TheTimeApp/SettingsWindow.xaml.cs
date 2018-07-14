@@ -61,7 +61,7 @@ namespace TheTimeApp
                     Text = user.UserName, 
                     Width = 220, 
                     Height = 25, 
-                    Editable = true
+                    Deletable = true
                 };
                 userbar.DeleteEvent += OnDeleteUser;
                 StackPanel.Children.Add(userbar);

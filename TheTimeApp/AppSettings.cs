@@ -19,7 +19,7 @@ namespace TheTimeApp
             get{
                 if (ReadValueFromXML("uwnmnnvvkgsfghks", false) == "")
                 {
-                    WriteValueTOXML("uwnmnnvvkgsfghks", "time.dtf", false);
+                    WriteValueTOXML("uwnmnnvvkgsfghks", "time.tdf", false);
                 }
                 return ReadValueFromXML("uwnmnnvvkgsfghks", false);
             }
