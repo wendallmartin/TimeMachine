@@ -41,7 +41,9 @@ namespace TheTimeApp.Controls
 
             SelectedEvent += OnMouseClick;
             DeleteEvent += OnDeleteClick;
-            
+
+            Width = 270;
+
         }
 
         private void OnDeleteClick(ViewBar viewBar)
@@ -63,6 +65,11 @@ namespace TheTimeApp.Controls
         public Time GetTime()
         {
             return _time;
+        }
+
+        public double GetKey()
+        {
+            return _time.Key;
         }
     }
 }

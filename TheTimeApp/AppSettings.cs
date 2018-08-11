@@ -1,119 +1,124 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Xml;
 using System.Xml.Linq;
 using DataEncrypterDecrypter;
+using NLog;
 
 namespace TheTimeApp
 {
     public class AppSettings
     {
-        private readonly Rfc2898DeriveBytes _DeriveBytes;
-        private static readonly byte[] _InitVectorBytes;
-        private static readonly byte[] _KeyBytes;
-        private static string settingsFilePath = "settings.xml";
+        private const string SettingsFilePath = "settings.xml";
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
         
         public static string DataPath
         {
             get{
-                if (ReadValueFromXML("uwnmnnvvkgsfghks", false) == "")
+                if (ReadValueFromXml("uwnmnnvvkgsfghks", false) == "")
                 {
-                    WriteValueTOXML("uwnmnnvvkgsfghks", "time.tdf", false);
+                    WriteValueToxml("uwnmnnvvkgsfghks", "time.tdf", false);
                 }
-                return ReadValueFromXML("uwnmnnvvkgsfghks", false);
+                return ReadValueFromXml("uwnmnnvvkgsfghks", false);
             }
-            set{ WriteValueTOXML("uwnmnnvvkgsfghks", value, false); }
+            set => WriteValueToxml("uwnmnnvvkgsfghks", value, false);
         }
         public static string FromAddress
         {
-            get { return ReadValueFromXML("ufhgawh"); }
-            set { WriteValueTOXML("ufhgawh", value); }
+            get => ReadValueFromXml("ufhgawh");
+            set => WriteValueToxml("ufhgawh", value);
         }
 
         public static string FromUser
         {
-            get { return ReadValueFromXML("klaosof"); }
-            set { WriteValueTOXML("klaosof", value); }
+            get => ReadValueFromXml("klaosof");
+            set => WriteValueToxml("klaosof", value);
         }
 
         public static string FromPass
         {
-            get { return ReadValueFromXML("wasllefa"); }
-            set { WriteValueTOXML("wasllefa", value); }
+            get => ReadValueFromXml("wasllefa");
+            set => WriteValueToxml("wasllefa", value);
         }
         public static string FromPort
         {
-            get { return ReadValueFromXML("adjflegad"); }
-            set { WriteValueTOXML("adjflegad", value); }
+            get => ReadValueFromXml("adjflegad");
+            set => WriteValueToxml("adjflegad", value);
         }
         public static string EmailHost
         {
-            get { return ReadValueFromXML("slllejfas"); }
-            set { WriteValueTOXML("slllejfas", value); }
+            get => ReadValueFromXml("slllejfas");
+            set => WriteValueToxml("slllejfas", value);
         }
         public static string ToAddress
         {
-            get { return ReadValueFromXML("aaljgjlkej"); }
-            set { WriteValueTOXML("aaljgjlkej", value); }
+            get => ReadValueFromXml("aaljgjlkej");
+            set => WriteValueToxml("aaljgjlkej", value);
         }
         public static string MilitaryTime
         {
-            get { return ReadValueFromXML("keslkwkjw"); }
-            set { WriteValueTOXML("keslkwkjw", value); }
+            get => ReadValueFromXml("keslkwkjw");
+            set => WriteValueToxml("keslkwkjw", value);
         }
 
         public static string SslEmail
         {
-            get { return ReadValueFromXML("ljowoiislo"); }
-            set { WriteValueTOXML("ljowoiislo", value); }
+            get => ReadValueFromXml("ljowoiislo");
+            set => WriteValueToxml("ljowoiislo", value);
         }
 
-        public static string SQLDataSource
+        public static string AzureDateSource
         {
-            get{ return ReadValueFromXML("kwkvuesav");}
-            set{ WriteValueTOXML("kwkvuesav", value); }
+            get => ReadValueFromXml("kwkvuesav");
+            set => WriteValueToxml("kwkvuesav", value);
         }
         
-        public static string SQLPortNumber
+        public static string SqlPortNumber
         {
-            get{ return ReadValueFromXML("dhjahhdjh");}
-            set{ WriteValueTOXML("dhjahhdjh", value); }
+            get => ReadValueFromXml("dhjahhdjh");
+            set => WriteValueToxml("dhjahhdjh", value);
         }
 
-        public static string SQLUserId
+        public static string AzureUser
         {
-            get { return ReadValueFromXML("aslejfooowgh"); }
-            set { WriteValueTOXML("aslejfooowgh", value); }
+            get => ReadValueFromXml("aslejfooowgh");
+            set => WriteValueToxml("aslejfooowgh", value);
         }
 
-        public static string SQLPassword
+        public static string AzurePassword
         {
-            get { return ReadValueFromXML("lsoenwowdjf"); }
-            set { WriteValueTOXML("lsoenwowdjf", value); }
+            get => ReadValueFromXml("lsoenwowdjf");
+            set => WriteValueToxml("lsoenwowdjf", value);
         }
 
-        public static string SQLCatelog
+        public static string AzureCateloge
         {
-            get { return ReadValueFromXML("lafjedoioowowfowof"); }
-            set { WriteValueTOXML("lafjedoioowowfowof", value); }
+            get => ReadValueFromXml("lafjedoioowowfowof");
+            set => WriteValueToxml("lafjedoioowowfowof", value);
         }
 
-        public static string SQLEnabled
+        public static string SqlEnabled
         {
-            get{return ReadValueFromXML("dkjfgjpwhjpo");}
-            set{ WriteValueTOXML("dkjfgjpwhjpo", value); }
+            get => ReadValueFromXml("dkjfgjpwhjpo");
+            set => WriteValueToxml("dkjfgjpwhjpo", value);
+        }
+
+        public static string SqlType
+        {
+            get => ReadValueFromXml("jgfhgjasgjfajfghj");
+            set => WriteValueToxml("jgfhgjasgjfajfghj", value);
         }
 
         public static string MainPermission
         {
-            get { return ReadValueFromXML("dlajwugpasdh"); }
-            set { WriteValueTOXML("dlajwugpasdh", value); }
+            get => ReadValueFromXml("dlajwugpasdh");
+            set => WriteValueToxml("dlajwugpasdh", value);
         }
 
         public static void Validate()
         {
-            if (!File.Exists(settingsFilePath))
+            if (!File.Exists(SettingsFilePath))
             {
                 SetSettingsToDefault();
             }
@@ -121,7 +126,7 @@ namespace TheTimeApp
 
         private static void SetSettingsToDefault()
         {
-            XmlTextWriter xmlWriter = new XmlTextWriter(settingsFilePath, null);
+            XmlTextWriter xmlWriter = new XmlTextWriter(SettingsFilePath, null);
             xmlWriter.WriteStartDocument();
             xmlWriter.WriteStartElement("settings");
 
@@ -130,7 +135,7 @@ namespace TheTimeApp
             xmlWriter.IndentChar = ' ';
 
             xmlWriter.WriteStartElement("uwnmnnvvkgsfghks");
-            xmlWriter.WriteValue("time.dtf");
+            xmlWriter.WriteValue("time.sqlite");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("ufhgawh");
@@ -188,6 +193,10 @@ namespace TheTimeApp
             xmlWriter.WriteStartElement("dkjfgjpwhjpo");
             xmlWriter.WriteValue("false");
             xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("jgfhgjasgjfajfghj");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("dlajwugpasdh");
             xmlWriter.WriteValue("read");
@@ -201,38 +210,49 @@ namespace TheTimeApp
         /// Reads the data of specified node provided in the parameter
         /// </summary>
         /// <param name="name">Node to be read</param>
+        /// <param name="encrypted"></param>
         /// <returns>string containing the value</returns>
-        private static string ReadValueFromXML(string name, bool encrypted = true)
+        private static string ReadValueFromXml(string name, bool encrypted = true)
         {
             try
             {
-                XDocument doc = XDocument.Load(settingsFilePath);
+                XDocument doc = XDocument.Load(SettingsFilePath);
                 foreach (XElement element in doc.Descendants().Where(e => e.Name == name))
                 {
                     string value = element.Value;
-                    return encrypted ? CryptoEngine.Decrypt(element.Value, "some_guffy_thin4") : value;
+                    if (string.IsNullOrEmpty(element.Value))
+                    {
+                        return string.Empty;
+                    }
+                    else
+                    {
+                        return encrypted ? CryptoEngine.Decrypt(element.Value, "some_guffy_thin4") : value;    
+                    }
                 }
                 return string.Empty;
             }
-            catch(System.Exception e)
+            catch(Exception e)
             {
-                //do some error logging here. Leaving for you to do 
-                return string.Empty;
+                Log.Info(e.ToString);
+                throw;
             }
         }
         
         /// <summary>
         /// Writes the updated value to XML
         /// </summary>
-        /// <param name="pstrValueToRead">Node of XML to read</param>
-        /// <param name="pstrValueToWrite">Value to write to that node</param>
         /// <returns></returns>
-        private static bool WriteValueTOXML(string name, string value, bool encrypted = true)
+        private static void WriteValueToxml(string name, string value, bool encrypted = true)
         {
             try
             {
-                XDocument doc = XDocument.Load(settingsFilePath);
-
+                XDocument doc = XDocument.Load(SettingsFilePath);
+                
+                if (doc.Element("settings") == null)
+                {
+                    throw new Exception("Settings corrupted!!!");    
+                }
+                
                 bool exist = false;
                 foreach (XElement element in doc.Descendants().Where(e => e.Name == name))
                 {
@@ -241,17 +261,15 @@ namespace TheTimeApp
                 }
                 if (!exist)
                 {
-                    doc.Element("settings").Add(new XElement(name, encrypted ? CryptoEngine.Encrypt(value, "some_guffy_thin4") : value));
+                    doc.Element("settings")?.Add(new XElement(name, encrypted ? CryptoEngine.Encrypt(value, "some_guffy_thin4") : value));
                 }
 
-                doc.Save(settingsFilePath);
-                return true;
+                doc.Save(SettingsFilePath);
             }
-            catch
+            catch(Exception e)
             {
-                //properly you need to log the exception here. But as this is just an
-                //example, I am not doing that. 
-                return false;
+                Log.Info(e.ToString);
+                throw;
             }
         }
     }

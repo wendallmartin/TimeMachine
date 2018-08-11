@@ -13,7 +13,7 @@ using DataBase = TheTimeApp.TimeData.TimeData;
 
 namespace TheTimeApp.TimeData
 {
-    public class SqlServerHelper
+    public class SqlServerHelper : TimeServer
     {
         private static readonly object IsConnectedLock = new object();
         private static readonly object SqlServerLock = new object();
@@ -55,13 +55,12 @@ namespace TheTimeApp.TimeData
         public SqlConnectionStringBuilder ConnectionStringBuilder { get; set; }
         
         public int Port { get; set; }
-        
+        public override List<string> UserNames { get; }
+        public override string SqlCurrentUser { get; set; }
         public SqlMode SqlMode { get; set; }
         
         // your data table
         private DataTable _dataTable = new DataTable();
-
-        public bool SqlEnabled { get; set; } = true;
 
         /// <summary>
         /// If connection == null we are not
@@ -89,18 +88,28 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        private string CurrentUser => ToTableName(DataBase.TimeDataBase.CurrentUserName);
+        private string CurrentUserName { get; set; }
 
         /// <summary>
         /// Returns user name converted to table name.
         /// </summary>
         /// <param name="username"></param>
         /// <returns></returns>
-        private string ToTableName(string username)
+        private string ToTimeTableName(string username)
         {
             return username.Replace(' ', '_') + "_TimeTable";
         }
 
+        /// <summary>
+        /// Returns user name converted to table name.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        private string ToDayTableName(string username)
+        {
+            return username.Replace(' ', '_') + "_DayTable";
+        }
+        
         public SqlServerHelper(SqlConnectionStringBuilder conStringBuilder, SqlMode sqlMode, List<SerilizeSqlCommand> commands)
         {
             ConnectionStringBuilder = conStringBuilder;
@@ -112,19 +121,6 @@ namespace TheTimeApp.TimeData
             
             _connectionRetry.Elapsed += OnConnectionRetry;
             _connectionRetry.Enabled = true;
-            if (SqlMode.Write && SqlEnabled)
-            {
-                new Thread(TestConnection).Start();
-                CreateUser(TimeData.TimeDataBase.CurrentUserName);
-            }
-
-            // only start sql cyclic read if sql enabled and MainPermission is 'read'
-            if (SqlEnabled && SqlMode.Read && IsConnected)
-            {
-                _cylcicSqlRead.Elapsed += PullDataElapsed;
-                _cylcicSqlRead.AutoReset = false;
-                StartCyclicSqlRead();
-            }
         }
 
         #region Helper functions
@@ -209,56 +205,12 @@ namespace TheTimeApp.TimeData
 
         #region SQL message pump
 
-        public List<string> GetAllTables()
-        {
-            if (!SqlEnabled || SqlConnection == null)
-                return null;
-            var tables = new List<string>();
-            
-            DataTable names = SqlConnection.GetSchema("Tables");
-            foreach (DataRow dataRow in names.Rows)
-            {
-                string tableName = dataRow[2].ToString();
-                if (tableName.Contains("_TimeTable"))
-                {
-                    tableName = tableName.Replace("_TimeTable", "");
-                    tables.Add(tableName);
-                }
-            }
-
-            return tables;
-        }
-
-        /// <summary>
-        /// Creates user table if it doesn't exist
-        /// EXCEPTS USER NAME NOT USER TABLE NAME!!
-        /// </summary>
-        /// <param name="user"></param>
-        public void CreateUser(string user)
-        {
-            if (!SqlEnabled) return;
-            AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(user)}')
-                                            CREATE TABLE {ToTableName(user)} (Date date, TimeIn time, TimeOut time, Details text)"));
-        }
-
-        /// <summary>
-        /// Deletes user table if it exist
-        /// EXCEPTS USER NAME NOT USER TABLE NAME!!
-        /// </summary>
-        /// <param name="username"></param>
-        public void RemoveUser(string username)
-        {
-            if (!SqlEnabled) return;
-            AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToTableName(username)}' AND xtype='U') DROP TABLE {ToTableName(username)}"));
-        }
-
         /// <summary>
         /// Add command to list and trys to flush commands
         /// </summary>
         /// <param name="command"></param>
         private void AddCommand(SerilizeSqlCommand command)
         {
-            if (!SqlEnabled) return;
             command.CommandAddTime = DateTime.Now;
             new Thread(() =>
             {
@@ -272,9 +224,6 @@ namespace TheTimeApp.TimeData
 
         private void FlushCommands()
         {
-            if (!SqlEnabled || SqlConnection == null || SqlConnection.State != ConnectionState.Open)
-                return;
-            
             try
             {
                 var successful = new List<SerilizeSqlCommand>();
@@ -311,6 +260,147 @@ namespace TheTimeApp.TimeData
         #endregion
 
         #region Message generators
+        
+        public override bool IsClockedIn()
+        {
+            Debug.WriteLine("IsClockedIn:");
+            object timein;
+            object timeout;
+
+            using(SqlCommand selectMaxIn = new SqlCommand($"Select Max(TimeIn) From {ToTimeTableName(CurrentUserName)}", _connection))
+            {
+                timein = selectMaxIn.ExecuteScalar();
+                if (timein.ToString() == "")
+                {
+                    Debug.Write(" false");
+                    return false;
+                }
+            }
+
+            using (SqlCommand selectMaxOut = new SqlCommand($"Select Max(TimeOut) From {ToTimeTableName(CurrentUserName)}", _connection))
+            {
+                timeout = selectMaxOut.ExecuteScalar();
+                if (timeout.ToString() == "")
+                {
+                    Debug.Write(" false");
+                    return false;
+                }
+            }
+            
+            Debug.Write(timein.ToString() == timeout.ToString());
+            return timein.ToString() == timeout.ToString();
+        }
+
+        public override void AddUser(User user)
+        {
+            string dayTable = ToDayTableName(user.UserName);
+            string timeTable = ToTimeTableName(user.UserName);
+            
+            AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{UserTable}')
+                                            CREATE TABLE {UserTable} (Name text, Rate text, Unit text, Active text)"));
+            
+            AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{dayTable}')
+                                            CREATE TABLE {dayTable} (Date date, TimeIn time, TimeOut time)"));
+            
+            AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{timeTable}')
+                                            CREATE TABLE {timeTable} (Date date, Details text)"));
+        }
+
+        public override int DeleteUser(string username)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void AddDay(Day day)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int DeleteDay(DateTime date)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int DeleteRange(DateTime start, DateTime end)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void PunchIn()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void PunchOut()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Day CurrentDay()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int DeleteTime(double key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int UpdateDetails(DateTime date, string details)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int UpdateTime(double key, Time upd)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string GetRangeAsText(DateTime dateA, DateTime dateB)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public List<string> GetAllTables()
+        {
+            var tables = new List<string>();
+            
+            DataTable names = SqlConnection.GetSchema("Tables");
+            foreach (DataRow dataRow in names.Rows)
+            {
+                string tableName = dataRow[2].ToString();
+                if (tableName.Contains("_TimeTable"))
+                {
+                    tableName = tableName.Replace("_TimeTable", "");
+                    tables.Add(tableName);
+                }
+            }
+
+            return tables;
+        }
+
+        /// <summary>
+        /// Creates user table if it doesn't exist
+        /// EXCEPTS USER NAME NOT USER TABLE NAME!!
+        /// </summary>
+        /// <param name="user"></param>
+        public void CreateUser(string user)
+        {
+
+        }
+
+        /// <summary>
+        /// Deletes user table if it exist
+        /// EXCEPTS USER NAME NOT USER TABLE NAME!!
+        /// </summary>
+        /// <param name="username"></param>
+        public void RemoveUser(string username)
+        {
+            AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToTimeTableName(username)}' AND xtype='U') DROP TABLE {ToTimeTableName(username)}"));
+            
+            AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToDayTableName(username)}' AND xtype='U') DROP TABLE {ToDayTableName(username)}"));
+        }
+
 
         /// <summary>
         /// Delete sql table and repushes everything
@@ -318,19 +408,13 @@ namespace TheTimeApp.TimeData
         /// <param name="days"></param>
         public void RePushToServer(List<Day> days)
         {
-            if (!SqlEnabled)
-            {
-                MessageBox.Show("SQL not enabled!");
-                return;
-            }
-
             new Thread(() =>
             {
                 lock (SqlPushLock)
                 {
-                    AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U') DROP TABLE {CurrentUser}"));
-                    AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{CurrentUser}' AND xtype='U')
-                                            CREATE TABLE {CurrentUser} (Date date, TimeIn time, TimeOut time, Details text)"));
+                    AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToTimeTableName(CurrentUserName)}' AND xtype='U') DROP TABLE {ToTimeTableName(CurrentUserName)}"));
+                    AddCommand(new SerilizeSqlCommand($@"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{ToTimeTableName(CurrentUserName)}' AND xtype='U')
+                                            CREATE TABLE {ToTimeTableName(CurrentUserName)} (Date date, TimeIn time, TimeOut time, Details text)"));
                     ProgressChangedEvent?.Invoke(0);
                     for (float i = 0; i < days.Count; i++)
                     {
@@ -352,11 +436,12 @@ namespace TheTimeApp.TimeData
 
         public void RemoveWeek(DateTime date)
         {
-            if (!SqlEnabled) return;
             Debug.WriteLine("Remove week");
             var datesInWeek = DatesInWeek(date);
-            AddCommand(new SerilizeSqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
+            AddCommand(new SerilizeSqlCommand($@"DELETE FROM {ToTimeTableName(CurrentUserName)} WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
                                       "' OR Date = '" + datesInWeek[5] + "' OR Date = '" + datesInWeek[6] + "')"));
+            AddCommand(new SerilizeSqlCommand($@"DELETE FROM {ToDayTableName(CurrentUserName)} WHERE( Date = '" + datesInWeek[0] + "' OR Date = '" + datesInWeek[1] + "' OR Date = '" + datesInWeek[2] + "' OR Date = '" + datesInWeek[3] + "' OR Date = '" + datesInWeek[4] +
+                                              "' OR Date = '" + datesInWeek[5] + "' OR Date = '" + datesInWeek[6] + "')"));
         }
 
         /// <summary>
@@ -365,12 +450,20 @@ namespace TheTimeApp.TimeData
         /// <param name="day"></param>
         public void InsertDay(Day day)
         {
-            if (!SqlEnabled) return;
             Debug.WriteLine("Insert day");
             if (day == null) return;
             try
             {
-                using (SerilizeSqlCommand command = new SerilizeSqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
+                using (SerilizeSqlCommand command = new SerilizeSqlCommand($"INSERT INTO {ToTimeTableName(CurrentUserName)} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
+                {
+                    command.AddParameter(new SqlParameter("Date", day.Date));
+                    command.AddParameter(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
+                    command.AddParameter(new SqlParameter("TimeOut", new DateTime().TimeOfDay));
+                    command.AddParameter(new SqlParameter("Details", day.Details));
+                    AddCommand(command);
+                }
+                
+                using (SerilizeSqlCommand command = new SerilizeSqlCommand($"INSERT INTO {ToDayTableName(CurrentUserName)} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
                 {
                     command.AddParameter(new SqlParameter("Date", day.Date));
                     command.AddParameter(new SqlParameter("TimeIn", new DateTime().TimeOfDay));
@@ -394,7 +487,7 @@ namespace TheTimeApp.TimeData
         {
             if (!SqlEnabled) return;
             Debug.WriteLine("Remove day");
-            var command = new SerilizeSqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '{date}' )");
+            var command = new SerilizeSqlCommand($@"DELETE FROM {ToDayTableName(CurrentUserName)} WHERE( Date = '{date}' )");
             AddCommand(command);
         }
 
@@ -405,7 +498,7 @@ namespace TheTimeApp.TimeData
             if (time == null) return;
             try
             {
-                using (SerilizeSqlCommand command = new SerilizeSqlCommand($"INSERT INTO {CurrentUser} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
+                using (SerilizeSqlCommand command = new SerilizeSqlCommand($"INSERT INTO {ToTimeTableName(CurrentUserName)} VALUES(@Date, @TimeIn, @TimeOut, @Details)"))
                 {
                     command.AddParameter(new SqlParameter("Date", time.TimeIn.Date));
                     command.AddParameter(new SqlParameter("TimeIn", time.TimeIn.TimeOfDay));
@@ -425,7 +518,7 @@ namespace TheTimeApp.TimeData
         {
             if (!SqlEnabled) return;
             Debug.WriteLine("Remove time");
-            SerilizeSqlCommand command = new SerilizeSqlCommand($@"DELETE FROM {CurrentUser} WHERE( Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' AND TimeOut = '{time.TimeOut.TimeOfDay}')");
+            SerilizeSqlCommand command = new SerilizeSqlCommand($@"DELETE FROM {ToTimeTableName(CurrentUserName)} WHERE( Date = '{time.TimeIn.Date}' AND TimeIn = '{time.TimeIn.TimeOfDay}' AND TimeOut = '{time.TimeOut.TimeOfDay}')");
             AddCommand(command);
         }
 
@@ -439,7 +532,7 @@ namespace TheTimeApp.TimeData
             }
             else
             {
-                using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {CurrentUser} SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"))
+                using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {ToDayTableName(CurrentUserName)} SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"))
                 {
                     cmd.AddParameter(new SqlParameter("Details", day.Details));
                     cmd.Type = SerilizeSqlCommand.CommandType.UpdateDetails;
@@ -453,7 +546,7 @@ namespace TheTimeApp.TimeData
         {
             if (!SqlEnabled) return;
             Debug.WriteLine("Update time");
-            using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {CurrentUser} SET Date = '{upd.TimeIn.Date}', TimeIn = '{upd.TimeIn.TimeOfDay}', TimeOut = '{upd.TimeOut.TimeOfDay}' WHERE( Date = '" + prev.TimeIn.Date + "' AND TimeIn = '" +prev.TimeIn.TimeOfDay + "' AND TimeOut = '" + prev.TimeOut.TimeOfDay + "')"))
+            using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {ToTimeTableName(CurrentUserName)} SET Date = '{upd.TimeIn.Date}', TimeIn = '{upd.TimeIn.TimeOfDay}', TimeOut = '{upd.TimeOut.TimeOfDay}' WHERE( Date = '" + prev.TimeIn.Date + "' AND TimeIn = '" +prev.TimeIn.TimeOfDay + "' AND TimeOut = '" + prev.TimeOut.TimeOfDay + "')"))
             {
                 cmd.Type = SerilizeSqlCommand.CommandType.UpdateTime;
                
@@ -566,7 +659,7 @@ namespace TheTimeApp.TimeData
                 MessageBox.Show("SQL not enabled!");
                 return null;
             }
-            return Load(CurrentUser);
+            return Load(ToTimeTableName(CurrentUserName));
         }
 
         #region pull data cyclic read
@@ -590,7 +683,7 @@ namespace TheTimeApp.TimeData
             {
                 try
                 {
-                    string query = $"SELECT * FROM {CurrentUser}";
+                    string query = $"SELECT * FROM {ToTimeTableName(CurrentUserName)}";
                     using (SqlCommand cmd = new SqlCommand(query, SqlConnection))
                     {
                         using (SqlDataAdapter da = new SqlDataAdapter(cmd))

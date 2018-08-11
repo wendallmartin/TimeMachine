@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheTimeApp", "TheTimeApp\TheTimeApp.csproj", "{980A9E4D-F83C-4EB2-8A70-318F75B8491F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{A5090ACC-6136-46A1-8869-706B4C76CF6F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{980A9E4D-F83C-4EB2-8A70-318F75B8491F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{980A9E4D-F83C-4EB2-8A70-318F75B8491F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{980A9E4D-F83C-4EB2-8A70-318F75B8491F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5090ACC-6136-46A1-8869-706B4C76CF6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5090ACC-6136-46A1-8869-706B4C76CF6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5090ACC-6136-46A1-8869-706B4C76CF6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5090ACC-6136-46A1-8869-706B4C76CF6F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

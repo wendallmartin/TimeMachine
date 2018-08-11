@@ -1,5 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <iasettings>
+<appSettings>
+    <add key="Stackify.ApiKey" value="3Zp3Xb9Th4Iw4Oh0Xu9Eo8Wi1Bu5Vk4Vd3Sq8Vs" />
+    <add key="Stackify.AppName" value="TheTimeApp"/> <!-- optional - will be inferred by Stackify if this is running on a monitored server -->
+    <add key="Stackify.Environment" value="Windows"/> <!-- optional - will be inferred by Stackify if this is running on a monitored server -->
+</appSettings>
   <projectproperties>
     <manufacturer>Wendall Martin</manufacturer>
     <productname>TheTimeApp</productname>

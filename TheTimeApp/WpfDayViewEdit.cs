@@ -26,7 +26,7 @@ namespace TheTimeApp
 
             if (AppSettings.MainPermission == "write")
             {
-                TimeData.TimeData.TimeDataBase.UpdateDetails(_day, dayDetails.Text);
+                LocalSql.Instance.UpdateDetails(_day.Date, dayDetails.Text);
             }
         }
     }

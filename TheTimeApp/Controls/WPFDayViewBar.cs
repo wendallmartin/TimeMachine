@@ -13,9 +13,9 @@ namespace TheTimeApp.Controls
     /// </summary>
     public class WpfDayViewBar : ViewBar
     {
-        private readonly DateTime _date;
+        private readonly Day _day;
 
-        public delegate void DayDelegate(DateTime date);
+        public delegate void DayDelegate(Day day);
 
         public event DayDelegate DeleteDayEvent;
 
@@ -26,17 +26,18 @@ namespace TheTimeApp.Controls
             BrushSelected = Brushes.LightSkyBlue;
             BrushUnselected = Brushes.CadetBlue;
             
-            _date = day.Date;
+            _day = day;
             
-            Text = _date.Month + "//" + _date.Day + "//" + _date.Year + "                                              Hours: " + day.HoursAsDec();
+            Text = _day.Date.Month + "//" + _day.Date.Day + "//" + _day.Date.Year + "                                              Hours: " + day.HoursAsDec();
 
             DeleteEvent += OnDeleteDay;
             SelectedEvent += OnDayDayClick;
+            Width = 280;
         }
 
         private void OnDayDayClick(ViewBar view)
         {
-            DayClickEvent?.Invoke(_date);
+            DayClickEvent?.Invoke(_day);
         }
 
         private void OnDeleteDay(ViewBar viewBar)
@@ -45,7 +46,7 @@ namespace TheTimeApp.Controls
 
             if (MessageBox.Show("Time will be deleted permenetly!", "Warning", button) == (MessageBoxResult) DialogResult.Yes)
             {
-                DeleteDayEvent?.Invoke(_date);
+                DeleteDayEvent?.Invoke(_day);
             }
         }
     }

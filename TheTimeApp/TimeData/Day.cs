@@ -19,14 +19,14 @@ namespace TheTimeApp.TimeData
 
         public Day(DateTime date)
         {
-            _date = date;
+            _date = date.Date;
             _details = "";
             times = new List<Time>();
         }
 
         public DateTime Date
         {
-            get{ return _date; }
+            get{ return _date.Date; }
             set{ _date = value; }
         }
 

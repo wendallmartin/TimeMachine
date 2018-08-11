@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Globalization;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading;
+using System.Windows;
 using System.Windows.Forms;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
@@ -23,6 +25,7 @@ namespace TheTimeApp
     public partial class WpfTimeViewWindow
     {
         private bool _24Hour;
+        private DateTime _baseDate;
 
         TimeViewEdit _timeedit;
 
@@ -30,7 +33,7 @@ namespace TheTimeApp
         {
             InitializeComponent();
             
-            _24Hour = AppSettings.MilitaryTime != "true";
+            _24Hour = AppSettings.MilitaryTime == "true";
 
             if (_24Hour)
             {
@@ -42,44 +45,31 @@ namespace TheTimeApp
                 TwelveHourButton.Background = Brushes.LightSkyBlue;
                 TwentyFourHourButton.Background = Brushes.Transparent;
             }
+
+            _baseDate = LocalSql.Instance.CurrentDay().Date;
             
-            
-            InitTimes(true);
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
-        private bool DatesAreInTheSameWeek(DateTime date1, DateTime date2)
-        {
-            Calendar cal = DateTimeFormatInfo.CurrentInfo?.Calendar;
-            if (cal == null)
-                return false;
-
-            var d1 = date1.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date1));
-            var d2 = date2.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date2));
-            return d1 == d2;
-        }
-
-        private void InitTimes(bool scrolltoend = false)
+        private void InitTimes(List<DateTime> startEnd)
         {
             bool honest = File.Exists("honest.txt");
             StackPanel.Children.Clear();
-            Day prev = new Day(new DateTime(2001, 1, 1));
-            foreach (Day day in DataBase.TimeDataBase.Days)
+            double totalHours = Math.Round(LocalSql.Instance.HoursInRange(startEnd[0], startEnd[1]), 1);
+            
+            if (DateTimeFormatInfo.CurrentInfo != null)
             {
-                if (!DatesAreInTheSameWeek(day.Date, prev.Date))
-                {
-                    if (DateTimeFormatInfo.CurrentInfo != null)
-                    {
-                        var cal = DateTimeFormatInfo.CurrentInfo.Calendar;
-                        var d2 = day.Date.Date.AddDays(-1 * (int) cal.GetDayOfWeek(day.Date) + 1);
-                        WpfWeekViewBar weekViewBar = new WpfWeekViewBar(d2, DataBase.TimeDataBase.HoursInWeek(d2));
-                        weekViewBar.DeleteWeekEvent += OnDeleteWeek;
-                        weekViewBar.EmailWeekEvent += OnEmailWeek;
-                        weekViewBar.PrintWeekEvent += OnPrintWeek;
-                        weekViewBar.PreviewWeekEvent += OnPreviewWeek;
-                        StackPanel.Children.Add(weekViewBar);
-                    }
-                }
-
+                WpfWeekViewBar weekViewBar = new WpfWeekViewBar(startEnd[0], totalHours);
+                weekViewBar.DeleteWeekEvent += OnDeleteWeek;
+                weekViewBar.EmailWeekEvent += OnEmailWeek;
+                weekViewBar.PrintWeekEvent += OnPrintWeek;
+                weekViewBar.PreviewWeekEvent += OnPreviewWeek;
+                StackPanel.Children.Add(weekViewBar);
+            }
+            
+            Day prev = new Day(new DateTime(2001, 1, 1));
+            foreach (Day day in LocalSql.Instance.DaysInRange(startEnd[0], startEnd[1]))
+            {
                 WpfDayViewBar datevViewBar = new WpfDayViewBar(day);
                 datevViewBar.DayClickEvent += OnDateViewClick;
                 datevViewBar.DeleteDayEvent += OnDeleteDayClick;
@@ -95,52 +85,49 @@ namespace TheTimeApp
                 prev = day;
             }
 
-            if (scrolltoend) ScrollViewer.ScrollToBottom();
+            TotalTime.Content = totalHours;
         }
 
         private void OnDeleteWeek(DateTime date)
         {
-            DataBase.TimeDataBase.DeleteWeek(date);
-            InitTimes();
+            LocalSql.Instance.DeleteRange(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
-        private void OnDeleteDayClick(DateTime date)
+        private void OnDeleteDayClick(Day day)
         {
-            DataBase.TimeDataBase.DeleteDay(date);
-            InitTimes();
+            LocalSql.Instance.DeleteDay(day.Date);
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
-        private void OnDateViewClick(DateTime date)
+        private void OnDateViewClick(Day day)
         {
-            Day day = DataBase.TimeDataBase.Days.First(d => d.Date == date);
             if (day == null) return;
 
             WpfDayViewEdit dayView = new WpfDayViewEdit(day);
             dayView.ShowDialog();
 
-            DataBase.TimeDataBase.Save();
-
-            InitTimes();
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
         private void TimeDeleteTime(Time time)
         {
-            DataBase.TimeDataBase.DeleteTime(time);
-            InitTimes();
+            LocalSql.Instance.DeleteTime(time.Key);
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
         private void TimeViewTimeClick(WpfTimeViewBar view)
         {
-            Time prevTime = new Time {TimeIn = view.GetTime().TimeIn, TimeOut = view.GetTime().TimeOut};
+            Time prevTime = new Time {TimeIn = view.GetTime().TimeIn, TimeOut = view.GetTime().TimeOut, Key = view.GetKey()};
             _timeedit = new TimeViewEdit(view.GetTime(), _24Hour);
 
             if (_timeedit.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                DataBase.TimeDataBase.UpdateTime(prevTime, _timeedit.GetTime);
+                LocalSql.Instance.UpdateTime(prevTime.Key, _timeedit.GetTime);
             }
 
             _timeedit.Close();
-            InitTimes();
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
         private void OnEmailWeek(DateTime date)
@@ -159,7 +146,7 @@ namespace TheTimeApp
                     smtp.Credentials = basicCredential;
                     smtp.Host = AppSettings.EmailHost;
                     msg.Subject = "Time";
-                    msg.Body = DataBase.TimeDataBase.ConverWeekToText(date);
+                    msg.Body = LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
                     smtp.Send(msg);
                     MessageBox.Show("Mail sent!");
                 }
@@ -175,7 +162,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(DataBase.TimeDataBase.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
+                e1.Graphics.DrawString(LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
             };
             try
@@ -198,7 +185,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(DataBase.TimeDataBase.ConverWeekToText(date), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
+                e1.Graphics.DrawString(LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
             };
             try
@@ -223,8 +210,8 @@ namespace TheTimeApp
             
             TimeFormatExpander.IsExpanded = false;
             AppSettings.MilitaryTime = "false";
-            _24Hour = false;
-            InitTimes();
+            _24Hour = AppSettings.MilitaryTime == "true";
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
         private void TwentyFour_Hour_Click(object sender, EventArgs e)
@@ -234,8 +221,43 @@ namespace TheTimeApp
             
             TimeFormatExpander.IsExpanded = false;
             AppSettings.MilitaryTime = "true";
-            _24Hour = true;
-            InitTimes();
+            _24Hour = AppSettings.MilitaryTime == "true";
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
+        }
+
+        private void Btn_NextClick(object sender, System.Windows.RoutedEventArgs e)
+        {
+            _baseDate = new DateTime(Math.Min(_baseDate.AddDays(7).Ticks, LocalSql.Instance.MaxDate().Date.Ticks));
+            
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
+        }
+
+        private void Btn_PrevClick(object sender, RoutedEventArgs e)
+        {
+            _baseDate = new DateTime(Math.Max(_baseDate.AddDays(-7).Ticks, LocalSql.Instance.MinDate().Date.Ticks));
+            InitTimes(TimeServer.StartEndWeek(_baseDate));
+        }
+
+        private void BtnTotalTimeClick(object sender, RoutedEventArgs e)
+        {
+            EmailOrPrintWindow emailOrPrintWindow = new EmailOrPrintWindow();
+
+            emailOrPrintWindow.ShowDialog();
+
+            DialogResult sure = emailOrPrintWindow.DialogResult;
+
+            if (sure == System.Windows.Forms.DialogResult.Yes)
+            {
+                OnEmailWeek(_baseDate);
+            }
+            else if (sure == System.Windows.Forms.DialogResult.No)
+            {
+                OnPrintWeek(_baseDate);
+            }
+            else if (sure == System.Windows.Forms.DialogResult.OK)
+            {
+                OnPreviewWeek(_baseDate);
+            }           
         }
     }
 }

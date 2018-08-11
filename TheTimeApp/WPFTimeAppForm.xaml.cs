@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Timers;
 using System.Windows;
@@ -17,45 +21,48 @@ namespace TheTimeApp
     public partial class WPFTimeAppForm
     {
         private System.Timers.Timer _detailsChanged;
-        
         public WPFTimeAppForm()
         {
             InitializeComponent();
-            lb_VersionNumber.Content = Program.CurrentVersion;
             AppSettings.Validate();
+            lb_VersionNumber.Content = Program.CurrentVersion;
+            
 
-            TimeData.TimeData.Load();
-            TimeData.TimeData.TimeDataBase.Save();
-            TimeData.TimeData.TimeDataBase.ConnectionChangedEvent += ConnectionChanged;
-            TimeData.TimeData.TimeDataBase.SqlUpdateChanged += SqlUpdateChanged;
+            LocalSql.LoadFromFile();
             
-            if (AppSettings.SQLEnabled == "true")
+            // set user name if not specified
+            if (LocalSql.Instance.SqlCurrentUser == null)
             {
-                TimeData.TimeData.TimeDataBase.SetUpSqlServer();
-                SqlUpdateChanged(TimeData.TimeData.TimeDataBase.SerilizableCommands);
+                if (LocalSql.Instance.UserNames != null && LocalSql.Instance.UserNames.Count > 0) LocalSql.Instance.SqlCurrentUser = LocalSql.Instance.UserNames.First();
+                while (string.IsNullOrEmpty(LocalSql.Instance.SqlCurrentUser))
+                {
+                    EnterUser userWin = new EnterUser();
+                    userWin.ShowDialog();
+                    LocalSql.Instance.AddUser(new User(userWin.UserText, "", new List<Day>()));
+                    LocalSql.Instance.SqlCurrentUser = userWin.UserText;
+                }
             }
-            
+
             SetStartChecked();
             
             _detailsChanged = new System.Timers.Timer(){Interval = 2000};
             _detailsChanged.Elapsed += OnDetailsChangeTick;
             _detailsChanged.AutoReset = false;
             
-            DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
-
-            btn_SelectedUser.Content = TimeData.TimeData.TimeDataBase.CurrentUserName;
+            DayDetailsBox.Text = LocalSql.Instance.CurrentDay().Details;
+            btn_SelectedUser.Content = LocalSql.Instance.SqlCurrentUser;
         }
 
         private void LoadUsers()
         {
             pnl_UserSelection.Children.Clear();
-            foreach (User user in TimeData.TimeData.TimeDataBase.Users)
+            foreach (string name in LocalSql.Instance.UserNames)
             {
                 ViewBar userBar = new ViewBar()
                 {
                     BrushUnselected = Brushes.DarkGray, 
                     BrushSelected = Brushes.DimGray, 
-                    Text = user.UserName, 
+                    Text = name, 
                     Width = 120, 
                     Height = 26, 
                     Deletable = false
@@ -67,9 +74,8 @@ namespace TheTimeApp
 
         private void OnUserSelected(ViewBar view)
         {
-            TimeData.TimeData.TimeDataBase.CurrentUserName = view.Text;
-            TimeData.TimeData.TimeDataBase.Save();
-            btn_SelectedUser.Content = TimeData.TimeData.TimeDataBase.CurrentUserName;
+            LocalSql.Instance.SqlCurrentUser = view.Text;
+            btn_SelectedUser.Content = LocalSql.Instance.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
         }
 
@@ -81,7 +87,7 @@ namespace TheTimeApp
 
         private void SetStartChecked()
         {
-            if (TimeData.TimeData.TimeDataBase.ClockedIn())
+            if (LocalSql.Instance.IsClockedIn())
             {
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
@@ -97,13 +103,13 @@ namespace TheTimeApp
         {
             if (Equals(Start_Button.Background, Brushes.Green))
             {
-                TimeData.TimeData.TimeDataBase.PunchIn();
+                LocalSql.Instance.PunchIn();
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
             }
             else
             {
-                TimeData.TimeData.TimeDataBase.PunchOut();
+                LocalSql.Instance.PunchOut();
                 Start_Button.Background = Brushes.Green;
                 Start_Button.Content = "Start";
             }
@@ -148,28 +154,26 @@ namespace TheTimeApp
 
         private void OnDayDetailsChanged(object sender, TextChangedEventArgs e)
         {
-            TimeData.TimeData.TimeDataBase.Save();
-            
-            if (AppSettings.SQLEnabled == "true")
+            if (AppSettings.SqlEnabled == "true")
             {
                 if(_detailsChanged.Enabled)// Stop any previous timers
                     _detailsChanged.Stop();
             
                 _detailsChanged.Start();    
             }
+            string details = DayDetailsBox.Text;
+            LocalSql.Instance.UpdateDetails(LocalSql.Instance.CurrentDay().Date, details);
         }
         
         private void OnDetailsChangeTick(object sender, ElapsedEventArgs e)
         {
-            string details = "";
-            Dispatcher.Invoke(() => { details = DayDetailsBox.Text; });
-            TimeData.TimeData.TimeDataBase.UpdateDetails(TimeData.TimeData.TimeDataBase.CurrentDay(), details);
+               
         }
 
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
             new WpfTimeViewWindow().ShowDialog();
-            DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
+            DayDetailsBox.Text = LocalSql.Instance.CurrentDay().Details;
         }
 
         private void btn_Settings_Click(object sender, RoutedEventArgs e)
@@ -177,9 +181,8 @@ namespace TheTimeApp
             SettingsWindow esettings = new SettingsWindow();
             esettings.ShowDialog();
             
-            TimeData.TimeData.Load();
             SetStartChecked();
-            DayDetailsBox.Text = TimeData.TimeData.TimeDataBase.CurrentDay().Details;
+            DayDetailsBox.Text = LocalSql.Instance.CurrentDay().Details;
         }
     }
 }

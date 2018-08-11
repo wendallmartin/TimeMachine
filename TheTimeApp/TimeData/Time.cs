@@ -9,6 +9,7 @@ namespace TheTimeApp.TimeData
     {
         private DateTime punchin;
         private DateTime punchout;
+        public double Key;
 
         public Time(DateTime punchIn, DateTime punchOUt)
         {
@@ -26,8 +27,7 @@ namespace TheTimeApp.TimeData
         {
             if (punchin != new DateTime())
             {
-                MessageBox.Show(@"Punch in failed!");
-                return;
+                throw new Exception(@"Punch in failed!");
             }
 
             punchin = punchout = DateTime.Now;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using MySql.Data.MySqlClient;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
 using Day = TheTimeApp.TimeData.Day;
@@ -36,14 +38,33 @@ namespace TheTimeApp
             TextBoxToAddress.Text = AppSettings.ToAddress;
             CheckBoxSsl.IsChecked = AppSettings.SslEmail == "true";
 
-            TextBoxSqlDataSource.Text = AppSettings.SQLDataSource;
-            TextBoxSqlUserId.Text = AppSettings.SQLUserId;
-            TextBoxSqlPassword.Text = "*********";
-            TextBoxSqlCatelog.Text = AppSettings.SQLCatelog;
-            TextBoxSqlPort.Text = AppSettings.SQLPortNumber;
+            TextBoxAzureDataSource.Text = AppSettings.AzureDateSource;
+            TextBoxAzureUserId.Text = AppSettings.AzureUser;
+            TextBoxAzurePassword.Text = "*********";
+            TextBoxAzureCatelog.Text = AppSettings.AzureCateloge;
+            TextBoxAzurePort.Text = AppSettings.SqlPortNumber;
             
-            btn_SQLEnable.Content = AppSettings.SQLEnabled == "true" ? "Enabled" : "Disabled";
+            btn_SQLEnable.Content = AppSettings.SqlEnabled == "true" ? "Enabled" : "Disabled";
             btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
+
+            SqlTypeExpaner.Header = AppSettings.SqlType;
+
+            switch (AppSettings.SqlType)
+            {
+                    case "Azure":
+                        MySqlSettings.Visibility = Visibility.Hidden;
+                        AzureSettings.Visibility = Visibility.Visible;
+                        break;
+                    case "MySql":
+                        AzureSettings.Visibility = Visibility.Hidden;
+                        MySqlSettings.Visibility = Visibility.Visible;
+                        break;
+                    default:
+                        AppSettings.SqlType = "Azure";
+                        MySqlSettings.Visibility = Visibility.Hidden;
+                        AzureSettings.Visibility = Visibility.Visible;
+                        return;
+            }
 
             AssociateEvents();
             LoadUsers();
@@ -52,13 +73,13 @@ namespace TheTimeApp
         private void LoadUsers()
         {
             StackPanel.Children.Clear();
-            foreach (User user in TimeData.TimeData.TimeDataBase.Users)
+            foreach (string user in LocalSql.Instance.UserNames)
             {
                 ViewBar userbar = new ViewBar()
                 {
                     BrushUnselected = Brushes.DarkGray,
                     BrushSelected = Brushes.DimGray,
-                    Text = user.UserName, 
+                    Text = user, 
                     Width = 220, 
                     Height = 25, 
                     Deletable = true
@@ -79,38 +100,11 @@ namespace TheTimeApp
             TextBoxToAddress.TextChanged += TextBox_ToAddress_TextChanged;
 
             // sql
-            TextBoxSqlDataSource.TextChanged += TextBoxSqlDataSource_TextChanged;
-            TextBoxSqlUserId.TextChanged += TextBoxSqlUserId_TextChanged;
-            TextBoxSqlPassword.TextChanged += TextBoxSqlPassword_TextChanged;
-            TextBoxSqlCatelog.TextChanged += TextBoxSqlCatelog_TextChanged;
-            TextBoxSqlPort.TextChanged += TextBoxSqlPort_TextChanged;
-
-            // sql server progress changed
-            if (TimeData.TimeData.TimeDataBase.SqlHelper != null)
-            {
-                TimeData.TimeData.TimeDataBase.SqlHelper.ProgressChangedEvent += OnSqlProgressChanged;
-                TimeData.TimeData.TimeDataBase.SqlHelper.ProgressFinishEvent += OnProgressFinish;    
-            }
-        }
-
-        private void TextBoxSqlDataSource_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            AppSettings.SQLDataSource = TextBoxSqlDataSource.Text;
-        }
-
-        private void TextBoxSqlUserId_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            AppSettings.SQLUserId = TextBoxSqlUserId.Text;
-        }
-
-        private void TextBoxSqlPassword_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            AppSettings.SQLPassword = TextBoxSqlPassword.Text;
-        }
-
-        private void TextBoxSqlCatelog_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            AppSettings.SQLCatelog = TextBoxSqlCatelog.Text;
+            TextBoxAzureDataSource.TextChanged += TextBoxAzureDataSource_TextChanged;
+            TextBoxAzureUserId.TextChanged += TextBoxAzureUserId_TextChanged;
+            TextBoxAzurePassword.TextChanged += TextBoxAzurePassword_TextChanged;
+            TextBoxAzureCatelog.TextChanged += TextBoxAzureCatelog_TextChanged;
+            TextBoxAzurePort.TextChanged += TextBoxAzurePort_TextChanged;
         }
 
         private void TextBox_FromAddress_TextChanged(object sender, TextChangedEventArgs e)
@@ -155,21 +149,21 @@ namespace TheTimeApp
 
         private void Btn_SQLEnabled_Click(object sender, RoutedEventArgs e)
         {
-            if (AppSettings.SQLEnabled == "true")
+            if (AppSettings.SqlEnabled == "true")
             {
-                AppSettings.SQLEnabled = "false";
+                AppSettings.SqlEnabled = "false";
                 btn_SQLEnable.Content = "Disabled";
             }
             else
             {
-                AppSettings.SQLEnabled = "true";
+                AppSettings.SqlEnabled = "true";
                 btn_SQLEnable.Content = "Enabled";
             }
         }
         
         private void Btn_SQLPushAll_Click(object sender, RoutedEventArgs e)
         {
-            if (AppSettings.SQLEnabled != "true")
+            if (AppSettings.SqlEnabled != "true")
             {
                 MessageBox.Show("SQL not enabled!");
                 return;
@@ -177,7 +171,7 @@ namespace TheTimeApp
             
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
             btn_SQLSyncAll.IsEnabled = false;
-            TimeData.TimeData.TimeDataBase.SqlHelper?.RePushToServer(TimeData.TimeData.TimeDataBase.Days);
+            LocalSql.Instance.RePushToServer();
         }
 
         private void OnSqlProgressChanged(float value)
@@ -228,47 +222,17 @@ namespace TheTimeApp
             }
         }
 
-        private void TextBoxSqlPort_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            AppSettings.SQLPortNumber = (sender as TextBox)?.Text;
-        }
-
-        private void Btn_SQLDownload_Click(object sender, RoutedEventArgs e)
-        {
-            if (AppSettings.SQLEnabled != "true")
-            {
-                MessageBox.Show("SQL not enabled!");
-                return;
-            }
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "Time file (*.dtf)|*.dtf";
-            saveFileDialog.ShowDialog();
-            ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-            TimeData.TimeData.TimeDataBase.LoadCurrentUserFromSql();
-            TimeData.TimeData.TimeDataBase.Save();
-        }
-
-        private void DataLocation_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Time file (*.dtf)|*.dtf";
-            openFileDialog.ShowDialog();
-            AppSettings.DataPath = openFileDialog.FileName;
-        }
-
         private void btn_Add_Click(object sender, RoutedEventArgs e)
         {
-            TimeData.TimeData.TimeDataBase.AddUser(AddUserBox.Text);
+            LocalSql.Instance.AddUser(new User(AddUserBox.Text, "", new List<Day>()));
             
             AddUserBox.Text = "";
-            TimeData.TimeData.TimeDataBase.Save();
             LoadUsers();
         }
 
         private void OnDeleteUser(ViewBar viewbar)
         {
-            TimeData.TimeData.TimeDataBase.DeleteUser(viewbar.Text);
-            TimeData.TimeData.TimeDataBase.Save();
+            LocalSql.Instance.DeleteUser(viewbar.Text);
             LoadUsers();
         }
 
@@ -291,6 +255,126 @@ namespace TheTimeApp
                     }
                 }
             }).Start();
+        }
+
+        #region sql settings
+        
+        private void Btn_SQLDownload_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppSettings.SqlEnabled != "true")
+            {
+                MessageBox.Show("SQL not enabled!");
+                return;
+            }
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "Time file (*.sqlite)|*.sqlite";
+            saveFileDialog.ShowDialog();
+            ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
+            LocalSql.Instance.LoadFromServer();
+        }
+
+        private void DataLocation_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Time file (*.sqlite)|*.sqlite";
+            openFileDialog.ShowDialog();
+            AppSettings.DataPath = openFileDialog.FileName;
+        }
+
+        private void BtnTestClick(object sender, RoutedEventArgs e)
+        {
+
+            try
+            {
+                switch (AppSettings.SqlType)
+                {
+                    case "Azure":
+                        SqlConnectionStringBuilder stringBuilder = new SqlConnectionStringBuilder()
+                        {
+                            DataSource = AppSettings.AzureDateSource,
+                            UserID = AppSettings.AzureUser,
+                            Password = AppSettings.AzurePassword,
+                            InitialCatalog = AppSettings.AzureCateloge,
+                            MultipleActiveResultSets = true,
+                        };
+                        using (SqlConnection azureConnection = new SqlConnection(stringBuilder.ConnectionString))
+                        {
+                            azureConnection.Open();
+                            azureConnection.Close();
+                        }
+
+                        MessageBox.Show("Connection confirmed!");
+                        break;
+                    case "MySql":
+                        MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()
+                        {
+                            Database = AppSettings.MySqlDataBase,
+                        }
+                        MessageBox.Show("Connection confirmed!");
+                        break;
+                    default:
+                        MessageBox.Show("Sql type not recognized!");
+                        break;
+                }
+
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message);
+            }
+        }
+
+        private void BtnTypeAzure_Click(object sender, RoutedEventArgs e)
+        {
+            SqlTypeExpaner.Header = AppSettings.SqlType = "Azure";
+            MySqlSettings.Visibility = Visibility.Hidden;
+            AzureSettings.Visibility = Visibility.Visible;
+            SqlTypeExpaner.IsExpanded = false;
+        }
+
+        private void BtnTypeMySql_Click(object sender, RoutedEventArgs e)
+        {
+            SqlTypeExpaner.Header = AppSettings.SqlType = "MySql";
+            AzureSettings.Visibility = Visibility.Hidden;
+            MySqlSettings.Visibility = Visibility.Visible;
+            SqlTypeExpaner.IsExpanded = false;
+        }
+
+        #region azure value change
+
+        private void TextBoxAzureDataSource_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.AzureDateSource = TextBoxAzureDataSource.Text;
+        }
+
+        private void TextBoxAzureUserId_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.AzureUser = TextBoxAzureUserId.Text;
+        }
+
+        private void TextBoxAzurePassword_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.AzurePassword = TextBoxAzurePassword.Text;
+        }
+
+        private void TextBoxAzureCatelog_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.AzureCateloge = TextBoxAzureCatelog.Text;
+        }
+        
+        private void TextBoxAzurePort_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.SqlPortNumber = (sender as TextBox)?.Text;
+        }
+
+        #endregion
+
+        #endregion
+
+        private void SqlTypeExpaner_Expanded(object sender, RoutedEventArgs e)
+        {
+                btn_SQLEnable.Visibility = btn_SQLTest.Visibility = Visibility.Hidden;
+                btn_SQLEnable.Visibility = btn_SQLTest.Visibility = Visibility.Visible;
         }
     }
 }

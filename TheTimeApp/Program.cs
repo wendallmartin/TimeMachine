@@ -4,11 +4,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using NLog;
 
 namespace TheTimeApp
 {
     static class Program
     {
+        private static Logger _log = LogManager.GetCurrentClassLogger();
         private static WPFTimeAppForm _mytime;
         private static WPFTimeViewForm _myview;
         
@@ -35,19 +37,22 @@ namespace TheTimeApp
             {
                 if (AppSettings.MainPermission == "write")
                 {
+                    _log.Info($"TimeApp {CurrentVersion} run......");
                     _mytime = new WPFTimeAppForm();
                     _mytime.ShowDialog();
+                    _log.Info("TimeApp run......FINISHED!!!");
                 }
                 else
                 {
+                    _log.Info($"TimeView: {CurrentVersion} run......");
                     _myview = new WPFTimeViewForm();
                     _myview.ShowDialog();
-                    TimeData.TimeData.TimeDataBase.Save();
+                    _log.Info("TimeView run......FINISHED!!!");
                 }
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                MessageBox.Show(e.Message);
                 throw;
             }
         }
