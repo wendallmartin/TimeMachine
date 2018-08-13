@@ -42,7 +42,12 @@ namespace TheTimeApp
             TextBoxAzureUserId.Text = AppSettings.AzureUser;
             TextBoxAzurePassword.Text = "*********";
             TextBoxAzureCatelog.Text = AppSettings.AzureCateloge;
-            TextBoxAzurePort.Text = AppSettings.SqlPortNumber;
+            TextBoxAzurePort.Text = AppSettings.AzurePort;
+            
+            TextBoxMySqlDataSource.Text = AppSettings.MySqlServer;
+            TextBoxMySqlUserId.Text = AppSettings.MySqlUserId;
+            TextBoxMySqlPassword.Text = "*********";
+            TextBoxMySqlPort.Text = AppSettings.MySqlPort;
             
             btn_SQLEnable.Content = AppSettings.SqlEnabled == "true" ? "Enabled" : "Disabled";
             btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
@@ -99,12 +104,18 @@ namespace TheTimeApp
             TextBoxFromPort.TextChanged += TextBox_FromPort_TextChanged;
             TextBoxToAddress.TextChanged += TextBox_ToAddress_TextChanged;
 
-            // sql
+            // azure
             TextBoxAzureDataSource.TextChanged += TextBoxAzureDataSource_TextChanged;
             TextBoxAzureUserId.TextChanged += TextBoxAzureUserId_TextChanged;
             TextBoxAzurePassword.TextChanged += TextBoxAzurePassword_TextChanged;
             TextBoxAzureCatelog.TextChanged += TextBoxAzureCatelog_TextChanged;
             TextBoxAzurePort.TextChanged += TextBoxAzurePort_TextChanged;
+            
+            // mysql
+            TextBoxMySqlDataSource.TextChanged += TextBoxMySqlDataSource_TextChanged;
+            TextBoxMySqlUserId.TextChanged += TextBoxMySqlUserId_TextChanged;
+            TextBoxMySqlPassword.TextChanged += TextBoxMySqlPassword_TextChanged;
+            TextBoxMySqlPort.TextChanged += TextBoxMySqlPort_TextChanged;
         }
 
         private void TextBox_FromAddress_TextChanged(object sender, TextChangedEventArgs e)
@@ -308,7 +319,14 @@ namespace TheTimeApp
                     case "MySql":
                         MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()
                         {
-                            Database = AppSettings.MySqlDataBase,
+                            Server = AppSettings.MySqlServer,
+                            UserID = AppSettings.MySqlUserId,
+                            Password = AppSettings.MySqlPassword,
+                        };
+                        using (MySqlConnection mySqlConnection = new MySqlConnection(mysqlBuiler.ConnectionString))
+                        {
+                            mySqlConnection.Open();
+                            mySqlConnection.Close();
                         }
                         MessageBox.Show("Connection confirmed!");
                         break;
@@ -364,7 +382,27 @@ namespace TheTimeApp
         
         private void TextBoxAzurePort_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.SqlPortNumber = (sender as TextBox)?.Text;
+            AppSettings.AzurePort = (sender as TextBox)?.Text;
+        }
+        
+        private void TextBoxMySqlPort_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.MySqlPort = TextBoxMySqlPort.Text;
+        }
+
+        private void TextBoxMySqlPassword_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.MySqlPassword = TextBoxMySqlPassword.Text;
+        }
+
+        private void TextBoxMySqlUserId_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.MySqlUserId = TextBoxMySqlUserId.Text;
+        }
+
+        private void TextBoxMySqlDataSource_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.MySqlServer = TextBoxMySqlDataSource.Text;
         }
 
         #endregion
@@ -373,8 +411,12 @@ namespace TheTimeApp
 
         private void SqlTypeExpaner_Expanded(object sender, RoutedEventArgs e)
         {
-                btn_SQLEnable.Visibility = btn_SQLTest.Visibility = Visibility.Hidden;
-                btn_SQLEnable.Visibility = btn_SQLTest.Visibility = Visibility.Visible;
+            btn_SQLSyncAll.Visibility = btn_SQLBackup.Visibility = btn_SQLEnable.Visibility = btn_SQLTest.Visibility = Visibility.Hidden;
+        }
+
+        private void SqlTypeExpaner_Colapsed(object sender, RoutedEventArgs e)
+        {
+            btn_SQLSyncAll.Visibility = btn_SQLBackup.Visibility = btn_SQLEnable.Visibility = btn_SQLTest.Visibility = Visibility.Visible;
         }
     }
 }

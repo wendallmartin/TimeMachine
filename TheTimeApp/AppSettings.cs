@@ -74,12 +74,6 @@ namespace TheTimeApp
             set => WriteValueToxml("kwkvuesav", value);
         }
         
-        public static string SqlPortNumber
-        {
-            get => ReadValueFromXml("dhjahhdjh");
-            set => WriteValueToxml("dhjahhdjh", value);
-        }
-
         public static string AzureUser
         {
             get => ReadValueFromXml("aslejfooowgh");
@@ -97,7 +91,38 @@ namespace TheTimeApp
             get => ReadValueFromXml("lafjedoioowowfowof");
             set => WriteValueToxml("lafjedoioowowfowof", value);
         }
+        
+        public static string AzurePort
+        {
+            get => ReadValueFromXml("dhjahhdjh");
+            set => WriteValueToxml("dhjahhdjh", value);
+        }
+        
+        
+        public static string MySqlServer
+        {
+            get => ReadValueFromXml("aksdfajhfgjh");
+            set => WriteValueToxml("aksdfajhfgjh", value);
+        }
+        
+        public static string MySqlUserId
+        {
+            get => ReadValueFromXml("jgufsedasdfhjkfhif");
+            set => WriteValueToxml("jgufsedasdfhjkfhif", value);
+        }
 
+        public static string MySqlPassword
+        {
+            get => ReadValueFromXml("jghjefdhguishsifpfafsdjkuh");
+            set => WriteValueToxml("jghjefdhguishsifpfafsdjkuh", value);
+        }
+        
+        public static string MySqlPort
+        {
+            get => ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd");
+            set => WriteValueToxml("fvdjgfghjkjsdfhjgknklhfzsd", value);
+        }
+        
         public static string SqlEnabled
         {
             get => ReadValueFromXml("dkjfgjpwhjpo");
@@ -139,31 +164,31 @@ namespace TheTimeApp
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("ufhgawh");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("klaosof");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("wasllefa");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
             
             xmlWriter.WriteStartElement("adjflegad");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("slllejfas");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("ljowoiislo");
-            xmlWriter.WriteValue("false");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("aaljgjlkej");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
             
             xmlWriter.WriteStartElement("aaljgjlkej");
@@ -171,27 +196,27 @@ namespace TheTimeApp
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("keslkwkjw");
-            xmlWriter.WriteValue("false");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("kwkvuesav");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("aslejfooowgh");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("lsoenwowdjf");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("lafjedoioowowfowof");
-            xmlWriter.WriteValue("xxxxxxxx");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("dkjfgjpwhjpo");
-            xmlWriter.WriteValue("false");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
             
             xmlWriter.WriteStartElement("jgfhgjasgjfajfghj");
@@ -199,7 +224,23 @@ namespace TheTimeApp
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("dlajwugpasdh");
-            xmlWriter.WriteValue("read");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("aksdfajhfgjh");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("jgufsedasdfhjkfhif");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("jghjefdhguishsifpfafsdjkuh");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("fvdjgfghjkjsdfhjgknklhfzsd");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteEndDocument();

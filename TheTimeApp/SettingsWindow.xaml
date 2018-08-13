@@ -63,7 +63,7 @@
                 
                 <Grid>
                     <Grid HorizontalAlignment="Stretch" VerticalAlignment="top">
-                        <Expander x:Name="SqlTypeExpaner" Header="Type" Background="Azure" HorizontalAlignment="Center" Height="68" VerticalAlignment="Top" Width="100" Margin="0,0,0,0" Expanded="SqlTypeExpaner_Expanded" Collapsed="SqlTypeExpaner_Expanded">
+                        <Expander x:Name="SqlTypeExpaner" Header="Type" Background="Azure" HorizontalAlignment="Center" Height="68" VerticalAlignment="Top" Width="100" Margin="0,0,0,0" Expanded="SqlTypeExpaner_Expanded" Collapsed="SqlTypeExpaner_Colapsed">
                             <StackPanel>
                                 <Button x:Name="BtnTypeAzure" Focusable="False" Content="Azure" Click="BtnTypeAzure_Click"></Button>
                                 <Button x:Name="BtnTypeMySql" Focusable="False" Content="MySql" Click="BtnTypeMySql_Click"></Button>
