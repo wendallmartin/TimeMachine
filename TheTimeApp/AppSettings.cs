@@ -174,6 +174,10 @@ namespace TheTimeApp
             }
         }
 
+        /// <summary>
+        /// Cannot set default value of encrypted
+        /// field without encrypting value!
+        /// </summary>
         private static void SetSettingsToDefault()
         {
             XmlTextWriter xmlWriter = new XmlTextWriter(SettingsFilePath, null);

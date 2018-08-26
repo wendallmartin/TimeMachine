@@ -52,6 +52,11 @@ namespace TheTimeApp
                 TimeServer.SqlCurrentUser = AppSettings.CurrentUser;
                 
                 DataBaseManager.Initulize();
+
+                if (!DataBaseManager.Instance.UserNames().Contains(TimeServer.SqlCurrentUser))
+                {
+                    DataBaseManager.Instance.AddUser(new User(TimeServer.SqlCurrentUser, "", new List<TimeData.Day>()));
+                }
                 
                 if (AppSettings.MainPermission == "write")
                 {

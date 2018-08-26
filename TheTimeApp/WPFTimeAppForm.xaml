@@ -11,7 +11,7 @@
              Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
              Width="375"
              Height="354.667"
-             Icon="C:/Users/Wendall Martin/Pictures/timecardpic.ico"
+             Icon="Resources/timecardpic.ico"
              Title="Time Clock">
     <Grid Height="336" VerticalAlignment="Top">
         <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="Auto" Height="85" Margin="10,0,10,57" FontSize="36" Click="btn_Start_CheckedChanged" MinHeight="80"/>
@@ -19,12 +19,12 @@
         </TextBox>
                 <Button x:Name="btn_Report" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Report_Click" Margin="5,5,0,0" >
                     <StackPanel>
-                        <Image Source="C:/Users/Wendall Martin/Pictures/report.png" Height="25"></Image>
+                        <Image Source="Resources/report.png" Height="25"></Image>
                     </StackPanel>
                 </Button>
                 <Button x:Name="btn_Settings" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Settings_Click" Margin="50,5,0,0" >
                       <StackPanel>
-                          <Image Source="C:/Users/Wendall Martin/Pictures/settings.png" Height="23"></Image>
+                          <Image Source="Resources/settings.png" Height="23"></Image>
                       </StackPanel>
                 </Button>
         <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="Auto" Margin="0,0,0,21" >

@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
-        Icon="C:/Users/Wendall Martin/Pictures/timecardpic.ico"
+        Icon="Resources/timecardpic.ico"
         Height="341.081" Width="343">
     <Grid>
         <TabControl SelectionChanged="OnSelectionChanged" Margin="0,1,0,-1">

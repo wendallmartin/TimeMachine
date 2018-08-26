@@ -27,11 +27,6 @@ namespace TheTimeApp.TimeData
             _connection = new SQLiteConnection(conStringBuilder);
             _connectionString = conStringBuilder;
             
-            if (!File.Exists("TimeData.sqlite"))
-            {
-                SQLiteConnection.CreateFile("TimeData.sqlite");
-            }
-            
             _connection.Open();
             
             using (SQLiteCommand cmd = _connection.CreateCommand())
@@ -637,7 +632,7 @@ namespace TheTimeApp.TimeData
             }
             if (!File.Exists(AppSettings.DataPath))
             {
-                SQLiteConnection.CreateFile(AppSettings.DataPath);
+                SQLiteConnection.CreateFile(Path.ChangeExtension(AppSettings.DataPath, ".sqlite"));
                 
             }
             return new Sqlite("Data Source="+ AppSettings.DataPath +";Version=3");
