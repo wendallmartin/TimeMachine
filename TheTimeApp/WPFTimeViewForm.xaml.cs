@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Drawing;
@@ -25,19 +26,23 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeViewForm
     {
+        private DateTime _currentDate; 
         public WPFTimeViewForm()
         {
             InitializeComponent();
+
+            _currentDate = DateTime.Now;
 
             lb_VersionNumber.Content = Program.CurrentVersion;
 
             AppSettings.Validate();
             
-            LocalSql.LoadFromFile();
+            Sqlite.LoadFromFile();
+            DataBaseManager.Initulize();
            
             if (AppSettings.SqlEnabled == "true" )
             {
-                LocalSql.Instance.LoadFromServer();
+                DataBaseManager.Instance.LoadFromServer();
                 ConnectionChanged(true);
             }
 
@@ -48,7 +53,7 @@ namespace TheTimeApp
         private void LoadUsers()
         {
             pnl_UserSelection.Children.Clear();
-            foreach (string user in LocalSql.Instance.UserNames)
+            foreach (string user in DataBaseManager.Instance.UserNames())
             {
                 ViewBar userBar = new ViewBar()
                 {
@@ -66,13 +71,14 @@ namespace TheTimeApp
 
         private void OnUserSelected(ViewBar view)
         {
-            btn_SelectedUser.Content = LocalSql.Instance.SqlCurrentUser;
+            TimeServer.SqlCurrentUser = view.Text;
+            btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
             
             bool connectedAndEnabled = AppSettings.SqlEnabled == "true"; 
             if (connectedAndEnabled)
             {
-                LocalSql.Instance.LoadFromServer();
+                DataBaseManager.Instance.LoadFromServer();
 
             }
             ConnectionChanged(connectedAndEnabled);
@@ -115,29 +121,25 @@ namespace TheTimeApp
         private void InitualizeView()
         {
             StackPanel.Children.Clear();
-            Day prev = new Day(new DateTime(2001,1,1));
-            foreach (Day day in LocalSql.Instance.AllDays())
+            
+            var a = TimeServer.StartEndWeek(_currentDate)[0];
+            var b = TimeServer.StartEndWeek(_currentDate)[1];
+            
+            WpfWeekViewBar weekViewBar = new WpfWeekViewBar( a, DataBaseManager.Instance.HoursInRange(a, b)){Deletable = false};
+            weekViewBar.EmailWeekEvent += OnEmailWeek;
+            weekViewBar.PrintWeekEvent += OnPrintWeek;
+            weekViewBar.PreviewWeekEvent += OnPreviewWeek;
+            StackPanel.Children.Add(weekViewBar);
+            
+            foreach (Day day in DataBaseManager.Instance.DaysInRange(a,b))
             {
-                if (!DatesAreInTheSameWeek(day.Date, prev.Date))
-                {
-                    var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
-                    var d1 = day.Date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(day.Date) + 1);
-                    var d2 = day.Date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(day.Date) + 7);
-                    WpfWeekViewBar weekViewBar = new WpfWeekViewBar( d1, LocalSql.Instance.HoursInRange(d1, d2)){Deletable = false};
-                    weekViewBar.EmailWeekEvent += OnEmailWeek;
-                    weekViewBar.PrintWeekEvent += OnPrintWeek;
-                    weekViewBar.PreviewWeekEvent += OnPreviewWeek;
-                    StackPanel.Children.Add(weekViewBar);
-                }
                 WpfDayViewBar datevViewBar = new WpfDayViewBar(day){Deletable = false};
                 datevViewBar.DayClickEvent += OnDateViewDayClick;
                 StackPanel.Children.Add(datevViewBar);
-
-                prev = day;
             }
             
             ScrollViewer.ScrollToBottom();
-            btn_SelectedUser.Content = LocalSql.Instance.SqlCurrentUser;
+            btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
         }
 
         private void OnDateViewDayClick(Day day)
@@ -153,7 +155,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0],TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
+                e1.Graphics.DrawString(DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0],TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
 
             };
@@ -178,7 +180,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate (object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0],TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
+                e1.Graphics.DrawString(DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0],TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(System.Drawing.Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
 
             };
@@ -214,7 +216,7 @@ namespace TheTimeApp
                     smtp.Credentials = basicCredential;
                     smtp.Host = AppSettings.EmailHost;
                     msg.Subject = "Time";
-                    msg.Body = LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0],TimeServer.StartEndWeek(date)[1]);
+                    msg.Body = DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0],TimeServer.StartEndWeek(date)[1]);
                     smtp.Send(msg);
                     MessageBox.Show("Mail sent!");
                 }

@@ -1,20 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Timers;
+using NLog;
 
 namespace TheTimeApp.TimeData
 {
     public abstract class TimeServer
     {
+        private Logger logger = LogManager.GetCurrentClassLogger();
         private static readonly object IsConnectedLock = new object();
         private static readonly object SqlServerLock = new object();
         private static readonly object SqlPullLock = new object();
         private static readonly object SqlPushLock = new object();
         
-        public abstract string SqlCurrentUser { get; set; }
+        public static string SqlCurrentUser { get; set; }
         protected bool _wasConnected;
         protected readonly Timer _connectionRetry = new Timer(1000);
         protected SqlMode SqlMode { get; set; }
@@ -29,11 +32,8 @@ namespace TheTimeApp.TimeData
 
         #region props
 
-        public abstract List<string> UserNames { get; }
-        
 
         #endregion
-        
         
         #region Delegates
 
@@ -52,37 +52,67 @@ namespace TheTimeApp.TimeData
         public ProgressFinishDel ProgressFinishEvent;
         public ConnectionChangedDel ConnectionChangedEvent;
         public UpdateChangeDel UpdateChangedEvent;
+        protected SqlConnection _connection = new SqlConnection();// Only referenced from SqlConnection property!
 
         #endregion
-
+        
+        
+        
+        
         
         public abstract bool IsClockedIn();
 
         public abstract void AddUser(User user);
         
+        public abstract List<string> UserNames();
+        
         public abstract int DeleteUser(string username);
 
+        public abstract Day CurrentDay();
+        
         public abstract void AddDay(Day day);
+
+        public abstract List<Day> DaysInRange(DateTime a, DateTime b);
         
         public abstract int DeleteDay(DateTime date);
+        
+        public abstract List<Day> AllDays();
+
+        public abstract double HoursInRange(DateTime a, DateTime b);
         
         public abstract int DeleteRange(DateTime start, DateTime end);
         
         public abstract void PunchIn();
 
         public abstract void PunchOut();
-
-        public abstract Day CurrentDay();
         
+        public abstract List<Time> AllTimes();
+
         public abstract int DeleteTime(double key);
         
         public abstract int UpdateDetails(DateTime date, string details);
         
         public abstract int UpdateTime(double key, Time upd);
+
+        public abstract double MaxTimeId(string tablename = "");
+        
+        public abstract List<Time> TimesinRange(DateTime dateA, DateTime dateB);
         
         public abstract string GetRangeAsText(DateTime dateA, DateTime dateB);
 
         public string UserTable => "Users_TimeTable";
+
+        public abstract DateTime MinDate();
+        
+        public abstract DateTime MaxDate();
+
+        public abstract void RePushToServer();
+        
+        public abstract void LoadFromServer();
+
+        public string TimeTableName => "Time_" + SqlCurrentUser.Replace(' ', '_') + "_TimeTable";
+
+        public string DayTableName => "Day_" + SqlCurrentUser.Replace(' ', '_') + "_TimeTable";
 
         /// <summary>
         /// Returns user name converted to table name.
@@ -139,6 +169,8 @@ namespace TheTimeApp.TimeData
             startEnd.Add(date.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date)));
             startEnd.Add(date.Date.AddDays(-1 * (int) cal.GetDayOfWeek(date) + 6));
             return startEnd;
-        } 
+        }
+
+        public abstract void Dispose();
     }
 }

@@ -46,7 +46,7 @@ namespace TheTimeApp
                 TwentyFourHourButton.Background = Brushes.Transparent;
             }
 
-            _baseDate = LocalSql.Instance.CurrentDay().Date;
+            _baseDate = DataBaseManager.Instance.CurrentDay().Date;
             
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
@@ -55,7 +55,7 @@ namespace TheTimeApp
         {
             bool honest = File.Exists("honest.txt");
             StackPanel.Children.Clear();
-            double totalHours = Math.Round(LocalSql.Instance.HoursInRange(startEnd[0], startEnd[1]), 1);
+            double totalHours = Math.Round(DataBaseManager.Instance.HoursInRange(startEnd[0], startEnd[1]), 1);
             
             if (DateTimeFormatInfo.CurrentInfo != null)
             {
@@ -68,7 +68,7 @@ namespace TheTimeApp
             }
             
             Day prev = new Day(new DateTime(2001, 1, 1));
-            foreach (Day day in LocalSql.Instance.DaysInRange(startEnd[0], startEnd[1]))
+            foreach (Day day in DataBaseManager.Instance.DaysInRange(startEnd[0], startEnd[1]))
             {
                 WpfDayViewBar datevViewBar = new WpfDayViewBar(day);
                 datevViewBar.DayClickEvent += OnDateViewClick;
@@ -90,13 +90,13 @@ namespace TheTimeApp
 
         private void OnDeleteWeek(DateTime date)
         {
-            LocalSql.Instance.DeleteRange(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
+            DataBaseManager.Instance.DeleteRange(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
         private void OnDeleteDayClick(Day day)
         {
-            LocalSql.Instance.DeleteDay(day.Date);
+            DataBaseManager.Instance.DeleteDay(day.Date);
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
@@ -112,7 +112,7 @@ namespace TheTimeApp
 
         private void TimeDeleteTime(Time time)
         {
-            LocalSql.Instance.DeleteTime(time.Key);
+            DataBaseManager.Instance.DeleteTime(time.Key);
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
@@ -123,7 +123,7 @@ namespace TheTimeApp
 
             if (_timeedit.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                LocalSql.Instance.UpdateTime(prevTime.Key, _timeedit.GetTime);
+                DataBaseManager.Instance.UpdateTime(prevTime.Key, _timeedit.GetTime);
             }
 
             _timeedit.Close();
@@ -146,7 +146,7 @@ namespace TheTimeApp
                     smtp.Credentials = basicCredential;
                     smtp.Host = AppSettings.EmailHost;
                     msg.Subject = "Time";
-                    msg.Body = LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
+                    msg.Body = DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
                     smtp.Send(msg);
                     MessageBox.Show("Mail sent!");
                 }
@@ -162,7 +162,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
+                e1.Graphics.DrawString(DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
             };
             try
@@ -185,7 +185,7 @@ namespace TheTimeApp
             PrintDocument p = new PrintDocument();
             p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
             {
-                e1.Graphics.DrawString(LocalSql.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
+                e1.Graphics.DrawString(DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
                     new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
             };
             try
@@ -227,14 +227,14 @@ namespace TheTimeApp
 
         private void Btn_NextClick(object sender, System.Windows.RoutedEventArgs e)
         {
-            _baseDate = new DateTime(Math.Min(_baseDate.AddDays(7).Ticks, LocalSql.Instance.MaxDate().Date.Ticks));
+            _baseDate = new DateTime(Math.Min(_baseDate.AddDays(7).Ticks, DataBaseManager.Instance.MaxDate().Date.Ticks));
             
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
         private void Btn_PrevClick(object sender, RoutedEventArgs e)
         {
-            _baseDate = new DateTime(Math.Max(_baseDate.AddDays(-7).Ticks, LocalSql.Instance.MinDate().Date.Ticks));
+            _baseDate = new DateTime(Math.Max(_baseDate.AddDays(-7).Ticks, DataBaseManager.Instance.MinDate().Date.Ticks));
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 

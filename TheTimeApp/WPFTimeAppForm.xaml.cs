@@ -27,36 +27,20 @@ namespace TheTimeApp
             AppSettings.Validate();
             lb_VersionNumber.Content = Program.CurrentVersion;
             
-
-            LocalSql.LoadFromFile();
-            
-            // set user name if not specified
-            if (LocalSql.Instance.SqlCurrentUser == null)
-            {
-                if (LocalSql.Instance.UserNames != null && LocalSql.Instance.UserNames.Count > 0) LocalSql.Instance.SqlCurrentUser = LocalSql.Instance.UserNames.First();
-                while (string.IsNullOrEmpty(LocalSql.Instance.SqlCurrentUser))
-                {
-                    EnterUser userWin = new EnterUser();
-                    userWin.ShowDialog();
-                    LocalSql.Instance.AddUser(new User(userWin.UserText, "", new List<Day>()));
-                    LocalSql.Instance.SqlCurrentUser = userWin.UserText;
-                }
-            }
-
             SetStartChecked();
             
             _detailsChanged = new System.Timers.Timer(){Interval = 2000};
             _detailsChanged.Elapsed += OnDetailsChangeTick;
             _detailsChanged.AutoReset = false;
             
-            DayDetailsBox.Text = LocalSql.Instance.CurrentDay().Details;
-            btn_SelectedUser.Content = LocalSql.Instance.SqlCurrentUser;
+            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
+            btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
         }
 
         private void LoadUsers()
         {
             pnl_UserSelection.Children.Clear();
-            foreach (string name in LocalSql.Instance.UserNames)
+            foreach (string name in DataBaseManager.Instance.UserNames())
             {
                 ViewBar userBar = new ViewBar()
                 {
@@ -74,9 +58,11 @@ namespace TheTimeApp
 
         private void OnUserSelected(ViewBar view)
         {
-            LocalSql.Instance.SqlCurrentUser = view.Text;
-            btn_SelectedUser.Content = LocalSql.Instance.SqlCurrentUser;
+            TimeServer.SqlCurrentUser = view.Text;
+            btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
+            AppSettings.CurrentUser = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
+            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
         }
 
         private void btn_SelectedUser_Click(object sender, EventArgs e)
@@ -87,7 +73,7 @@ namespace TheTimeApp
 
         private void SetStartChecked()
         {
-            if (LocalSql.Instance.IsClockedIn())
+            if (DataBaseManager.Instance.IsClockedIn())
             {
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
@@ -103,13 +89,13 @@ namespace TheTimeApp
         {
             if (Equals(Start_Button.Background, Brushes.Green))
             {
-                LocalSql.Instance.PunchIn();
+                DataBaseManager.Instance.PunchIn();
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
             }
             else
             {
-                LocalSql.Instance.PunchOut();
+                DataBaseManager.Instance.PunchOut();
                 Start_Button.Background = Brushes.Green;
                 Start_Button.Content = "Start";
             }
@@ -162,7 +148,7 @@ namespace TheTimeApp
                 _detailsChanged.Start();    
             }
             string details = DayDetailsBox.Text;
-            LocalSql.Instance.UpdateDetails(LocalSql.Instance.CurrentDay().Date, details);
+            DataBaseManager.Instance.UpdateDetails(DataBaseManager.Instance.CurrentDay().Date, details);
         }
         
         private void OnDetailsChangeTick(object sender, ElapsedEventArgs e)
@@ -173,7 +159,7 @@ namespace TheTimeApp
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
             new WpfTimeViewWindow().ShowDialog();
-            DayDetailsBox.Text = LocalSql.Instance.CurrentDay().Details;
+            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
         }
 
         private void btn_Settings_Click(object sender, RoutedEventArgs e)
@@ -182,7 +168,7 @@ namespace TheTimeApp
             esettings.ShowDialog();
             
             SetStartChecked();
-            DayDetailsBox.Text = LocalSql.Instance.CurrentDay().Details;
+            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
         }
     }
 }

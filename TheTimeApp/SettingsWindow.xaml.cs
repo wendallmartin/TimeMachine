@@ -47,7 +47,7 @@ namespace TheTimeApp
             TextBoxMySqlDataSource.Text = AppSettings.MySqlServer;
             TextBoxMySqlUserId.Text = AppSettings.MySqlUserId;
             TextBoxMySqlPassword.Text = "*********";
-            TextBoxMySqlPort.Text = AppSettings.MySqlPort;
+            TextBoxMySqlPort.Text = AppSettings.MySqlPort.ToString();
             
             btn_SQLEnable.Content = AppSettings.SqlEnabled == "true" ? "Enabled" : "Disabled";
             btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
@@ -78,7 +78,7 @@ namespace TheTimeApp
         private void LoadUsers()
         {
             StackPanel.Children.Clear();
-            foreach (string user in LocalSql.Instance.UserNames)
+            foreach (string user in DataBaseManager.Instance.UserNames())
             {
                 ViewBar userbar = new ViewBar()
                 {
@@ -182,7 +182,7 @@ namespace TheTimeApp
             
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
             btn_SQLSyncAll.IsEnabled = false;
-            LocalSql.Instance.RePushToServer();
+            DataBaseManager.Instance.RePushToServer();
         }
 
         private void OnSqlProgressChanged(float value)
@@ -235,7 +235,7 @@ namespace TheTimeApp
 
         private void btn_Add_Click(object sender, RoutedEventArgs e)
         {
-            LocalSql.Instance.AddUser(new User(AddUserBox.Text, "", new List<Day>()));
+            DataBaseManager.Instance.AddUser(new User(AddUserBox.Text, "", new List<Day>()));
             
             AddUserBox.Text = "";
             LoadUsers();
@@ -243,7 +243,7 @@ namespace TheTimeApp
 
         private void OnDeleteUser(ViewBar viewbar)
         {
-            LocalSql.Instance.DeleteUser(viewbar.Text);
+            DataBaseManager.Instance.DeleteUser(viewbar.Text);
             LoadUsers();
         }
 
@@ -281,7 +281,7 @@ namespace TheTimeApp
             saveFileDialog.Filter = "Time file (*.sqlite)|*.sqlite";
             saveFileDialog.ShowDialog();
             ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-            LocalSql.Instance.LoadFromServer();
+            DataBaseManager.Instance.LoadFromServer();
         }
 
         private void DataLocation_Click(object sender, RoutedEventArgs e)
@@ -314,7 +314,7 @@ namespace TheTimeApp
                             azureConnection.Close();
                         }
 
-                        MessageBox.Show("Connection confirmed!");
+                        MessageBox.Show("Connection successful!");
                         break;
                     case "MySql":
                         MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()
@@ -322,13 +322,14 @@ namespace TheTimeApp
                             Server = AppSettings.MySqlServer,
                             UserID = AppSettings.MySqlUserId,
                             Password = AppSettings.MySqlPassword,
+                            Port = (uint) AppSettings.MySqlPort
                         };
                         using (MySqlConnection mySqlConnection = new MySqlConnection(mysqlBuiler.ConnectionString))
                         {
                             mySqlConnection.Open();
                             mySqlConnection.Close();
                         }
-                        MessageBox.Show("Connection confirmed!");
+                        MessageBox.Show("Connection successful!");
                         break;
                     default:
                         MessageBox.Show("Sql type not recognized!");
@@ -387,7 +388,7 @@ namespace TheTimeApp
         
         private void TextBoxMySqlPort_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.MySqlPort = TextBoxMySqlPort.Text;
+            AppSettings.MySqlPort = int.Parse(TextBoxMySqlPort.Text);
         }
 
         private void TextBoxMySqlPassword_TextChanged(object sender, TextChangedEventArgs e)
@@ -403,6 +404,11 @@ namespace TheTimeApp
         private void TextBoxMySqlDataSource_TextChanged(object sender, TextChangedEventArgs e)
         {
             AppSettings.MySqlServer = TextBoxMySqlDataSource.Text;
+        }
+        
+        private void TextBoxMySqlDatabase_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.MySqlDatabase = TextBoxMySqlDatabase.Text;
         }
 
         #endregion

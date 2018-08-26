@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
+using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -11,16 +12,20 @@ using NLog;
 
 namespace TheTimeApp.TimeData
 {
-    public class LocalSql : TimeServer
+    /// <summary>
+    /// The local database
+    /// </summary>
+    public class Sqlite : TimeServer
     {
         private static NLog.Logger logger = LogManager.GetCurrentClassLogger();
         private SQLiteConnection _connection;
-        public static LocalSql Instance;
+        private string _connectionString;
 
-        public LocalSql(string conStringBuilder)
+        public Sqlite(string conStringBuilder)
         {
             logger.Info("Initalize......");
             _connection = new SQLiteConnection(conStringBuilder);
+            _connectionString = conStringBuilder;
             
             if (!File.Exists("TimeData.sqlite"))
             {
@@ -28,10 +33,27 @@ namespace TheTimeApp.TimeData
             }
             
             _connection.Open();
+            
+            using (SQLiteCommand cmd = _connection.CreateCommand())
+            {
+                if (AppSettings.MySqlDatabase == "")
+                    AppSettings.MySqlDatabase = "TimeDataBase";
+                
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}]([Name] TEXT , [Rate] TEXT , [Unit] TEXT , [Active] TEXT )";
+                cmd.ExecuteNonQuery();
+                
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{DayTableName}] ( [Date] TEXT, [Details] TEXT )";
+                cmd.ExecuteNonQuery();
+                
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{TimeTableName}] ([Date] TEXT, [TimeIn] TEXT, [TimeOut] TEXT, [Key] INT )";
+                cmd.ExecuteNonQuery();
+            }
+
+            
             logger.Info("Initalize......FINISHED!!!");
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             logger.Info("Disposing......");
             _connection.Close();
@@ -40,44 +62,41 @@ namespace TheTimeApp.TimeData
             logger.Info("Disposing......FINISHED!!!");
         }
 
-        public override List<string> UserNames
+        public override List<string> UserNames()
         {
-            get{
-                Debug.WriteLine("Usernames");
-                List<string> usernames = new List<string>();
-                try
+            Debug.WriteLine("Usernames");
+            List<string> usernames = new List<string>();
+            try
+            {
+                using (SQLiteCommand cmd = _connection.CreateCommand())
                 {
-                    using (SQLiteCommand cmd = _connection.CreateCommand())
-                    {
-                        cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
-                        cmd.ExecuteNonQuery();
-                    }
-                    
-                    DataTable dataTable = new DataTable();
-                    using (SQLiteCommand command = new SQLiteCommand($"SELECT * FROM {UserTable}", _connection))
-                    {
-                        using (SQLiteDataReader reader = command.ExecuteReader())
-                        {
-                            dataTable.Load(reader);        
-                        }
-                    }
-
-                    foreach (DataRow row in dataTable.Rows)
-                    {
-                        usernames.Add(row.ItemArray[0].ToString());
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
+                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
+                    cmd.ExecuteNonQuery();
                 }
 
-                usernames.ForEach(u => Debug.Write(", " + u));
-                Debug.WriteLine("");
-                
-                return usernames;
+                DataTable dataTable = new DataTable();
+                using (SQLiteCommand command = new SQLiteCommand($"SELECT * FROM {UserTable}", _connection))
+                {
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        dataTable.Load(reader);
+                    }
+                }
+
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    usernames.Add(row.ItemArray[0].ToString());
+                }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            usernames.ForEach(u => Debug.Write(", " + u));
+            Debug.WriteLine("");
+            return usernames;
         }
 
         public override bool IsClockedIn()
@@ -86,7 +105,7 @@ namespace TheTimeApp.TimeData
             object timein;
             object timeout;
 
-                using(SQLiteCommand selectMaxIn = new SQLiteCommand($"Select Max(TimeIn) From {TimeTableName()}", _connection))
+                using(SQLiteCommand selectMaxIn = new SQLiteCommand($"Select Max(TimeIn) From {TimeTableName}", _connection))
                 {
                     timein = selectMaxIn.ExecuteScalar();
                     if (timein.ToString() == "")
@@ -96,7 +115,7 @@ namespace TheTimeApp.TimeData
                     }
                 }
 
-                using (SQLiteCommand selectMaxOut = new SQLiteCommand($"Select Max(TimeOut) From {TimeTableName()}", _connection))
+                using (SQLiteCommand selectMaxOut = new SQLiteCommand($"Select Max(TimeOut) From {TimeTableName}", _connection))
                 {
                     timeout = selectMaxOut.ExecuteScalar();
                     if (timeout.ToString() == "")
@@ -110,51 +129,49 @@ namespace TheTimeApp.TimeData
             return timein.ToString() == timeout.ToString();
         }
 
-        public override string SqlCurrentUser
-        {
-            get{
-                Debug.WriteLine("SqlCurrentUser get");
-                using (SQLiteCommand cmd = _connection.CreateCommand())
-                {
-                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
-                    cmd.ExecuteNonQuery();
-
-                    cmd.CommandText = $"SELECT Name from {UserTable} WHERE Active = \'true\'";
-                    string result =  (string)cmd.ExecuteScalar();
-                    
-                    return result;
-                }
-            }
-            set{
-                logger.Info($"Set current user: {value}");
-                Debug.WriteLine("SqlCurrentUser set");
-                if(!UserNames.Contains(value))
-                    throw new Exception("User does not exist!!!");
-                
-                using (SQLiteCommand cmd = _connection.CreateCommand())
-                {
-                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
-                    cmd.ExecuteNonQuery();
-
-                    cmd.CommandText = $"INSERT INTO {UserTable} (Name, Rate, Unit, Active) Select @Name, @Rate, @Unit, @Active WHERE not exists(select * from {UserTable} where Name = '{value}')";
-                    cmd.Parameters.Add(new SQLiteParameter("Name", value));
-                    cmd.Parameters.Add(new SQLiteParameter("Rate", ""));
-                    cmd.Parameters.Add(new SQLiteParameter("Unit", ""));
-                    cmd.Parameters.Add(new SQLiteParameter("Active", "true"));
-                    cmd.ExecuteNonQuery();
-                    
-                    cmd.CommandText = $"UPDATE {UserTable} SET Active = @Active WHERE Name = '{value}'";
-                    cmd.Parameters.Add(new SQLiteParameter("Active", "true"));
-                    cmd.ExecuteNonQuery();
-
-                    cmd.CommandText = $"UPDATE {UserTable} SET Active = @Active WHERE Name != '{value}'";
-                    cmd.Parameters.Add(new SQLiteParameter("Active", "false"));
-                    cmd.ExecuteNonQuery();
-                    
-                    
-                }
-            }
-        }
+//        public override string TimeServer.SqlCurrentUser
+//        {
+//            get{
+//                Debug.WriteLine("TimeServer.SqlCurrentUser get");
+//                using (SQLiteCommand cmd = _connection.CreateCommand())
+//                {
+//                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
+//                    cmd.ExecuteNonQuery();
+//
+//                    cmd.CommandText = $"SELECT Name from {UserTable} WHERE Active = \'true\'";
+//                    string result =  (string)cmd.ExecuteScalar();
+//                    
+//                    return result;
+//                }
+//            }
+//            set{
+//                logger.Info($"Set current user: {value}");
+//                Debug.WriteLine("TimeServer.SqlCurrentUser set");
+//                if(!UserNames().Contains(value))
+//                    throw new Exception("User does not exist!!!");
+//                
+//                using (SQLiteCommand cmd = _connection.CreateCommand())
+//                {
+//                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
+//                    cmd.ExecuteNonQuery();
+//
+//                    cmd.CommandText = $"INSERT INTO {UserTable} (Name, Rate, Unit, Active) Select @Name, @Rate, @Unit, @Active WHERE not exists(select * from {UserTable} where Name = '{value}')";
+//                    cmd.Parameters.Add(new SQLiteParameter("Name", value));
+//                    cmd.Parameters.Add(new SQLiteParameter("Rate", ""));
+//                    cmd.Parameters.Add(new SQLiteParameter("Unit", ""));
+//                    cmd.Parameters.Add(new SQLiteParameter("Active", "true"));
+//                    cmd.ExecuteNonQuery();
+//                    
+//                    cmd.CommandText = $"UPDATE {UserTable} SET Active = @Active WHERE Name = '{value}'";
+//                    cmd.Parameters.Add(new SQLiteParameter("Active", "true"));
+//                    cmd.ExecuteNonQuery();
+//
+//                    cmd.CommandText = $"UPDATE {UserTable} SET Active = @Active WHERE Name != '{value}'";
+//                    cmd.Parameters.Add(new SQLiteParameter("Active", "false"));
+//                    cmd.ExecuteNonQuery();
+//                }
+//            }
+//        }
 
         public override void AddUser(User user)
         {
@@ -211,7 +228,7 @@ namespace TheTimeApp.TimeData
             Debug.WriteLine("CurrentDay:");
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $"select * from {DayTableName()} Where Date = '{DateSqLite(DateTime.Now)}'";
+                cmd.CommandText = $"select * from {DayTableName} Where Date = '{DateSqLite(DateTime.Now)}'";
                 cmd.Parameters.Add(new SQLiteParameter());
                 using (SQLiteDataReader rdr = cmd.ExecuteReader())
                 {
@@ -241,7 +258,7 @@ namespace TheTimeApp.TimeData
             Debug.WriteLine($"DeleteTime: {key}");
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $"DELETE FROM {TimeTableName()} WHERE Key = @Key";
+                cmd.CommandText = $"DELETE FROM {TimeTableName} WHERE Key = @Key";
                 cmd.Parameters.Add(new SQLiteParameter("Key", key));
                 return cmd.ExecuteNonQuery();
             }
@@ -254,7 +271,7 @@ namespace TheTimeApp.TimeData
             Debug.WriteLine($"AddDay: {day}");
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $"INSERT INTO {DayTableName()} VALUES(@Date, @Details)";
+                cmd.CommandText = $"INSERT INTO {DayTableName} VALUES(@Date, @Details)";
                 cmd.Parameters.Add(new SQLiteParameter("Date", DateSqLite(day.Date.Date)));
                 cmd.Parameters.Add(new SQLiteParameter("Details", day.Details));
                 cmd.ExecuteNonQuery();
@@ -262,7 +279,7 @@ namespace TheTimeApp.TimeData
                 foreach (Time time in day.Times)
                 {
                     cmd.Parameters.Clear();
-                    cmd.CommandText = $"INSERT INTO {TimeTableName()} VALUES(@Date, @TimeIn, @TimeOut)";
+                    cmd.CommandText = $"INSERT INTO {TimeTableName} VALUES(@Date, @TimeIn, @TimeOut)";
                     cmd.Parameters.Add(new SQLiteParameter("Date", DateSqLite(time.TimeIn.Date)));
                     cmd.Parameters.Add(new SQLiteParameter("TimeIn", DateTimeSqLite(time.TimeIn)));
                     cmd.Parameters.Add(new SQLiteParameter("TimeOut", DateTimeSqLite(time.TimeOut)));
@@ -280,11 +297,11 @@ namespace TheTimeApp.TimeData
             int result = 0;
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $"DELETE FROM {DayTableName()} WHERE Date = @Date";
+                cmd.CommandText = $"DELETE FROM {DayTableName} WHERE Date = @Date";
                 cmd.Parameters.Add(new SQLiteParameter("Date", DateSqLite(date)));
                 result += cmd.ExecuteNonQuery();
                 
-                cmd.CommandText = $"DELETE FROM {TimeTableName()} WHERE Date = @Date";
+                cmd.CommandText = $"DELETE FROM {TimeTableName} WHERE Date = @Date";
                 result += cmd.ExecuteNonQuery();
              }
 
@@ -302,14 +319,14 @@ namespace TheTimeApp.TimeData
                 string stringstart = DateSqLite(start);
                 string stringend = DateSqLite(end);
                 
-                cmd.CommandText = $"DELETE FROM {DayTableName()} WHERE Date >= @start AND Date <= @end";
+                cmd.CommandText = $"DELETE FROM {DayTableName} WHERE Date >= @start AND Date <= @end";
                 cmd.Parameters.Add(new SQLiteParameter("start", stringstart));
                 cmd.Parameters.Add(new SQLiteParameter("end", stringend));
                 result += cmd.ExecuteNonQuery();
                 
                 cmd.Parameters.Clear();
                 
-                cmd.CommandText = $"DELETE FROM {TimeTableName()} WHERE Date >= @start AND Date <= @end";
+                cmd.CommandText = $"DELETE FROM {TimeTableName} WHERE Date >= @start AND Date <= @end";
                 cmd.Parameters.Add(new SQLiteParameter("start", stringstart));
                 cmd.Parameters.Add(new SQLiteParameter("end", stringend));
                 result += cmd.ExecuteNonQuery();
@@ -345,7 +362,7 @@ namespace TheTimeApp.TimeData
             Debug.WriteLine($"UdateDetails: {date}:{details}");
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $@"UPDATE {DayTableName()} SET Details = @Details WHERE Date = '{DateSqLite(date.Date)}'";
+                cmd.CommandText = $@"UPDATE {DayTableName} SET Details = @Details WHERE Date = '{DateSqLite(date.Date)}'";
                 cmd.Parameters.Add(new SQLiteParameter("Details", details));
                 result = cmd.ExecuteNonQuery();
             }
@@ -361,7 +378,7 @@ namespace TheTimeApp.TimeData
             int result = 0;
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $"select * from {DayTableName()} Where Date = @Date";
+                cmd.CommandText = $"select * from {TimeTableName} Where Date = @Date";
                 cmd.Parameters.Add(new SQLiteParameter("Date", DateSqLite(upd.TimeIn.Date)));
                 using (SQLiteDataReader rdr = cmd.ExecuteReader())
                 {
@@ -374,7 +391,7 @@ namespace TheTimeApp.TimeData
 
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $"UPDATE {TimeTableName()} SET Date = @Date, TimeIn = @TimeIn, TimeOut = @TimeOut WHERE Key = @Key";
+                cmd.CommandText = $"UPDATE {TimeTableName} SET Date = @Date, TimeIn = @TimeIn, TimeOut = @TimeOut WHERE Key = @Key";
                 cmd.Parameters.Add(new SQLiteParameter("Date", DateSqLite(upd.TimeIn.Date)));
                 cmd.Parameters.Add(new SQLiteParameter("TimeIn", DateTimeSqLite(upd.TimeIn)));
                 cmd.Parameters.Add(new SQLiteParameter("TimeOut", DateTimeSqLite(upd.TimeOut)));
@@ -392,16 +409,11 @@ namespace TheTimeApp.TimeData
             Debug.WriteLine("PunchIn");
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{TimeTableName()}] (
-                          [Date] TEXT,
-                          [TimeIn] TEXT,
-                          [TimeOut] TEXT,
-                          [Key] INT
-                          )";
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{TimeTableName}] ([Date] TEXT,[TimeIn] TEXT,[TimeOut] TEXT,[Key] INT)";
                 cmd.ExecuteNonQuery();
                 
                 DateTime now = DateTime.Now;
-                cmd.CommandText = $"INSERT INTO {TimeTableName()} VALUES(@Date, @TimeIn, @TimeOut, @Key)";
+                cmd.CommandText = $"INSERT INTO {TimeTableName} VALUES(@Date, @TimeIn, @TimeOut, @Key)";
                 cmd.Parameters.Add(new SQLiteParameter("Date", DateSqLite(now.Date)));
                 cmd.Parameters.Add(new SQLiteParameter("TimeIn", DateTimeSqLite(now)));
                 cmd.Parameters.Add(new SQLiteParameter("TimeOut", DateTimeSqLite(now)));
@@ -416,7 +428,7 @@ namespace TheTimeApp.TimeData
             Debug.WriteLine("PunchOut");
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $"UPDATE {TimeTableName()} SET TimeOut = @TimeOut WHERE Key = '{MaxTimeId()}'";
+                cmd.CommandText = $"UPDATE {TimeTableName} SET TimeOut = @TimeOut WHERE Key = '{MaxTimeId()}'";
                 cmd.Parameters.Add(new SQLiteParameter("TimeOut", DateTimeSqLite(DateTime.Now)));
                 cmd.ExecuteNonQuery();
             }
@@ -440,7 +452,7 @@ namespace TheTimeApp.TimeData
             return result;
         }
 
-        public double HoursInRange(DateTime dateA, DateTime dateB)
+        public override double HoursInRange(DateTime dateA, DateTime dateB)
         {
             logger.Info($"HoursInRange, DateA: {dateA} | DateB: {dateB}.........");
             Debug.WriteLine($"HoursInRange: {dateA}-{dateB}");
@@ -451,12 +463,12 @@ namespace TheTimeApp.TimeData
             return result;
         }
 
-        private List<Time> TimesinRange(DateTime dateA, DateTime dateB)
+        public override List<Time> TimesinRange(DateTime dateA, DateTime dateB)
         {
             logger.Info($"TimesInRange, DateA: {dateA} | DateB: {dateB}.........");
             Debug.WriteLine($"TimesInRange: {dateA}-{dateB}");
             List<Time> times = new List<Time>();
-            string qry = $"select * from {TimeTableName()}";
+            string qry = $"select * from {TimeTableName}";
             DataTable vt = new DataTable();
             SQLiteDataAdapter da = new SQLiteDataAdapter(qry, _connection);
             da.Fill(vt);
@@ -477,13 +489,13 @@ namespace TheTimeApp.TimeData
             return times;
         }
         
-        public List<Day> DaysInRange(DateTime dateA, DateTime dateB)
+        public override List<Day> DaysInRange(DateTime dateA, DateTime dateB)
         {
             logger.Info($"DaysInRange, DateA: {dateA} | DateB: {dateB}.........");
             Debug.WriteLine($"DaysInRange: {dateA}-{dateB}");
             
             var times = new List<Day>();
-            string qry = $"select * from {DayTableName()}";
+            string qry = $"select * from {DayTableName}";
             DataTable vt = new DataTable();
             SQLiteDataAdapter da = new SQLiteDataAdapter(qry, _connection);
             da.Fill(vt);
@@ -504,10 +516,10 @@ namespace TheTimeApp.TimeData
             return times;
         }
 
-        public List<Time> AllTimes()
+        public override List<Time> AllTimes()
         {
             List<Time> times = new List<Time>();
-            string qry = $"select * from {TimeTableName()}";
+            string qry = $"select * from {TimeTableName}";
             DataTable vt = new DataTable();
             SQLiteDataAdapter da = new SQLiteDataAdapter(qry, _connection);
             da.Fill(vt);
@@ -525,10 +537,10 @@ namespace TheTimeApp.TimeData
             return times;
         }
 
-        public List<Day> AllDays()
+        public override List<Day> AllDays()
         {
             List<Day> days = new List<Day>();
-            string qry = $"select * from {DayTableName()}";
+            string qry = $"select * from {DayTableName}";
             DataTable vt = new DataTable();
             SQLiteDataAdapter da = new SQLiteDataAdapter(qry, _connection);
             da.Fill(vt);
@@ -544,30 +556,11 @@ namespace TheTimeApp.TimeData
 
             return days;
         }
-                
-        /// <summary>
-        /// Returns user name converted to table name.
-        /// </summary>
-        /// <returns></returns>
-        public string TimeTableName()
-        {
-            return "Time_" + SqlCurrentUser.Replace(' ', '_') + "_TimeTable";
-        }
 
-
-        /// <summary>
-        /// Returns user name converted to table name.
-        /// </summary>
-        /// <returns></returns>
-        public string DayTableName()
-        {
-            return "Day_" + SqlCurrentUser.Replace(' ', '_') + "_TimeTable";
-        }
-
-        public double MaxTimeId(string tablename = "")
+        public override double MaxTimeId(string tablename = "")
         {
             if (tablename == "")
-                tablename = TimeTableName();
+                tablename = TimeTableName;
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"Select Max(Key) From '{tablename}'";
@@ -579,11 +572,11 @@ namespace TheTimeApp.TimeData
             }   
         }
         
-        public DateTime MinDate()
+        public override DateTime MinDate()
         {
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $@"Select Min(Date) from {DayTableName()}";
+                cmd.CommandText = $@"Select Min(Date) from {DayTableName}";
                 object result = cmd.ExecuteScalar();
                 
                 if (result.ToString() == "" || result is DBNull)
@@ -593,11 +586,11 @@ namespace TheTimeApp.TimeData
             }
         }
         
-        public DateTime MaxDate()
+        public override DateTime MaxDate()
         {
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                cmd.CommandText = $@"Select Max(Date) from {DayTableName()}";
+                cmd.CommandText = $@"Select Max(Date) from {DayTableName}";
                 object result = cmd.ExecuteScalar();
                 
                 if (result.ToString() == "" || result is DBNull)
@@ -607,7 +600,21 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        public static void LoadFromFile()
+        public override void RePushToServer()
+        {
+            logger.Info("RePushToServer........");
+            logger.Info("RePushToServer........FINISHED!!!");
+        }
+
+        public override void LoadFromServer()
+        {
+            logger.Info("LoadFromServer.........");
+            logger.Info("LoadFromServer.........FINISHED!!!");
+        }
+
+        #region sqlite specific methods
+
+        public static Sqlite LoadFromFile()
         {
             if (Path.GetExtension(AppSettings.DataPath) != ".sqlite")
             {
@@ -618,34 +625,24 @@ namespace TheTimeApp.TimeData
                     File.Delete(newPath);
                 
                 SQLiteConnection.CreateFile(newPath);
-                Instance = new LocalSql("Data Source="+ newPath +";Version=3");
+                Sqlite instance = new Sqlite("Data Source="+ newPath +";Version=3");
                 
                 foreach (User user in data.Users)
                 {
-                    Instance.AddUser(user);
+                    instance.AddUser(user);
                 }
                 
                 AppSettings.DataPath = newPath;
+                return instance;
             }
-            else if (!File.Exists(AppSettings.DataPath))
+            if (!File.Exists(AppSettings.DataPath))
             {
                 SQLiteConnection.CreateFile(AppSettings.DataPath);
+                
             }
-            // initualize instance if still null
-            if(LocalSql.Instance == null)
-                LocalSql.Instance = new LocalSql("Data Source="+ AppSettings.DataPath +";Version=3");
+            return new Sqlite("Data Source="+ AppSettings.DataPath +";Version=3");
         }
 
-        public void RePushToServer()
-        {
-            logger.Info("RePushToServer........");
-            logger.Info("RePushToServer........FINISHED!!!");
-        }
-
-        public void LoadFromServer()
-        {
-            logger.Info("LoadFromServer.........");
-            logger.Info("LoadFromServer.........FINISHED!!!");
-        }
+        #endregion    
     }
 }

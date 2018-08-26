@@ -103,8 +103,6 @@ namespace TheTimeApp.TimeData
             {
                 if (!File.Exists(file))
                 {
-                    MessageBox.Show(@"File not found! Starting over with new data in default location.");
-                    AppSettings.DataPath = "time.sqlite";
                     // we assume this is the first instance of the app so the data file must be created
                     return new TimeData();
                 }
@@ -270,7 +268,7 @@ namespace TheTimeApp.TimeData
 //            {
 //                EnterUser newUserWin = new EnterUser();
 //                newUserWin.ShowDialog();
-//                if (newUserWin.UserText != "new user") // todo must perform more professional check for user input
+//                if (newUserWin.UserText != "new user")
 //                {
 //                    AddUser(newUserWin.UserText);
 //                }

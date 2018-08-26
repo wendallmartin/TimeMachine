@@ -67,23 +67,12 @@
       <HintPath>..\packages\MySql.Data.8.0.12\lib\net452\MySql.Data.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
-      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c">
       <HintPath>..\packages\NLog.4.5.8\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="NLog.Targets.Stackify, Version=2.1.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLog.Targets.Stackify.2.1.1\lib\net452\NLog.Targets.Stackify.dll</HintPath>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="StackifyLib, Version=2.1.3.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\packages\StackifyLib.2.1.3\lib\net452\StackifyLib.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -153,10 +142,11 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TimeData\CryptoEngine.cs" />
+    <Compile Include="TimeData\DataBaseManager.cs" />
     <Compile Include="TimeData\Day.cs" />
+    <Compile Include="TimeData\MySql.cs" />
     <Compile Include="TimeData\TimeServer.cs" />
-    <Compile Include="TimeData\LocalSql.cs" />
-    <Compile Include="TimeData\Logger.cs" />
+    <Compile Include="TimeData\Sqlite.cs" />
     <Compile Include="TimeData\SqlMode.cs" />
     <Compile Include="TimeData\SerilizeSqlCommand.cs" />
     <Compile Include="TimeData\SQLServerHelper.cs" />

@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Timers;
 using System.Windows;
+using NLog;
 using Timer = System.Timers.Timer;
 using DataBase = TheTimeApp.TimeData.TimeData;
 
@@ -15,13 +16,12 @@ namespace TheTimeApp.TimeData
 {
     public class SqlServerHelper : TimeServer
     {
+        private Logger logger = LogManager.GetCurrentClassLogger();
         private static readonly object IsConnectedLock = new object();
         private static readonly object SqlServerLock = new object();
         private static readonly object SqlPullLock = new object();
         private static readonly object SqlPushLock = new object();
-        
-        private SqlConnection _connection = new SqlConnection();// Only referenced from SqlConnection property!
-        
+
         public List<SerilizeSqlCommand> Commands;
 
         #region Delegates
@@ -55,8 +55,7 @@ namespace TheTimeApp.TimeData
         public SqlConnectionStringBuilder ConnectionStringBuilder { get; set; }
         
         public int Port { get; set; }
-        public override List<string> UserNames { get; }
-        public override string SqlCurrentUser { get; set; }
+        
         public SqlMode SqlMode { get; set; }
         
         // your data table
@@ -82,7 +81,6 @@ namespace TheTimeApp.TimeData
                 }
                 catch (Exception e)
                 {
-                    Logger.LogException(e, "SqlConnectionExceptions");
                     return null;
                 }
             }
@@ -90,26 +88,40 @@ namespace TheTimeApp.TimeData
 
         private string CurrentUserName { get; set; }
 
-        /// <summary>
-        /// Returns user name converted to table name.
-        /// </summary>
-        /// <param name="username"></param>
-        /// <returns></returns>
-        private string ToTimeTableName(string username)
+        public override List<string> UserNames()
         {
-            return username.Replace(' ', '_') + "_TimeTable";
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Returns user name converted to table name.
-        /// </summary>
-        /// <param name="username"></param>
-        /// <returns></returns>
-        private string ToDayTableName(string username)
+        public override DateTime MinDate()
         {
-            return username.Replace(' ', '_') + "_DayTable";
+            throw new NotImplementedException();
         }
-        
+
+        public override DateTime MaxDate()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void RePushToServer()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void LoadFromServer()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Dispose()
+        {
+            logger.Info("Disposing......");
+            _connection.Close();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            logger.Info("Disposing......FINISHED!!!");
+        }
+
         public SqlServerHelper(SqlConnectionStringBuilder conStringBuilder, SqlMode sqlMode, List<SerilizeSqlCommand> commands)
         {
             ConnectionStringBuilder = conStringBuilder;
@@ -240,7 +252,6 @@ namespace TheTimeApp.TimeData
                     }
                     catch (Exception e)
                     {
-                        Logger.LogException(e, "SqlExeptions");
                     }
                     UpdateChangedEvent?.Invoke(Commands.Where(s => !successful.Contains(s)).ToList());
                 }
@@ -253,7 +264,6 @@ namespace TheTimeApp.TimeData
             }
             catch (Exception e)
             {
-                Logger.LogException(e, "FlushExceptions");
             }
         }
 
@@ -316,7 +326,22 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
+        public override List<Day> DaysInRange(DateTime a, DateTime b)
+        {
+            throw new NotImplementedException();
+        }
+
         public override int DeleteDay(DateTime date)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override List<Day> AllDays()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override double HoursInRange(DateTime a, DateTime b)
         {
             throw new NotImplementedException();
         }
@@ -332,6 +357,11 @@ namespace TheTimeApp.TimeData
         }
 
         public override void PunchOut()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override List<Time> AllTimes()
         {
             throw new NotImplementedException();
         }
@@ -352,6 +382,16 @@ namespace TheTimeApp.TimeData
         }
 
         public override int UpdateTime(double key, Time upd)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override double MaxTimeId(string tablename = "")
+        {
+            throw new NotImplementedException();
+        }
+
+        public override List<Time> TimesinRange(DateTime dateA, DateTime dateB)
         {
             throw new NotImplementedException();
         }

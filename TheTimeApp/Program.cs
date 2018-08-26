@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Deployment.Application;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using NLog;
+using TheTimeApp.TimeData;
+using Day = System.Windows.Forms.Day;
 
 namespace TheTimeApp
 {
@@ -35,6 +39,20 @@ namespace TheTimeApp
             Application.SetCompatibleTextRenderingDefault(false);
             try
             {
+                AppSettings.Validate();
+                
+                // set user name if not specified
+                while (string.IsNullOrEmpty(AppSettings.CurrentUser))
+                {
+                    EnterUser userWin = new EnterUser();
+                    userWin.ShowDialog();
+                    AppSettings.CurrentUser = userWin.txt_User.Text;
+                }
+                
+                TimeServer.SqlCurrentUser = AppSettings.CurrentUser;
+                
+                DataBaseManager.Initulize();
+                
                 if (AppSettings.MainPermission == "write")
                 {
                     _log.Info($"TimeApp {CurrentVersion} run......");
@@ -52,7 +70,7 @@ namespace TheTimeApp
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                MessageBox.Show(e.ToString());
                 throw;
             }
         }

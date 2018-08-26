@@ -18,12 +18,19 @@ namespace TheTimeApp
             get{
                 if (ReadValueFromXml("uwnmnnvvkgsfghks", false) == "")
                 {
-                    WriteValueToxml("uwnmnnvvkgsfghks", "time.tdf", false);
+                    WriteValueToxml("uwnmnnvvkgsfghks", "time", false);
                 }
                 return ReadValueFromXml("uwnmnnvvkgsfghks", false);
             }
             set => WriteValueToxml("uwnmnnvvkgsfghks", value, false);
         }
+
+        public static string CurrentUser
+        {
+            get => ReadValueFromXml("ahkakljdfgj");
+            set => WriteValueToxml("ahkakljdfgj", value);
+        }
+        
         public static string FromAddress
         {
             get => ReadValueFromXml("ufhgawh");
@@ -116,11 +123,29 @@ namespace TheTimeApp
             get => ReadValueFromXml("jghjefdhguishsifpfafsdjkuh");
             set => WriteValueToxml("jghjefdhguishsifpfafsdjkuh", value);
         }
-        
-        public static string MySqlPort
+
+        public static string MySqlDatabase
         {
-            get => ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd");
-            set => WriteValueToxml("fvdjgfghjkjsdfhjgknklhfzsd", value);
+            get => ReadValueFromXml("igaujjshjsdfhhalfjlffhio");
+            set => WriteValueToxml("igaujjshjsdfhhalfjlffhio", value);
+        }
+        
+        /// <summary>
+        /// Int port value
+        /// </summary>
+        public static int MySqlPort
+        {
+            get{
+                if (!string.IsNullOrEmpty(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd")))
+                {
+                    return int.Parse(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd"));
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            set => WriteValueToxml("fvdjgfghjkjsdfhjgknklhfzsd", value.ToString());
         }
         
         public static string SqlEnabled
@@ -161,6 +186,10 @@ namespace TheTimeApp
 
             xmlWriter.WriteStartElement("uwnmnnvvkgsfghks");
             xmlWriter.WriteValue("time.sqlite");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("ahkakljdfgj");
+            xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 
             xmlWriter.WriteStartElement("ufhgawh");
@@ -236,6 +265,10 @@ namespace TheTimeApp
             xmlWriter.WriteEndElement();
             
             xmlWriter.WriteStartElement("jghjefdhguishsifpfafsdjkuh");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+                
+            xmlWriter.WriteStartElement("igaujjshjsdfhhalfjlffhio");
             xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
             
