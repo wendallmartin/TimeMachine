@@ -30,9 +30,19 @@ namespace TheTimeApp.TimeData
                         UserID = AppSettings.MySqlUserId,
                         Password = AppSettings.MySqlPassword,
                         Database = AppSettings.MySqlDatabase,
-                        Port = (uint) AppSettings.MySqlPort
+                        Port = (uint) AppSettings.MySqlPort,
+                        SslMode = MySqlSslMode.None// todo add mysql ssl setting
                     };
-                    _secondary.Add(new MySql(mysqlBuiler.ConnectionString));    
+                    try
+                    {
+                        _secondary.Add(new MySql(mysqlBuiler.ConnectionString));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        MessageBox.Show(e.Message);
+                    }
+                        
                 }
                 else if (AppSettings.SqlType == "Azure" && !string.IsNullOrEmpty(AppSettings.AzureDateSource))
                 {

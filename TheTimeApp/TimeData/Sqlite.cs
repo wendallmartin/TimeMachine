@@ -124,50 +124,6 @@ namespace TheTimeApp.TimeData
             return timein.ToString() == timeout.ToString();
         }
 
-//        public override string TimeServer.SqlCurrentUser
-//        {
-//            get{
-//                Debug.WriteLine("TimeServer.SqlCurrentUser get");
-//                using (SQLiteCommand cmd = _connection.CreateCommand())
-//                {
-//                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
-//                    cmd.ExecuteNonQuery();
-//
-//                    cmd.CommandText = $"SELECT Name from {UserTable} WHERE Active = \'true\'";
-//                    string result =  (string)cmd.ExecuteScalar();
-//                    
-//                    return result;
-//                }
-//            }
-//            set{
-//                logger.Info($"Set current user: {value}");
-//                Debug.WriteLine("TimeServer.SqlCurrentUser set");
-//                if(!UserNames().Contains(value))
-//                    throw new Exception("User does not exist!!!");
-//                
-//                using (SQLiteCommand cmd = _connection.CreateCommand())
-//                {
-//                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}] ( [Name] TEXT, [Rate] TEXT, [Unit] TEXT, [Active] TEXT )";
-//                    cmd.ExecuteNonQuery();
-//
-//                    cmd.CommandText = $"INSERT INTO {UserTable} (Name, Rate, Unit, Active) Select @Name, @Rate, @Unit, @Active WHERE not exists(select * from {UserTable} where Name = '{value}')";
-//                    cmd.Parameters.Add(new SQLiteParameter("Name", value));
-//                    cmd.Parameters.Add(new SQLiteParameter("Rate", ""));
-//                    cmd.Parameters.Add(new SQLiteParameter("Unit", ""));
-//                    cmd.Parameters.Add(new SQLiteParameter("Active", "true"));
-//                    cmd.ExecuteNonQuery();
-//                    
-//                    cmd.CommandText = $"UPDATE {UserTable} SET Active = @Active WHERE Name = '{value}'";
-//                    cmd.Parameters.Add(new SQLiteParameter("Active", "true"));
-//                    cmd.ExecuteNonQuery();
-//
-//                    cmd.CommandText = $"UPDATE {UserTable} SET Active = @Active WHERE Name != '{value}'";
-//                    cmd.Parameters.Add(new SQLiteParameter("Active", "false"));
-//                    cmd.ExecuteNonQuery();
-//                }
-//            }
-//        }
-
         public override void AddUser(User user)
         {
             logger.Info($"Add user: {user.UserName}..........");
@@ -187,14 +143,12 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new SQLiteParameter("Active", "false"));
                 cmd.ExecuteNonQuery();
                 
-                cmd.CommandText = $@"DROP TABLE IF EXISTS [{dayTable}]";
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{dayTable}] ( [Date] TEXT, [Details] TEXT )";
                 cmd.ExecuteNonQuery();
-                cmd.CommandText = $@"CREATE TABLE [{dayTable}] ( [Date] TEXT, [Details] TEXT )";
+                
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{timeTable}] ([Date] TEXT, [TimeIn] TEXT, [TimeOut] TEXT, [Key] INT )";
                 cmd.ExecuteNonQuery();
-                cmd.CommandText = $@"DROP TABLE IF EXISTS [{timeTable}]";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = $@"CREATE TABLE [{timeTable}] ([Date] TEXT, [TimeIn] TEXT, [TimeOut] TEXT, [Key] INT )";
-                cmd.ExecuteNonQuery();
+                
                 foreach (Day day in user.Days)
                 {
                     cmd.CommandText = $"INSERT INTO {dayTable} VALUES(@Date, @Details)";

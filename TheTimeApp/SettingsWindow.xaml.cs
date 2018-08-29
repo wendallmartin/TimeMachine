@@ -48,6 +48,7 @@ namespace TheTimeApp
             TextBoxMySqlUserId.Text = AppSettings.MySqlUserId;
             TextBoxMySqlPassword.Text = "*********";
             TextBoxMySqlPort.Text = AppSettings.MySqlPort.ToString();
+            TextBoxMySqlDatabase.Text = AppSettings.MySqlDatabase;
             
             btn_SQLEnable.Content = AppSettings.SqlEnabled == "true" ? "Enabled" : "Disabled";
             btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
@@ -322,7 +323,8 @@ namespace TheTimeApp
                             Server = AppSettings.MySqlServer,
                             UserID = AppSettings.MySqlUserId,
                             Password = AppSettings.MySqlPassword,
-                            Port = (uint) AppSettings.MySqlPort
+                            Port = (uint) AppSettings.MySqlPort,
+                            SslMode = MySqlSslMode.None// todo add mysql ssl setting
                         };
                         using (MySqlConnection mySqlConnection = new MySqlConnection(mysqlBuiler.ConnectionString))
                         {

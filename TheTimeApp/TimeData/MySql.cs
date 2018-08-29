@@ -43,56 +43,7 @@ namespace TheTimeApp.TimeData
             }
             
             logger.Info("Initualize.........FINISHED!!!");
-        }
-
-//        public override string TimeServer.SqlCurrentUser
-//        {
-//            get{
-//                Debug.WriteLine("TimeServer.SqlCurrentUser get");
-//                using (MySqlCommand cmd = _connection.CreateCommand())
-//                {
-//                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{UserTable}` ( `Name` TEXT, `Rate` TEXT, `Unit` TEXT, `Active` TEXT )";
-//                    cmd.ExecuteNonQuery();
-//
-//                    cmd.CommandText = $"SELECT Name from `{UserTable}` WHERE Active = \'true\'";
-//                    string result =  (string)cmd.ExecuteScalar();
-//                    
-//                    return result;
-//                }
-//            }
-//            set{
-//                logger.Info($"Set current user: {value}");
-//                Debug.WriteLine("TimeServer.SqlCurrentUser set");
-//                if (!UserNames().Contains(value))
-//                    throw new Exception("User does not exist!!!");
-//
-//                using (MySqlCommand cmd = _connection.CreateCommand())
-//                {
-//                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{UserTable}` ( `Name` TEXT, `Rate` TEXT, `Unit` TEXT, `Active` TEXT )";
-//                    cmd.ExecuteNonQuery();
-//
-//                    cmd.CommandText = $"INSERT INTO `{UserTable}` (`Name`, `Rate`, `Unit`, `Active`) Select @Name, @Rate, @Unit, @Active WHERE not exists(select * from `{UserTable}` where Name = '{value}')";
-//                    cmd.Parameters.Add(new MySqlParameter("Name", value));
-//                    cmd.Parameters.Add(new MySqlParameter("Rate", ""));
-//                    cmd.Parameters.Add(new MySqlParameter("Unit", ""));
-//                    cmd.Parameters.Add(new MySqlParameter("Active", "true"));
-//                    cmd.ExecuteNonQuery();
-//                    
-//                    cmd.Parameters.Clear();
-//
-//                    cmd.CommandText = $"UPDATE `{UserTable}` SET Active = @Active WHERE Name = '{value}'";
-//                    cmd.Parameters.Add(new MySqlParameter("Active", "true"));
-//                    cmd.ExecuteNonQuery();
-//                    
-//                    cmd.Parameters.Clear();
-//
-//                    cmd.CommandText = $"UPDATE `{UserTable}` SET Active = @Active WHERE Name != '{value}'";
-//                    cmd.Parameters.Add(new MySqlParameter("Active", "false"));
-//                    cmd.ExecuteNonQuery();
-//                }
-//            }
-//        }
-
+        } 
         
         public override bool IsClockedIn()
         {
@@ -143,13 +94,10 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new MySqlParameter("Active", "false"));
                 cmd.ExecuteNonQuery();
                 
-                cmd.CommandText = $@"DROP TABLE IF EXISTS `{dayTable}`";
+                
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{dayTable}` ( `Date` TEXT, `Details` TEXT )";
                 cmd.ExecuteNonQuery();
-                cmd.CommandText = $@"CREATE TABLE `{dayTable}` ( `Date` TEXT, `Details` TEXT )";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = $@"DROP TABLE IF EXISTS `{timeTable}`";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = $@"CREATE TABLE `{timeTable}` (`Date` TEXT, `TimeIn` TEXT, `TimeOut` TEXT, `Key` INT )";
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{timeTable}` (`Date` TEXT, `TimeIn` TEXT, `TimeOut` TEXT, `Key` INT )";
                 cmd.ExecuteNonQuery();
                 foreach (Day day in user.Days)
                 {
