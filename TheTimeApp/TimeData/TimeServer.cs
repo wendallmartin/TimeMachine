@@ -114,20 +114,13 @@ namespace TheTimeApp.TimeData
 
         public string DayTableName => ToDayTableName(SqlCurrentUser);
 
-        private string ValidateUserName(string name)
-        {
-            name = name.Replace(' ', '_');
-            name = name.Replace('.', '_');
-            return name;
-        }
-
         /// <summary>
         /// Returns user name converted to table name.
         /// </summary>
         /// <returns></returns>
         public string ToTimeTableName(string user)
         {
-            return "Time_" + ValidateUserName(user) + "_TimeTable";
+            return "Time_" + user + "_TimeTable";
         }
 
 
@@ -137,7 +130,7 @@ namespace TheTimeApp.TimeData
         /// <returns></returns>
         public string ToDayTableName(string user)
         {
-            return "Day_" + ValidateUserName(user) + "_TimeTable";
+            return "Day_" + user + "_TimeTable";
         }
 
         public static string DateTimeSqLite(DateTime datetime)
