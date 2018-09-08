@@ -10,7 +10,7 @@ namespace TheTimeApp
 {
     public class AppSettings
     {
-        private const string SettingsFilePath = "settings.xml";
+        private static readonly string SettingsFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\TheTimeApp\\settings.xml";
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
         
         public static string DataPath
@@ -189,7 +189,7 @@ namespace TheTimeApp
             xmlWriter.IndentChar = ' ';
 
             xmlWriter.WriteStartElement("uwnmnnvvkgsfghks");
-            xmlWriter.WriteValue("time.sqlite");
+            xmlWriter.WriteValue(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\TheTimeApp\time.sqlite");
             xmlWriter.WriteEndElement();
             
             xmlWriter.WriteStartElement("ahkakljdfgj");

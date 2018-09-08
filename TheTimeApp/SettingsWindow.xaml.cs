@@ -7,14 +7,13 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Forms;
 using System.Windows.Media;
 using MySql.Data.MySqlClient;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
 using Day = TheTimeApp.TimeData.Day;
 using MessageBox = System.Windows.MessageBox;
-using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
-using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace TheTimeApp
@@ -257,8 +256,8 @@ namespace TheTimeApp
                     try
                     {
                         ProcessStartInfo info = new ProcessStartInfo();
-                        info.FileName = Path.Combine(Directory.GetCurrentDirectory(), "FTPUpdater.exe");
-                        info.Arguments = Program.CurrentVersion + $" \"{Directory.GetCurrentDirectory()}\"" + " TheTimeApp";
+                        info.FileName = Path.Combine(Directory.GetCurrentDirectory(), "Updater.exe");
+                        info.Arguments = Program.CurrentVersion + $" \"{Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TheTimeApp")}\" http://www.wrmcodeblocks.com/TheTimeApp/Downloads";
                         Process.Start(info);
                     }
                     catch (Exception exception)
@@ -280,17 +279,21 @@ namespace TheTimeApp
             }
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "Time file (*.sqlite)|*.sqlite";
-            saveFileDialog.ShowDialog();
-            ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-            DataBaseManager.Instance.LoadFromServer();
+            if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
+                DataBaseManager.Instance.LoadFromServer();    
+            } 
         }
 
         private void DataLocation_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "Time file (*.sqlite)|*.sqlite";
-            openFileDialog.ShowDialog();
-            AppSettings.DataPath = openFileDialog.FileName;
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                AppSettings.DataPath = openFileDialog.FileName;    
+            }
         }
 
         private void BtnTestClick(object sender, RoutedEventArgs e)

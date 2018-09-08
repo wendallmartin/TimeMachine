@@ -29,11 +29,14 @@ namespace TheTimeApp
                 if(process.StartTime != Process.GetCurrentProcess().StartTime)
                     process.Kill();
             }
-            
-            ProcessStartInfo info = new ProcessStartInfo();
-            info.FileName = Path.Combine(Directory.GetCurrentDirectory(), "FTPUpdater.exe");
-            info.Arguments = CurrentVersion + $" \"{Directory.GetCurrentDirectory()}\"" + " TheTimeApp false";
-            Process.Start(info);
+
+            if (File.Exists("Updater.exe"))
+            {
+                ProcessStartInfo info = new ProcessStartInfo();
+                info.FileName = "Updater.exe";
+                info.Arguments = CurrentVersion + $" \"{Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TheTimeApp")}\" http://www.wrmcodeblocks.com/TheTimeApp/Downloads false";
+                Process.Start(info);    
+            }
             
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -58,19 +61,19 @@ namespace TheTimeApp
                     DataBaseManager.Instance.AddUser(new User(TimeServer.SqlCurrentUser, "", new List<TimeData.Day>()));
                 }
                 
-                if (AppSettings.MainPermission == "write")
-                {
-                    _log.Info($"TimeApp {CurrentVersion} run......");
-                    _mytime = new WPFTimeAppForm();
-                    _mytime.ShowDialog();
-                    _log.Info("TimeApp run......FINISHED!!!");
-                }
-                else
+                if (AppSettings.MainPermission == "read")
                 {
                     _log.Info($"TimeView: {CurrentVersion} run......");
                     _myview = new WPFTimeViewForm();
                     _myview.ShowDialog();
                     _log.Info("TimeView run......FINISHED!!!");
+                }
+                else
+                {
+                    _log.Info($"TimeApp {CurrentVersion} run......");
+                    _mytime = new WPFTimeAppForm();
+                    _mytime.ShowDialog();
+                    _log.Info("TimeApp run......FINISHED!!!");   
                 }
             }
             catch (Exception e)

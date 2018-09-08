@@ -24,7 +24,6 @@ namespace TheTimeApp
         public WPFTimeAppForm()
         {
             InitializeComponent();
-            AppSettings.Validate();
             lb_VersionNumber.Content = Program.CurrentVersion;
             
             SetStartChecked();

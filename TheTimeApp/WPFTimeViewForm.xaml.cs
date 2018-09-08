@@ -35,8 +35,6 @@ namespace TheTimeApp
 
             lb_VersionNumber.Content = Program.CurrentVersion;
 
-            AppSettings.Validate();
-            
             Sqlite.LoadFromFile();
             DataBaseManager.Initulize();
            
