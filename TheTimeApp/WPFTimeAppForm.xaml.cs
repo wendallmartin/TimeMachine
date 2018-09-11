@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -34,6 +35,8 @@ namespace TheTimeApp
             
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
+            
+            UpdateTimer();
         }
 
         private void LoadUsers()
@@ -62,6 +65,7 @@ namespace TheTimeApp
             AppSettings.CurrentUser = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
+            UpdateTimer();
         }
 
         private void btn_SelectedUser_Click(object sender, EventArgs e)
@@ -88,16 +92,24 @@ namespace TheTimeApp
         {
             if (Equals(Start_Button.Background, Brushes.Green))
             {
+                UpdateTimer();
                 DataBaseManager.Instance.PunchIn();
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
             }
             else
             {
+                UpdateTimer();
                 DataBaseManager.Instance.PunchOut();
                 Start_Button.Background = Brushes.Green;
                 Start_Button.Content = "Start";
             }
+        }
+
+        private void UpdateTimer()
+        {
+            TimeSpan ts = DataBaseManager.Instance.HoursInRange(DateTime.Today, DateTime.Today);
+            Lbl_Time.Content = $"{ts.Hours:0}:{ts.Minutes:00}";       
         }
 
         private void SqlUpdateChanged(List<SerilizeSqlCommand> value)

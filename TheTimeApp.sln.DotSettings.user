@@ -38,6 +38,7 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Fd_003ATimeData_002Ff_003ATime_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AAppSettings_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AApp_002Econfig/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AEmailOrPrintWindow_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AEnterUser_002Examl/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003AEnterUser_002Examl_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=980A9E4D_002DF83C_002D4EB2_002D8A70_002D318F75B8491F_002Ff_003ANLog_002Econfig/@EntryIndexedValue">ForceIncluded</s:String>

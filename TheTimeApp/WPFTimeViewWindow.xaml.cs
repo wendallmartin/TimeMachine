@@ -55,7 +55,7 @@ namespace TheTimeApp
         {
             bool honest = File.Exists("honest.txt");
             StackPanel.Children.Clear();
-            double totalHours = Math.Round(DataBaseManager.Instance.HoursInRange(startEnd[0], startEnd[1]), 1);
+            TimeSpan totalHours = DataBaseManager.Instance.HoursInRange(startEnd[0], startEnd[1]);
             
             if (DateTimeFormatInfo.CurrentInfo != null)
             {
@@ -85,7 +85,7 @@ namespace TheTimeApp
                 prev = day;
             }
 
-            TotalTime.Content = totalHours;
+            TotalTime.Content = $"{totalHours.Hours:0}:{totalHours.Minutes:00}";
         }
 
         private void OnDeleteWeek(DateTime date)

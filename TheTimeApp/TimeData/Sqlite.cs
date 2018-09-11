@@ -401,13 +401,18 @@ namespace TheTimeApp.TimeData
             return result;
         }
 
-        public override double HoursInRange(DateTime dateA, DateTime dateB)
+        public override TimeSpan HoursInRange(DateTime dateA, DateTime dateB)
         {
             logger.Info($"HoursInRange, DateA: {dateA} | DateB: {dateB}.........");
             Debug.WriteLine($"HoursInRange: {dateA}-{dateB}");
-            var times = DaysInRange(dateA, dateB);
+            var days = DaysInRange(dateA, dateB);
             
-            double result = times.Sum(t => t.HoursAsDec());
+            TimeSpan result = new TimeSpan();
+            foreach (Day day in days)
+            {
+                result = result.Add(day.Hours());
+            }
+            
             logger.Info($"HoursInRange, DateA: {dateA} | DateB: {dateB}.........FINISHED!!! Result: {result}");
             return result;
         }

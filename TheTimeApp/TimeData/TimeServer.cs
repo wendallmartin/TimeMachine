@@ -78,7 +78,7 @@ namespace TheTimeApp.TimeData
         
         public abstract List<Day> AllDays();
 
-        public abstract double HoursInRange(DateTime a, DateTime b);
+        public abstract TimeSpan HoursInRange(DateTime a, DateTime b);
         
         public abstract int DeleteRange(DateTime start, DateTime end);
         

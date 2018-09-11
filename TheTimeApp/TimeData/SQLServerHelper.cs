@@ -341,7 +341,7 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override double HoursInRange(DateTime a, DateTime b)
+        public override TimeSpan HoursInRange(DateTime a, DateTime b)
         {
             throw new NotImplementedException();
         }

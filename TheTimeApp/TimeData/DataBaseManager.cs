@@ -102,7 +102,7 @@ namespace TheTimeApp.TimeData
             return _primary.AllDays();
         }
 
-        public override double HoursInRange(DateTime a, DateTime b)
+        public override TimeSpan HoursInRange(DateTime a, DateTime b)
         {
             return _primary.HoursInRange(a, b);
         }

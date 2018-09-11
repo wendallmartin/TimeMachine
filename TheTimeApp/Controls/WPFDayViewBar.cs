@@ -28,7 +28,7 @@ namespace TheTimeApp.Controls
             
             _day = day;
             
-            Text = _day.Date.Month + "//" + _day.Date.Day + "//" + _day.Date.Year + "                                              Hours: " + day.HoursAsDec();
+            Text = _day.Date.Month + "//" + _day.Date.Day + "//" + _day.Date.Year + "                                              Hours: " + $"{day.Hours().Hours:0}:{day.Hours().Minutes:00}";
 
             DeleteEvent += OnDeleteDay;
             SelectedEvent += OnDayDayClick;

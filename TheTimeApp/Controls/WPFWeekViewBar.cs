@@ -23,7 +23,7 @@ namespace TheTimeApp.Controls
 
         public event WeekDel PreviewWeekEvent;
 
-        public WpfWeekViewBar(DateTime dateTime, double hoursinweek)
+        public WpfWeekViewBar(DateTime dateTime, TimeSpan hoursinweek)
         {
             BrushSelected = Brushes.DimGray;
             BrushUnselected = Brushes.Gray;
@@ -31,7 +31,7 @@ namespace TheTimeApp.Controls
             _date = dateTime;
 
             Text = "Week - " + dateTime.Month + "//" +
-                   dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + hoursinweek;
+                   dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + $"{hoursinweek.Hours:00}:{hoursinweek.Minutes:00}";
 
             DeleteEvent += OnDeleteDay;
             SelectedEvent += OnMouseDown;
