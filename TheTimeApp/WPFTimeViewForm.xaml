@@ -21,7 +21,7 @@
         </Button>
         <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="367" Margin="0,0,0,21" >
             <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="82" Canvas.Left="10"/>
-            <Label x:Name="lbl_UpToDate" Content="NOT up to day" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
+            <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
         </Canvas>
         <ScrollViewer x:Name="ScrollViewer" Background="Gray" Margin="10,50,10,60" HorizontalAlignment="Center" Width="470" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="StackPanel" Orientation="Vertical" Background="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>

@@ -97,31 +97,23 @@ namespace TheTimeApp.TimeData
         public override bool IsClockedIn()
         {
             Debug.WriteLine("IsClockedIn:");
-            object timein;
-            object timeout;
+            object timeIn;
+            object timeOut;
+            using (SQLiteCommand selectMaxIn = new SQLiteCommand($"Select `TimeIn` From [{TimeTableName}] order by [key] desc limit 1", _connection))
+            {
+                timeIn = selectMaxIn.ExecuteScalar();
+                if (timeIn == null) return false;
+                if (timeIn.ToString() == "") return false;
+            }
 
-                using(SQLiteCommand selectMaxIn = new SQLiteCommand($"Select Max(TimeIn) From [{TimeTableName}]", _connection))
-                {
-                    timein = selectMaxIn.ExecuteScalar();
-                    if (timein.ToString() == "")
-                    {
-                        Debug.Write(" false");
-                        return false;
-                    }
-                }
+            using (SQLiteCommand selectMaxOut = new SQLiteCommand($"Select `TimeOut` From [{TimeTableName}] order by [key] desc limit 1", _connection))
+            {
+                timeOut = selectMaxOut.ExecuteScalar();
+                if (timeOut == null) return false;
+                if (timeOut.ToString() == "") return false;
+            }
 
-                using (SQLiteCommand selectMaxOut = new SQLiteCommand($"Select Max(TimeOut) From [{TimeTableName}]", _connection))
-                {
-                    timeout = selectMaxOut.ExecuteScalar();
-                    if (timeout.ToString() == "")
-                    {
-                        Debug.Write(" false");
-                        return false;
-                    }
-                }
-            
-            Debug.Write(timein.ToString() == timeout.ToString());
-            return timein.ToString() == timeout.ToString();
+            return timeIn.ToString() == timeOut.ToString();
         }
 
         public override void AddUser(User user)
@@ -173,31 +165,38 @@ namespace TheTimeApp.TimeData
 
         public override Day CurrentDay()
         {
-            Day day = new Day(DateTime.MinValue);
-            Debug.WriteLine("CurrentDay:");
-            using (SQLiteCommand cmd = _connection.CreateCommand())
+            Day day = null;
+            using (SQLiteCommand cmdDay = _connection.CreateCommand())
             {
-                cmd.CommandText = $"select * from [{DayTableName}] Where Date = '{DateSqLite(DateTime.Now)}'";
-                cmd.Parameters.Add(new SQLiteParameter());
-                using (SQLiteDataReader rdr = cmd.ExecuteReader())
+                cmdDay.CommandText = $"select `Details` from [{DayTableName}] Where Date = '{DateSqLite(DateTime.Now)}'";
+                object res = cmdDay.ExecuteScalar();
+                if (res != null)
                 {
-                    while (rdr.Read())
+                    day = new Day(DateTime.Now) {Details = res.ToString()};
+                    
+                    // Add times to day
+                    using (SQLiteCommand cmdTime = _connection.CreateCommand())
                     {
-                        day = new Day(Convert.ToDateTime(rdr["Date"].ToString()))
+                        cmdTime.CommandText = $"select * from [{TimeTableName}] Where Date = '{DateSqLite(DateTime.Now)}'";
+                        cmdTime.Parameters.Add(new SQLiteParameter());
+                        using (SQLiteDataReader rdr = cmdTime.ExecuteReader())
                         {
-                            Details = rdr["Details"].ToString()
-                        };
+                            while (rdr.Read())
+                            {
+                                Time time = new Time(Convert.ToDateTime(rdr["TimeIn"].ToString()), Convert.ToDateTime(rdr["TimeOut"].ToString()));
+                                day.AddTime(time);
+                            }
+                        }
                     }
+                }
+                
+                if(day == null)
+                {
+                    day = new Day(DateTime.Now);
+                    AddDay(day);
                 }
             }
 
-            if (day.Date == DateTime.MinValue)
-            {
-                day = new Day(DateTime.Now);
-                AddDay(day);
-            }
-            
-            Debug.Write(day.ToString());
             return day;
         }
 

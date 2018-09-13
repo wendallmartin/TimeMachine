@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.Data.SQLite;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Timers;
@@ -21,21 +17,25 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeAppForm
     {
-        private System.Timers.Timer _detailsChanged;
+        private readonly System.Timers.Timer _timeTic;
+        private readonly System.Timers.Timer _detailsChanged;
         public WPFTimeAppForm()
         {
             InitializeComponent();
             lb_VersionNumber.Content = Program.CurrentVersion;
             
-            SetStartChecked();
-            
             _detailsChanged = new System.Timers.Timer(){Interval = 2000};
             _detailsChanged.Elapsed += OnDetailsChangeTick;
             _detailsChanged.AutoReset = false;
             
+            _timeTic = new System.Timers.Timer(){Interval = 60000};
+            _timeTic.Elapsed += UpdateTimer;
+            _timeTic.AutoReset = true;
+            
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
             
+            SetStartChecked();
             UpdateTimer();
         }
 
@@ -78,11 +78,13 @@ namespace TheTimeApp
         {
             if (DataBaseManager.Instance.IsClockedIn())
             {
+                _timeTic.Start();
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
             }
             else
             {
+                _timeTic.Stop();
                 Start_Button.Background = Brushes.Green;
                 Start_Button.Content = "Start";
             }
@@ -93,23 +95,48 @@ namespace TheTimeApp
             if (Equals(Start_Button.Background, Brushes.Green))
             {
                 UpdateTimer();
+                _timeTic.Start();
+                
                 DataBaseManager.Instance.PunchIn();
                 Start_Button.Background = Brushes.Red;
                 Start_Button.Content = "Stop";
             }
             else
             {
-                UpdateTimer();
                 DataBaseManager.Instance.PunchOut();
                 Start_Button.Background = Brushes.Green;
                 Start_Button.Content = "Start";
+                
+                _timeTic.Stop();
+                UpdateTimer();
             }
+        }
+
+        /// <summary>
+        /// Event adapter for timer _timTic
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void UpdateTimer(object sender, ElapsedEventArgs e)
+        {
+            UpdateTimer();
         }
 
         private void UpdateTimer()
         {
             TimeSpan ts = DataBaseManager.Instance.HoursInRange(DateTime.Today, DateTime.Today);
-            Lbl_Time.Content = $"{ts.Hours:0}:{ts.Minutes:00}";       
+            if (DataBaseManager.Instance.IsClockedIn())
+            {
+                Day day = DataBaseManager.Instance.CurrentDay();
+                if (day.Times.Count > 0)
+                {
+                    DateTime lasTimeIn = day.Times.Last().TimeIn;
+                    TimeSpan additional = DateTime.Now - lasTimeIn;
+                    ts = ts.Add(additional);    
+                }
+            }
+
+            Dispatcher.Invoke(() => { Lbl_Time.Content = $"{ts.Hours:0}:{ts.Minutes:00}"; });
         }
 
         private void SqlUpdateChanged(List<SerilizeSqlCommand> value)
