@@ -20,7 +20,7 @@ namespace Tests
         {
             TimeServer.SqlCurrentUser = "nunit";
             AppSettings.Validate();
-            AppSettings.DataPath = "TimeData";
+            AppSettings.DataPath = "TimeData";// todo make tests no longer corrupt appData
             _instance = Sqlite.LoadFromFile();
             _instance.AddUser(new User("nunit", "", new List<Day>()));
             TimeServer.SqlCurrentUser = "nunit";

@@ -171,6 +171,11 @@ namespace TheTimeApp.TimeData
             return startEnd;
         }
 
+        public static string TimeSpanToText(TimeSpan hours)
+        {
+            return Math.Floor(hours.TotalHours) + ":" + hours.Minutes;
+        }
+
         public abstract void Dispose();
     }
 }

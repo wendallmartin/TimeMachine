@@ -387,6 +387,7 @@ namespace TheTimeApp.TimeData
             logger.Info($"GetRangeAsText, DateA: {dateA} | DateB: {dateB}");
             Debug.WriteLine($"GetRangeAsText: {dateA}-{dateB}");
             string result = "";
+            TimeSpan hours = HoursInRange(dateA, dateB);
             result += dateA.Date.Month + "\\" + dateA.Date.Day + "\\" + dateA.Date.Year + " to " + dateB.Date.Month + "\\" + dateB.Date.Day + "\\" + dateB.Date.Year;
             
             foreach (Day day in DaysInRange(dateA,dateB))
@@ -396,7 +397,8 @@ namespace TheTimeApp.TimeData
                 result += "\n--------------------------------------------------------";
             }
             result += "\n -------------------------------";
-            result += "\n Total hours = " + HoursInRange(dateA, dateB);
+            result += "\n Total hours as time span = " + TimeSpanToText(hours);
+            result += "\n Total hours as decimal = " + Math.Round(hours.TotalHours, 1);
             return result;
         }
 

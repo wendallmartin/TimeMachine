@@ -15,12 +15,8 @@
              Title="Time Clock">
     <Grid>
         <Label x:Name="lb_VersionNumber" Content="Label" HorizontalAlignment="Right" VerticalAlignment="Top" Width="Auto" FontSize="10"/>
-        <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Margin="0,10,0,0" Click="btn_SelectedUser_Click"/>
-        <Label x:Name="Lbl_Time" Content="" FontSize="20" Foreground="LightGreen" HorizontalAlignment="Center" Margin="0,32,0,0" VerticalAlignment="Top"/>
-        <ScrollViewer x:Name = "scroll_UserSelection" HorizontalAlignment="Center" Margin="0,35,0,0" VerticalAlignment="Top" Width="150" Visibility="Hidden" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="pnl_UserSelection" HorizontalAlignment="Center" Height="Auto" VerticalAlignment="Top" Width="150"/>    
-        </ScrollViewer>
-        <TextBox x:Name="DayDetailsBox" TextWrapping="Wrap" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Stretch" Width="Auto" Margin="45,68,45,145" MinHeight="120" TextChanged="OnDayDetailsChanged" AcceptsReturn="True" ScrollViewer.CanContentScroll="True">
+        <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Margin="0,18,0,0" Click="btn_SelectedUser_Click"/>
+        <TextBox x:Name="DayDetailsBox" TextWrapping="Wrap" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Stretch" Width="Auto" Margin="45,47,45,156" MinHeight="120" TextChanged="OnDayDetailsChanged" AcceptsReturn="True" ScrollViewer.CanContentScroll="True">
         </TextBox>
                 <Button x:Name="btn_Report" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Report_Click" Margin="5,5,0,0" >
                     <StackPanel>
@@ -32,10 +28,14 @@
                           <Image Source="Resources/settings.png" Height="23"></Image>
                       </StackPanel>
                 </Button>
+        <ScrollViewer x:Name = "scroll_UserSelection" HorizontalAlignment="Center" Margin="0,43,0,0" Visibility="Hidden" VerticalAlignment="Top" Width="150" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="pnl_UserSelection" HorizontalAlignment="Center" Height="Auto" VerticalAlignment="Top" Width="150"/>
+        </ScrollViewer>
+        <Label x:Name="Lbl_Time" Content="" FontSize="20" Foreground="LightGreen" HorizontalAlignment="Center" Margin="0,0,0,122" VerticalAlignment="Bottom"/>
+        <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="Auto" Height="85" Margin="10,0,10,40" FontSize="36" Click="btn_Start_CheckedChanged" MinHeight="80"/>
         <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="Auto">
             <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="Auto" Canvas.Left="10"/>
             <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="Auto"  Canvas.Right="10" />
         </Canvas>
-        <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="Auto" Height="85" Margin="10,0,10,45" FontSize="36" Click="btn_Start_CheckedChanged" MinHeight="80"/>
     </Grid>
 </Window>

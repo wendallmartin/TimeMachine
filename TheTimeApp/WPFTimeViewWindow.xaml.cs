@@ -85,7 +85,7 @@ namespace TheTimeApp
                 prev = day;
             }
 
-            TotalTime.Content = $"{totalHours.Hours:0}:{totalHours.Minutes:00}";
+            TotalTime.Content = TimeServer.TimeSpanToText(totalHours);
         }
 
         private void OnDeleteWeek(DateTime date)

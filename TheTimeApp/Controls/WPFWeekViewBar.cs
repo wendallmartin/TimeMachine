@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Forms;
 using System.Windows.Media;
+using TheTimeApp.TimeData;
 using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace TheTimeApp.Controls
@@ -23,7 +24,7 @@ namespace TheTimeApp.Controls
 
         public event WeekDel PreviewWeekEvent;
 
-        public WpfWeekViewBar(DateTime dateTime, TimeSpan hoursinweek)
+        public WpfWeekViewBar(DateTime dateTime, TimeSpan hours)
         {
             BrushSelected = Brushes.DimGray;
             BrushUnselected = Brushes.Gray;
@@ -31,7 +32,7 @@ namespace TheTimeApp.Controls
             _date = dateTime;
 
             Text = "Week - " + dateTime.Month + "//" +
-                   dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + $"{hoursinweek.Hours:00}:{hoursinweek.Minutes:00}";
+                   dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + $"{TimeServer.TimeSpanToText(hours)}";
 
             DeleteEvent += OnDeleteDay;
             SelectedEvent += OnMouseDown;
@@ -39,7 +40,7 @@ namespace TheTimeApp.Controls
 
         private void OnDeleteDay(ViewBar viewBar)
         {
-            var sure = MessageBox.Show(@"Time will be deleted permenetly!", @"Warning",
+            var sure = MessageBox.Show(@"Time will be deleted permanently!", @"Warning",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
             if (sure == DialogResult.Yes)
