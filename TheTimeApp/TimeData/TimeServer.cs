@@ -173,7 +173,7 @@ namespace TheTimeApp.TimeData
 
         public static string TimeSpanToText(TimeSpan hours)
         {
-            return Math.Floor(hours.TotalHours) + ":" + hours.Minutes;
+            return $"{Math.Floor(hours.TotalHours):0}:{hours.Minutes:00}";
         }
 
         public abstract void Dispose();
