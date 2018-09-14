@@ -17,24 +17,29 @@ namespace TheTimeApp
     /// </summary>
     public partial class WPFTimeAppForm
     {
-        private readonly System.Timers.Timer _timeTic;
-        private readonly System.Timers.Timer _detailsChanged;
+        private System.Timers.Timer _timeTic;
+        private System.Timers.Timer _detailsChanged;
         public WPFTimeAppForm()
         {
             InitializeComponent();
+            Init();
+        }
+
+        private void Init()
+        {
             lb_VersionNumber.Content = Program.CurrentVersion;
-            
-            _detailsChanged = new System.Timers.Timer(){Interval = 2000};
+
+            _detailsChanged = new System.Timers.Timer() {Interval = 2000};
             _detailsChanged.Elapsed += OnDetailsChangeTick;
             _detailsChanged.AutoReset = false;
-            
-            _timeTic = new System.Timers.Timer(){Interval = 60000};
+
+            _timeTic = new System.Timers.Timer() {Interval = 60000};
             _timeTic.Elapsed += UpdateTimer;
             _timeTic.AutoReset = true;
-            
+
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
-            
+
             SetStartChecked();
             UpdateTimer();
         }
@@ -197,16 +202,13 @@ namespace TheTimeApp
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
             new WpfTimeViewWindow().ShowDialog();
-            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
+            Init();
         }
 
         private void btn_Settings_Click(object sender, RoutedEventArgs e)
         {
-            SettingsWindow esettings = new SettingsWindow();
-            esettings.ShowDialog();
-            
-            SetStartChecked();
-            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
+            new SettingsWindow().ShowDialog();
+            Init();// reinitialize
         }
     }
 }

@@ -581,10 +581,26 @@ namespace TheTimeApp.TimeData
                 
                 SQLiteConnection.CreateFile(newPath);
                 Sqlite instance = new Sqlite("Data Source="+ newPath +";Version=3");
-                
-                foreach (User user in data.Users)
+
+                if (data.Users == null || data.Users.Count == 0)
                 {
+                    EnterUser enterUser = new EnterUser();
+                    enterUser.ShowDialog();
+                    List<Day> days = new List<Day>();
+                    if (data.Days != null && data.Days.Count > 0)
+                    {
+                        days = data.Days;
+                    }
+                    
+                    User user = new User(enterUser.UserText, "", days);
                     instance.AddUser(user);
+                }
+                else
+                {
+                    foreach (User user in data.Users)
+                    {
+                        instance.AddUser(user);
+                    }                    
                 }
                 
                 AppSettings.DataPath = newPath;

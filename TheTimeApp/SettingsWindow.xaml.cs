@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
@@ -24,7 +25,7 @@ namespace TheTimeApp
     public partial class SettingsWindow
     {
         private readonly object _update = new object();
-        
+        private bool _changeDataPath;        
         public SettingsWindow()
         {
             InitializeComponent();
@@ -267,7 +268,21 @@ namespace TheTimeApp
                 }
             }).Start();
         }
-
+        
+        private void DataLocation_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Time file (*.sqlite)|*.sqlite|Dtf (*.dtf)|*.dtf|Tdf (*.tdf)|*.tdf";
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                if (AppSettings.DataPath != openFileDialog.FileName)
+                {
+                    _changeDataPath = true;
+                    AppSettings.DataPath = openFileDialog.FileName;    
+                }
+            }
+        }
+        
         #region sql settings
         
         private void Btn_SQLDownload_Click(object sender, RoutedEventArgs e)
@@ -284,16 +299,6 @@ namespace TheTimeApp
                 ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
                 DataBaseManager.Instance.LoadFromServer();    
             } 
-        }
-
-        private void DataLocation_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Time file (*.sqlite)|*.sqlite";
-            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                AppSettings.DataPath = openFileDialog.FileName;    
-            }
         }
 
         private void BtnTestClick(object sender, RoutedEventArgs e)
@@ -428,6 +433,16 @@ namespace TheTimeApp
         private void SqlTypeExpaner_Colapsed(object sender, RoutedEventArgs e)
         {
             btn_SQLSyncAll.Visibility = btn_SQLBackup.Visibility = btn_SQLEnable.Visibility = btn_SQLTest.Visibility = Visibility.Visible;
+        }
+
+        private void SettingsWindow_OnClosing(object sender, CancelEventArgs e)
+        {
+            if (_changeDataPath)
+            {
+                Thread thread = new Thread (() => { Process.Start("TheTimeApp.exe");});
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+            }
         }
     }
 }

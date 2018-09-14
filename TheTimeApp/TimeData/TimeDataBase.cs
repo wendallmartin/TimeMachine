@@ -73,6 +73,12 @@ namespace TheTimeApp.TimeData
         public List<Day> Days
         {
             get{
+                if (TimeDataBase == null || TimeDataBase._users == null || TimeDataBase._users.Count == 0)
+                {
+                    if(days != null) return days;
+                        
+                    return new List<Day>();
+                }
                 if (TimeDataBase._users.Any(u => u.UserName == TimeDataBase.CurrentUserName))
                 {
                     return TimeDataBase._users.First(u => u.UserName == TimeDataBase.CurrentUserName).Days ;    
