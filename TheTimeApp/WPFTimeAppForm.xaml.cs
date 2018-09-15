@@ -67,7 +67,7 @@ namespace TheTimeApp
         {
             TimeServer.SqlCurrentUser = view.Text;
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
-            AppSettings.CurrentUser = TimeServer.SqlCurrentUser;
+            AppSettings.Instance.CurrentUser = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
             UpdateTimer();
@@ -183,7 +183,7 @@ namespace TheTimeApp
 
         private void OnDayDetailsChanged(object sender, TextChangedEventArgs e)
         {
-            if (AppSettings.SqlEnabled == "true")
+            if (AppSettings.Instance.SqlEnabled == "true")
             {
                 if(_detailsChanged.Enabled)// Stop any previous timers
                     _detailsChanged.Stop();

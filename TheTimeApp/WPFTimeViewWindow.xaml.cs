@@ -33,7 +33,7 @@ namespace TheTimeApp
         {
             InitializeComponent();
             
-            _24Hour = AppSettings.MilitaryTime == "true";
+            _24Hour = AppSettings.Instance.MilitaryTime == "true";
 
             if (_24Hour)
             {
@@ -136,15 +136,15 @@ namespace TheTimeApp
             {
                 try
                 {
-                    MailMessage msg = new MailMessage(AppSettings.FromAddress, AppSettings.ToAddress);
+                    MailMessage msg = new MailMessage(AppSettings.Instance.FromAddress, AppSettings.Instance.ToAddress);
                     SmtpClient smtp = new SmtpClient();
-                    NetworkCredential basicCredential = new NetworkCredential(AppSettings.FromUser, AppSettings.FromPass);
-                    smtp.EnableSsl = AppSettings.SslEmail == "true";
-                    smtp.Port = Convert.ToInt32(AppSettings.FromPort);
+                    NetworkCredential basicCredential = new NetworkCredential(AppSettings.Instance.FromUser, AppSettings.Instance.FromPass);
+                    smtp.EnableSsl = AppSettings.Instance.SslEmail == "true";
+                    smtp.Port = Convert.ToInt32(AppSettings.Instance.FromPort);
                     smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
                     smtp.UseDefaultCredentials = false;
                     smtp.Credentials = basicCredential;
-                    smtp.Host = AppSettings.EmailHost;
+                    smtp.Host = AppSettings.Instance.EmailHost;
                     msg.Subject = "Time";
                     msg.Body = DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
                     smtp.Send(msg);
@@ -209,8 +209,8 @@ namespace TheTimeApp
             TwentyFourHourButton.Background = Brushes.Transparent;
             
             TimeFormatExpander.IsExpanded = false;
-            AppSettings.MilitaryTime = "false";
-            _24Hour = AppSettings.MilitaryTime == "true";
+            AppSettings.Instance.MilitaryTime = "false";
+            _24Hour = AppSettings.Instance.MilitaryTime == "true";
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
@@ -220,8 +220,8 @@ namespace TheTimeApp
             TwelveHourButton.Background = Brushes.Transparent;
             
             TimeFormatExpander.IsExpanded = false;
-            AppSettings.MilitaryTime = "true";
-            _24Hour = AppSettings.MilitaryTime == "true";
+            AppSettings.Instance.MilitaryTime = "true";
+            _24Hour = AppSettings.Instance.MilitaryTime == "true";
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 

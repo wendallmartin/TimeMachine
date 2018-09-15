@@ -19,8 +19,8 @@ namespace Tests
         [SetUp]
         public void Setup()
         {
-            AppSettings.Validate();
-            AppSettings.MySqlDatabase = "test";
+            AppSettings.Instance = new AppSettings();
+            AppSettings.Instance.MySqlDatabase = "test";
             TimeServer.SqlCurrentUser = "nunit";
             MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()
             {

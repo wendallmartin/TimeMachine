@@ -31,8 +31,8 @@ namespace TheTimeApp.TimeData
             
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
-                if (AppSettings.MySqlDatabase == "")
-                    AppSettings.MySqlDatabase = "TimeDataBase";
+                if (AppSettings.Instance.MySqlDatabase == "")
+                    AppSettings.Instance.MySqlDatabase = "TimeDataBase";
                 
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}]([Name] TEXT , [Rate] TEXT , [Unit] TEXT , [Active] TEXT )";
                 cmd.ExecuteNonQuery();
@@ -571,10 +571,10 @@ namespace TheTimeApp.TimeData
 
         public static Sqlite LoadFromFile()
         {
-            if (Path.GetExtension(AppSettings.DataPath) != ".sqlite")
+            if (Path.GetExtension(AppSettings.Instance.DataPath) != ".sqlite")
             {
-                TimeData data = TimeData.Load(AppSettings.DataPath);
-                string newPath = Path.ChangeExtension(AppSettings.DataPath, ".sqlite");
+                TimeData data = TimeData.Load(AppSettings.Instance.DataPath);
+                string newPath = Path.ChangeExtension(AppSettings.Instance.DataPath, ".sqlite");
                 
                 if (newPath != null && File.Exists(newPath))
                     File.Delete(newPath);
@@ -603,15 +603,15 @@ namespace TheTimeApp.TimeData
                     }                    
                 }
                 
-                AppSettings.DataPath = newPath;
+                AppSettings.Instance.DataPath = newPath;
                 return instance;
             }
-            if (!File.Exists(AppSettings.DataPath))
+            if (!File.Exists(AppSettings.Instance.DataPath))
             {
-                SQLiteConnection.CreateFile(Path.ChangeExtension(AppSettings.DataPath, ".sqlite"));
+                SQLiteConnection.CreateFile(Path.ChangeExtension(AppSettings.Instance.DataPath, ".sqlite"));
                 
             }
-            return new Sqlite("Data Source="+ AppSettings.DataPath +";Version=3");
+            return new Sqlite("Data Source="+ AppSettings.Instance.DataPath +";Version=3");
         }
 
         #endregion    

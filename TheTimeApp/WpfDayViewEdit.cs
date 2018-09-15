@@ -24,7 +24,7 @@ namespace TheTimeApp
             if (!Enabled)
                 return;
 
-            if (AppSettings.MainPermission == "write")
+            if (AppSettings.Instance.MainPermission == "write")
             {
                 DataBaseManager.Instance.UpdateDetails(_day.Date, dayDetails.Text);
             }

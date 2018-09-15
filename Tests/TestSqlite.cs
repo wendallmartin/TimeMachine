@@ -19,8 +19,8 @@ namespace Tests
         public void Setup()
         {
             TimeServer.SqlCurrentUser = "nunit";
-            AppSettings.Validate();
-            AppSettings.DataPath = "TimeData";// todo make tests no longer corrupt appData
+            AppSettings.Instance = new AppSettings();
+            AppSettings.Instance.DataPath = "TimeData.sqlite";
             _instance = Sqlite.LoadFromFile();
             _instance.AddUser(new User("nunit", "", new List<Day>()));
             TimeServer.SqlCurrentUser = "nunit";
@@ -31,8 +31,8 @@ namespace Tests
         {
             _instance.Dispose();
             
-            if(File.Exists($"{AppSettings.DataPath}.sqlite"))
-                File.Delete($"{AppSettings.DataPath}.sqlite");
+            if(File.Exists($"{AppSettings.Instance.DataPath}"))
+                File.Delete($"{AppSettings.Instance.DataPath}");
         }
 
         [Test]

@@ -38,7 +38,7 @@ namespace TheTimeApp
             Sqlite.LoadFromFile();
             DataBaseManager.Initulize();
            
-            if (AppSettings.SqlEnabled == "true" )
+            if (AppSettings.Instance.SqlEnabled == "true" )
             {
                 DataBaseManager.Instance.LoadFromServer();
                 ConnectionChanged(true);
@@ -73,7 +73,7 @@ namespace TheTimeApp
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
             
-            bool connectedAndEnabled = AppSettings.SqlEnabled == "true"; 
+            bool connectedAndEnabled = AppSettings.Instance.SqlEnabled == "true"; 
             if (connectedAndEnabled)
             {
                 DataBaseManager.Instance.LoadFromServer();
@@ -195,15 +195,15 @@ namespace TheTimeApp
             {
                 try
                 {
-                    MailMessage msg = new MailMessage(AppSettings.FromAddress, AppSettings.ToAddress);
+                    MailMessage msg = new MailMessage(AppSettings.Instance.FromAddress, AppSettings.Instance.ToAddress);
                     SmtpClient smtp = new SmtpClient();
-                    NetworkCredential basicCredential = new NetworkCredential(AppSettings.FromUser, AppSettings.FromPass);
-                    smtp.EnableSsl = AppSettings.SslEmail == "true";
-                    smtp.Port = Convert.ToInt32(AppSettings.FromPort);
+                    NetworkCredential basicCredential = new NetworkCredential(AppSettings.Instance.FromUser, AppSettings.Instance.FromPass);
+                    smtp.EnableSsl = AppSettings.Instance.SslEmail == "true";
+                    smtp.Port = Convert.ToInt32(AppSettings.Instance.FromPort);
                     smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
                     smtp.UseDefaultCredentials = false;
                     smtp.Credentials = basicCredential;
-                    smtp.Host = AppSettings.EmailHost;
+                    smtp.Host = AppSettings.Instance.EmailHost;
                     msg.Subject = "Time";
                     msg.Body = DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0],TimeServer.StartEndWeek(date)[1]);
                     smtp.Send(msg);

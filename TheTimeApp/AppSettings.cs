@@ -12,160 +12,104 @@ namespace TheTimeApp
     {
         private static readonly string SettingsFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\TheTimeApp\\settings.xml";
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        
-        public static string DataPath
+
+        private static AppSettings _instance;
+
+        public static AppSettings Instance
         {
             get{
-                if (ReadValueFromXml("uwnmnnvvkgsfghks", false) == "")
+                if (_instance == null)
                 {
-                    WriteValueToxml("uwnmnnvvkgsfghks", "time", false);
+                    _instance = new AppSettings();
+                    _instance.Load();
                 }
-                return ReadValueFromXml("uwnmnnvvkgsfghks", false);
+                
+                return _instance;
             }
-            set => WriteValueToxml("uwnmnnvvkgsfghks", value, false);
-        }
-
-        public static string CurrentUser
-        {
-            get => ReadValueFromXml("ahkakljdfgj");
-            set => WriteValueToxml("ahkakljdfgj", value);
+            set => _instance = value;
         }
         
-        public static string FromAddress
-        {
-            get => ReadValueFromXml("ufhgawh");
-            set => WriteValueToxml("ufhgawh", value);
-        }
-
-        public static string FromUser
-        {
-            get => ReadValueFromXml("klaosof");
-            set => WriteValueToxml("klaosof", value);
-        }
-
-        public static string FromPass
-        {
-            get => ReadValueFromXml("wasllefa");
-            set => WriteValueToxml("wasllefa", value);
-        }
-        public static string FromPort
-        {
-            get => ReadValueFromXml("adjflegad");
-            set => WriteValueToxml("adjflegad", value);
-        }
-        public static string EmailHost
-        {
-            get => ReadValueFromXml("slllejfas");
-            set => WriteValueToxml("slllejfas", value);
-        }
-        public static string ToAddress
-        {
-            get => ReadValueFromXml("aaljgjlkej");
-            set => WriteValueToxml("aaljgjlkej", value);
-        }
-        public static string MilitaryTime
-        {
-            get => ReadValueFromXml("keslkwkjw");
-            set => WriteValueToxml("keslkwkjw", value);
-        }
-
-        public static string SslEmail
-        {
-            get => ReadValueFromXml("ljowoiislo");
-            set => WriteValueToxml("ljowoiislo", value);
-        }
-
-        public static string AzureDateSource
-        {
-            get => ReadValueFromXml("kwkvuesav");
-            set => WriteValueToxml("kwkvuesav", value);
-        }
+        public string DataPath { get; set; }
+        public string CurrentUser { get; set; }
+        public string FromAddress { get; set; }
+        public string FromUser { get; set; }
+        public string FromPass { get; set; }
+        public string FromPort { get; set; }
+        public string EmailHost { get; set; }
+        public string ToAddress { get; set; }
+        public string MilitaryTime { get; set; }
+        public string SslEmail { get; set; }
+        public string AzureDateSource { get; set; }
+        public string AzureUser { get; set; }
+        public string AzurePassword { get; set; }
+        public string AzureCateloge { get; set; }
+        public string AzurePort { get; set; }
+        public string MySqlServer { get; set; }
+        public string MySqlUserId { get; set; }
+        public string MySqlPassword { get; set; }
+        public string MySqlDatabase { get; set; }
+        public int MySqlPort { get; set; }
+        public string SqlEnabled { get; set; }
+        public string SqlType { get; set; }
+        public string MainPermission { get; set; }
         
-        public static string AzureUser
+        public void Load()
         {
-            get => ReadValueFromXml("aslejfooowgh");
-            set => WriteValueToxml("aslejfooowgh", value);
+            DataPath = ReadValueFromXml("uwnmnnvvkgsfghks", false) == "" ? "time" : ReadValueFromXml("uwnmnnvvkgsfghks", false);
+            CurrentUser = ReadValueFromXml("ahkakljdfgj");
+            FromAddress = ReadValueFromXml("ufhgawh");
+            FromUser = ReadValueFromXml("klaosof");
+            FromPass = ReadValueFromXml("wasllefa");
+            FromPort = ReadValueFromXml("adjflegad");
+            EmailHost = ReadValueFromXml("slllejfas");
+            ToAddress = ReadValueFromXml("aaljgjlkej");
+            MilitaryTime = ReadValueFromXml("keslkwkjw");
+            SslEmail = ReadValueFromXml("ljowoiislo");
+            AzureDateSource = ReadValueFromXml("kwkvuesav");
+            AzureUser = ReadValueFromXml("aslejfooowgh");
+            AzurePassword = ReadValueFromXml("lsoenwowdjf");
+            AzureCateloge = ReadValueFromXml("lafjedoioowowfowof");
+            AzurePort = ReadValueFromXml("dhjahhdjh");
+            MySqlServer = ReadValueFromXml("aksdfajhfgjh");
+            MySqlUserId = ReadValueFromXml("jgufsedasdfhjkfhif");
+            MySqlPassword = ReadValueFromXml("jghjefdhguishsifpfafsdjkuh");
+            MySqlDatabase = ReadValueFromXml("igaujjshjsdfhhalfjlffhio");
+            MySqlPort = !string.IsNullOrEmpty(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd")) ? int.Parse(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd")) : 0;
+            SqlEnabled = ReadValueFromXml("dkjfgjpwhjpo");
+            SqlType = ReadValueFromXml("jgfhgjasgjfajfghj");
+            MainPermission = ReadValueFromXml("dlajwugpasdh");
         }
 
-        public static string AzurePassword
+        public void Save()
         {
-            get => ReadValueFromXml("lsoenwowdjf");
-            set => WriteValueToxml("lsoenwowdjf", value);
+            WriteValueToxml("uwnmnnvvkgsfghks", DataPath, false);
+            WriteValueToxml("ahkakljdfgj", CurrentUser);
+            WriteValueToxml("ufhgawh", FromAddress);
+            WriteValueToxml("klaosof", FromUser);
+            WriteValueToxml("wasllefa", FromPass);
+            WriteValueToxml("adjflegad", FromPort);
+            WriteValueToxml("slllejfas", EmailHost);
+            WriteValueToxml("aaljgjlkej", ToAddress);
+            WriteValueToxml("keslkwkjw", MilitaryTime);
+            WriteValueToxml("ljowoiislo", SslEmail);
+            WriteValueToxml("kwkvuesav", AzureDateSource);
+            WriteValueToxml("aslejfooowgh", AzureUser);
+            WriteValueToxml("lsoenwowdjf", AzurePassword);
+            WriteValueToxml("lafjedoioowowfowof", AzureCateloge);
+            WriteValueToxml("dhjahhdjh", AzurePort);
+            WriteValueToxml("aksdfajhfgjh", MySqlServer);
+            WriteValueToxml("jgufsedasdfhjkfhif", MySqlUserId);
+            WriteValueToxml("jghjefdhguishsifpfafsdjkuh", MySqlPassword);
+            WriteValueToxml("igaujjshjsdfhhalfjlffhio", MySqlDatabase);
+            WriteValueToxml("fvdjgfghjkjsdfhjgknklhfzsd", MySqlPort.ToString());
+            WriteValueToxml("dkjfgjpwhjpo", SqlEnabled);
+            WriteValueToxml("jgfhgjasgjfajfghj", SqlType);
+            WriteValueToxml("dlajwugpasdh", MainPermission);
         }
-
-        public static string AzureCateloge
-        {
-            get => ReadValueFromXml("lafjedoioowowfowof");
-            set => WriteValueToxml("lafjedoioowowfowof", value);
-        }
-        
-        public static string AzurePort
-        {
-            get => ReadValueFromXml("dhjahhdjh");
-            set => WriteValueToxml("dhjahhdjh", value);
-        }
-        
-        
-        public static string MySqlServer
-        {
-            get => ReadValueFromXml("aksdfajhfgjh");
-            set => WriteValueToxml("aksdfajhfgjh", value);
-        }
-        
-        public static string MySqlUserId
-        {
-            get => ReadValueFromXml("jgufsedasdfhjkfhif");
-            set => WriteValueToxml("jgufsedasdfhjkfhif", value);
-        }
-
-        public static string MySqlPassword
-        {
-            get => ReadValueFromXml("jghjefdhguishsifpfafsdjkuh");
-            set => WriteValueToxml("jghjefdhguishsifpfafsdjkuh", value);
-        }
-
-        public static string MySqlDatabase
-        {
-            get => ReadValueFromXml("igaujjshjsdfhhalfjlffhio");
-            set => WriteValueToxml("igaujjshjsdfhhalfjlffhio", value);
-        }
-        
+                
         /// <summary>
-        /// Int port value
+        /// Creates new database if it does not exist.
         /// </summary>
-        public static int MySqlPort
-        {
-            get{
-                if (!string.IsNullOrEmpty(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd")))
-                {
-                    return int.Parse(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd"));
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            set => WriteValueToxml("fvdjgfghjkjsdfhjgknklhfzsd", value.ToString());
-        }
-        
-        public static string SqlEnabled
-        {
-            get => ReadValueFromXml("dkjfgjpwhjpo");
-            set => WriteValueToxml("dkjfgjpwhjpo", value);
-        }
-
-        public static string SqlType
-        {
-            get => ReadValueFromXml("jgfhgjasgjfajfghj");
-            set => WriteValueToxml("jgfhgjasgjfajfghj", value);
-        }
-
-        public static string MainPermission
-        {
-            get => ReadValueFromXml("dlajwugpasdh");
-            set => WriteValueToxml("dlajwugpasdh", value);
-        }
-
         public static void Validate()
         {
             if (!File.Exists(SettingsFilePath))

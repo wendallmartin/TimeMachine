@@ -20,12 +20,13 @@ namespace Tests
         {
             TimeServer.SqlCurrentUser = "nunit";
             
-            AppSettings.Validate();
-            AppSettings.MySqlDatabase = "test";
-            AppSettings.MySqlPassword = "test";
-            AppSettings.MySqlPort = 3306;
-            AppSettings.MySqlServer = "localhost";
-            AppSettings.MySqlUserId = "WendallMartin";
+            AppSettings.Instance = new AppSettings();
+            AppSettings.Instance.DataPath = "TimeData.sqlite";
+            AppSettings.Instance.MySqlDatabase = "test";
+            AppSettings.Instance.MySqlPassword = "test";
+            AppSettings.Instance.MySqlPort = 3306;
+            AppSettings.Instance.MySqlServer = "localhost";
+            AppSettings.Instance.MySqlUserId = "WendallMartin";
 
             DataBaseManager.Initulize();
             _instance = DataBaseManager.Instance;
@@ -42,8 +43,8 @@ namespace Tests
             }
             _instance.Dispose();
             
-            if(File.Exists("TimeData.sqlite"))
-                File.Delete("TimeData.sqlite");
+            if(File.Exists(AppSettings.Instance.DataPath))
+                File.Delete(AppSettings.Instance.DataPath);
         }
 
         [Test]

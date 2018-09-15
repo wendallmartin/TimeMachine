@@ -27,9 +27,9 @@ namespace TheTimeApp.TimeData
             
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
-                if (AppSettings.MySqlDatabase == "")
-                    AppSettings.MySqlDatabase = "TimeDataBase";
-                cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{AppSettings.MySqlDatabase}`";
+                if (AppSettings.Instance.MySqlDatabase == "")
+                    AppSettings.Instance.MySqlDatabase = "TimeDataBase";
+                cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{AppSettings.Instance.MySqlDatabase}`";
                 cmd.ExecuteNonQuery();
                 
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{UserTable}`(`Name` TEXT , `Rate` TEXT , `Unit` TEXT , `Active` TEXT )";

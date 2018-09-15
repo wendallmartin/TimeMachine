@@ -45,14 +45,14 @@ namespace TheTimeApp
                 AppSettings.Validate();
                 
                 // set user name if not specified
-                while (string.IsNullOrEmpty(AppSettings.CurrentUser))
+                while (string.IsNullOrEmpty(AppSettings.Instance.CurrentUser))
                 {
                     EnterUser userWin = new EnterUser();
                     userWin.ShowDialog();
-                    AppSettings.CurrentUser = userWin.txt_User.Text;
+                    AppSettings.Instance.CurrentUser = userWin.txt_User.Text;
                 }
                 
-                TimeServer.SqlCurrentUser = AppSettings.CurrentUser;
+                TimeServer.SqlCurrentUser = AppSettings.Instance.CurrentUser;
                 
                 DataBaseManager.Initulize();
 
@@ -61,7 +61,7 @@ namespace TheTimeApp
                     DataBaseManager.Instance.AddUser(new User(TimeServer.SqlCurrentUser, "", new List<TimeData.Day>()));
                 }
                 
-                if (AppSettings.MainPermission == "read")
+                if (AppSettings.Instance.MainPermission == "read")
                 {
                     _log.Info($"TimeView: {CurrentVersion} run......");
                     _myview = new WPFTimeViewForm();
@@ -75,6 +75,7 @@ namespace TheTimeApp
                     _mytime.ShowDialog();
                     _log.Info("TimeApp run......FINISHED!!!");   
                 }
+                AppSettings.Instance.Save();
             }
             catch (Exception e)
             {

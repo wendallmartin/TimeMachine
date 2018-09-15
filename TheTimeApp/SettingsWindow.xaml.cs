@@ -30,32 +30,32 @@ namespace TheTimeApp
         {
             InitializeComponent();
 
-            TextBoxFromAddress.Text = AppSettings.FromAddress;
-            TextBoxUserName.Text = AppSettings.FromUser;
+            TextBoxFromAddress.Text = AppSettings.Instance.FromAddress;
+            TextBoxUserName.Text = AppSettings.Instance.FromUser;
             TextBoxFromPass.Text = "*********";
-            TextBoxEmailServer.Text = AppSettings.EmailHost;
-            TextBoxFromPort.Text = AppSettings.FromPort;
-            TextBoxToAddress.Text = AppSettings.ToAddress;
-            CheckBoxSsl.IsChecked = AppSettings.SslEmail == "true";
+            TextBoxEmailServer.Text = AppSettings.Instance.EmailHost;
+            TextBoxFromPort.Text = AppSettings.Instance.FromPort;
+            TextBoxToAddress.Text = AppSettings.Instance.ToAddress;
+            CheckBoxSsl.IsChecked = AppSettings.Instance.SslEmail == "true";
 
-            TextBoxAzureDataSource.Text = AppSettings.AzureDateSource;
-            TextBoxAzureUserId.Text = AppSettings.AzureUser;
+            TextBoxAzureDataSource.Text = AppSettings.Instance.AzureDateSource;
+            TextBoxAzureUserId.Text = AppSettings.Instance.AzureUser;
             TextBoxAzurePassword.Text = "*********";
-            TextBoxAzureCatelog.Text = AppSettings.AzureCateloge;
-            TextBoxAzurePort.Text = AppSettings.AzurePort;
+            TextBoxAzureCatelog.Text = AppSettings.Instance.AzureCateloge;
+            TextBoxAzurePort.Text = AppSettings.Instance.AzurePort;
             
-            TextBoxMySqlDataSource.Text = AppSettings.MySqlServer;
-            TextBoxMySqlUserId.Text = AppSettings.MySqlUserId;
+            TextBoxMySqlDataSource.Text = AppSettings.Instance.MySqlServer;
+            TextBoxMySqlUserId.Text = AppSettings.Instance.MySqlUserId;
             TextBoxMySqlPassword.Text = "*********";
-            TextBoxMySqlPort.Text = AppSettings.MySqlPort.ToString();
-            TextBoxMySqlDatabase.Text = AppSettings.MySqlDatabase;
+            TextBoxMySqlPort.Text = AppSettings.Instance.MySqlPort.ToString();
+            TextBoxMySqlDatabase.Text = AppSettings.Instance.MySqlDatabase;
             
-            btn_SQLEnable.Content = AppSettings.SqlEnabled == "true" ? "Enabled" : "Disabled";
-            btn_Permission.Content = AppSettings.MainPermission == "write" ? "Write" : "Read";
+            btn_SQLEnable.Content = AppSettings.Instance.SqlEnabled == "true" ? "Enabled" : "Disabled";
+            btn_Permission.Content = AppSettings.Instance.MainPermission == "write" ? "Write" : "Read";
 
-            SqlTypeExpaner.Header = AppSettings.SqlType;
+            SqlTypeExpaner.Header = AppSettings.Instance.SqlType;
 
-            switch (AppSettings.SqlType)
+            switch (AppSettings.Instance.SqlType)
             {
                     case "Azure":
                         MySqlSettings.Visibility = Visibility.Hidden;
@@ -66,7 +66,7 @@ namespace TheTimeApp
                         MySqlSettings.Visibility = Visibility.Visible;
                         break;
                     default:
-                        AppSettings.SqlType = "Azure";
+                        AppSettings.Instance.SqlType = "Azure";
                         MySqlSettings.Visibility = Visibility.Hidden;
                         AzureSettings.Visibility = Visibility.Visible;
                         return;
@@ -121,61 +121,61 @@ namespace TheTimeApp
 
         private void TextBox_FromAddress_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.FromAddress = TextBoxFromAddress.Text;
+            AppSettings.Instance.FromAddress = TextBoxFromAddress.Text;
         }
 
         private void TextBox_UserName_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.FromUser = TextBoxUserName.Text;
+            AppSettings.Instance.FromUser = TextBoxUserName.Text;
         }
 
         private void TextBox_FromPass_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.FromPass = TextBoxFromPass.Text;
+            AppSettings.Instance.FromPass = TextBoxFromPass.Text;
         }
 
         private void TextBox_EmailServer_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.EmailHost = TextBoxEmailServer.Text;
+            AppSettings.Instance.EmailHost = TextBoxEmailServer.Text;
         }
 
         private void TextBox_FromPort_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.FromPort = TextBoxFromPort.Text;
+            AppSettings.Instance.FromPort = TextBoxFromPort.Text;
         }
 
         private void TextBox_ToAddress_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.ToAddress = TextBoxToAddress.Text;
+            AppSettings.Instance.ToAddress = TextBoxToAddress.Text;
         }
 
         private void Ssl_CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            AppSettings.SslEmail = "true";
+            AppSettings.Instance.SslEmail = "true";
         }
 
         private void Ssl_CheckBox_UnChecked(object sender, RoutedEventArgs e)
         {
-            AppSettings.SslEmail = "false";
+            AppSettings.Instance.SslEmail = "false";
         }
 
         private void Btn_SQLEnabled_Click(object sender, RoutedEventArgs e)
         {
-            if (AppSettings.SqlEnabled == "true")
+            if (AppSettings.Instance.SqlEnabled == "true")
             {
-                AppSettings.SqlEnabled = "false";
+                AppSettings.Instance.SqlEnabled = "false";
                 btn_SQLEnable.Content = "Disabled";
             }
             else
             {
-                AppSettings.SqlEnabled = "true";
+                AppSettings.Instance.SqlEnabled = "true";
                 btn_SQLEnable.Content = "Enabled";
             }
         }
         
         private void Btn_SQLPushAll_Click(object sender, RoutedEventArgs e)
         {
-            if (AppSettings.SqlEnabled != "true")
+            if (AppSettings.Instance.SqlEnabled != "true")
             {
                 MessageBox.Show("SQL not enabled!");
                 return;
@@ -214,14 +214,14 @@ namespace TheTimeApp
 
         private void btn_EmployEmployer_Click(object sender, RoutedEventArgs e)
         {
-            if (AppSettings.MainPermission == "write")
+            if (AppSettings.Instance.MainPermission == "write")
             {
-                AppSettings.MainPermission = "read";
+                AppSettings.Instance.MainPermission = "read";
                 btn_Permission.Content = "Read";
             }
             else
             {
-                AppSettings.MainPermission = "write";
+                AppSettings.Instance.MainPermission = "write";
                 btn_Permission.Content = "Write";
             }
         }
@@ -275,10 +275,10 @@ namespace TheTimeApp
             openFileDialog.Filter = "Time file (*.sqlite)|*.sqlite|Dtf (*.dtf)|*.dtf|Tdf (*.tdf)|*.tdf";
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                if (AppSettings.DataPath != openFileDialog.FileName)
+                if (AppSettings.Instance.DataPath != openFileDialog.FileName)
                 {
                     _changeDataPath = true;
-                    AppSettings.DataPath = openFileDialog.FileName;    
+                    AppSettings.Instance.DataPath = openFileDialog.FileName;    
                 }
             }
         }
@@ -287,7 +287,7 @@ namespace TheTimeApp
         
         private void Btn_SQLDownload_Click(object sender, RoutedEventArgs e)
         {
-            if (AppSettings.SqlEnabled != "true")
+            if (AppSettings.Instance.SqlEnabled != "true")
             {
                 MessageBox.Show("SQL not enabled!");
                 return;
@@ -306,15 +306,15 @@ namespace TheTimeApp
 
             try
             {
-                switch (AppSettings.SqlType)
+                switch (AppSettings.Instance.SqlType)
                 {
                     case "Azure":
                         SqlConnectionStringBuilder stringBuilder = new SqlConnectionStringBuilder()
                         {
-                            DataSource = AppSettings.AzureDateSource,
-                            UserID = AppSettings.AzureUser,
-                            Password = AppSettings.AzurePassword,
-                            InitialCatalog = AppSettings.AzureCateloge,
+                            DataSource = AppSettings.Instance.AzureDateSource,
+                            UserID = AppSettings.Instance.AzureUser,
+                            Password = AppSettings.Instance.AzurePassword,
+                            InitialCatalog = AppSettings.Instance.AzureCateloge,
                             MultipleActiveResultSets = true,
                         };
                         using (SqlConnection azureConnection = new SqlConnection(stringBuilder.ConnectionString))
@@ -328,10 +328,10 @@ namespace TheTimeApp
                     case "MySql":
                         MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()
                         {
-                            Server = AppSettings.MySqlServer,
-                            UserID = AppSettings.MySqlUserId,
-                            Password = AppSettings.MySqlPassword,
-                            Port = (uint) AppSettings.MySqlPort,
+                            Server = AppSettings.Instance.MySqlServer,
+                            UserID = AppSettings.Instance.MySqlUserId,
+                            Password = AppSettings.Instance.MySqlPassword,
+                            Port = (uint) AppSettings.Instance.MySqlPort,
                             SslMode = MySqlSslMode.None// todo add mysql ssl setting
                         };
                         using (MySqlConnection mySqlConnection = new MySqlConnection(mysqlBuiler.ConnectionString))
@@ -355,7 +355,7 @@ namespace TheTimeApp
 
         private void BtnTypeAzure_Click(object sender, RoutedEventArgs e)
         {
-            SqlTypeExpaner.Header = AppSettings.SqlType = "Azure";
+            SqlTypeExpaner.Header = AppSettings.Instance.SqlType = "Azure";
             MySqlSettings.Visibility = Visibility.Hidden;
             AzureSettings.Visibility = Visibility.Visible;
             SqlTypeExpaner.IsExpanded = false;
@@ -363,7 +363,7 @@ namespace TheTimeApp
 
         private void BtnTypeMySql_Click(object sender, RoutedEventArgs e)
         {
-            SqlTypeExpaner.Header = AppSettings.SqlType = "MySql";
+            SqlTypeExpaner.Header = AppSettings.Instance.SqlType = "MySql";
             AzureSettings.Visibility = Visibility.Hidden;
             MySqlSettings.Visibility = Visibility.Visible;
             SqlTypeExpaner.IsExpanded = false;
@@ -373,52 +373,52 @@ namespace TheTimeApp
 
         private void TextBoxAzureDataSource_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.AzureDateSource = TextBoxAzureDataSource.Text;
+            AppSettings.Instance.AzureDateSource = TextBoxAzureDataSource.Text;
         }
 
         private void TextBoxAzureUserId_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.AzureUser = TextBoxAzureUserId.Text;
+            AppSettings.Instance.AzureUser = TextBoxAzureUserId.Text;
         }
 
         private void TextBoxAzurePassword_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.AzurePassword = TextBoxAzurePassword.Text;
+            AppSettings.Instance.AzurePassword = TextBoxAzurePassword.Text;
         }
 
         private void TextBoxAzureCatelog_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.AzureCateloge = TextBoxAzureCatelog.Text;
+            AppSettings.Instance.AzureCateloge = TextBoxAzureCatelog.Text;
         }
         
         private void TextBoxAzurePort_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.AzurePort = (sender as TextBox)?.Text;
+            AppSettings.Instance.AzurePort = (sender as TextBox)?.Text;
         }
         
         private void TextBoxMySqlPort_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.MySqlPort = int.Parse(TextBoxMySqlPort.Text);
+            AppSettings.Instance.MySqlPort = int.Parse(TextBoxMySqlPort.Text);
         }
 
         private void TextBoxMySqlPassword_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.MySqlPassword = TextBoxMySqlPassword.Text;
+            AppSettings.Instance.MySqlPassword = TextBoxMySqlPassword.Text;
         }
 
         private void TextBoxMySqlUserId_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.MySqlUserId = TextBoxMySqlUserId.Text;
+            AppSettings.Instance.MySqlUserId = TextBoxMySqlUserId.Text;
         }
 
         private void TextBoxMySqlDataSource_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.MySqlServer = TextBoxMySqlDataSource.Text;
+            AppSettings.Instance.MySqlServer = TextBoxMySqlDataSource.Text;
         }
         
         private void TextBoxMySqlDatabase_TextChanged(object sender, TextChangedEventArgs e)
         {
-            AppSettings.MySqlDatabase = TextBoxMySqlDatabase.Text;
+            AppSettings.Instance.MySqlDatabase = TextBoxMySqlDatabase.Text;
         }
 
         #endregion

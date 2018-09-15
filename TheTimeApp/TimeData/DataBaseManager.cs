@@ -20,17 +20,17 @@ namespace TheTimeApp.TimeData
         {
             _primary = Sqlite.LoadFromFile();
             
-            if (AppSettings.SqlEnabled == "true")
+            if (AppSettings.Instance.SqlEnabled == "true")
             {
-                if (AppSettings.SqlType == "MySql" && !string.IsNullOrEmpty(AppSettings.MySqlServer))
+                if (AppSettings.Instance.SqlType == "MySql" && !string.IsNullOrEmpty(AppSettings.Instance.MySqlServer))
                 {
                     MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()
                     {
-                        Server = AppSettings.MySqlServer,
-                        UserID = AppSettings.MySqlUserId,
-                        Password = AppSettings.MySqlPassword,
-                        Database = AppSettings.MySqlDatabase,
-                        Port = (uint) AppSettings.MySqlPort,
+                        Server = AppSettings.Instance.MySqlServer,
+                        UserID = AppSettings.Instance.MySqlUserId,
+                        Password = AppSettings.Instance.MySqlPassword,
+                        Database = AppSettings.Instance.MySqlDatabase,
+                        Port = (uint) AppSettings.Instance.MySqlPort,
                         SslMode = MySqlSslMode.None// todo add mysql ssl setting
                     };
                     try
@@ -44,7 +44,7 @@ namespace TheTimeApp.TimeData
                     }
                         
                 }
-                else if (AppSettings.SqlType == "Azure" && !string.IsNullOrEmpty(AppSettings.AzureDateSource))
+                else if (AppSettings.Instance.SqlType == "Azure" && !string.IsNullOrEmpty(AppSettings.Instance.AzureDateSource))
                 {
                     MessageBox.Show("Azure sql not implemented!");
                 }
