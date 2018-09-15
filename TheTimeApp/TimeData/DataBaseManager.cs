@@ -35,7 +35,7 @@ namespace TheTimeApp.TimeData
                     };
                     try
                     {
-                        _secondary.Add(new MySql(mysqlBuiler.ConnectionString));
+                        _secondary.Add(new MySql(mysqlBuiler.ConnectionString, MySql.UpdateModes.Async));
                     }
                     catch (Exception e)
                     {
@@ -72,11 +72,10 @@ namespace TheTimeApp.TimeData
             return _primary.UserNames();
         }
 
-        public override int DeleteUser(string username)
+        public override void DeleteUser(string username)
         {
-            var result = _primary.DeleteUser(username);
+            _primary.DeleteUser(username);
             _secondary.ForEach(s => s.DeleteUser(username));
-            return result;
         }
 
         public override void AddDay(Day day)
@@ -90,11 +89,10 @@ namespace TheTimeApp.TimeData
             return _primary.DaysInRange(a, b);
         }
 
-        public override int DeleteDay(DateTime date)
+        public override void DeleteDay(DateTime date)
         {
-            var result = _primary.DeleteDay(date);
+            _primary.DeleteDay(date);
             _secondary.ForEach(s => s.DeleteDay(date));
-            return result;
         }
 
         public override List<Day> AllDays()
@@ -107,11 +105,10 @@ namespace TheTimeApp.TimeData
             return _primary.HoursInRange(a, b);
         }
 
-        public override int DeleteRange(DateTime start, DateTime end)
+        public override void DeleteRange(DateTime start, DateTime end)
         {
-            var result = _primary.DeleteRange(start, end);
+            _primary.DeleteRange(start, end);
             _secondary.ForEach(s => s.DeleteRange(start,end));
-            return result;
         }
 
         public override void PunchIn()
@@ -137,25 +134,22 @@ namespace TheTimeApp.TimeData
             return day;
         }
 
-        public override int DeleteTime(double key)
+        public override void DeleteTime(double key)
         {
-            var result = _primary.DeleteTime(key);
+            _primary.DeleteTime(key);
             _secondary.ForEach(s => s.DeleteTime(key));
-            return result;
         }
 
-        public override int UpdateDetails(DateTime date, string details)
+        public override void UpdateDetails(DateTime date, string details)
         {
-            var result = _primary.UpdateDetails(date, details);
+            _primary.UpdateDetails(date, details);
             _secondary.ForEach(s => s.UpdateDetails(date, details));
-            return result;
         }
 
-        public override int UpdateTime(double key, Time upd)
+        public override void UpdateTime(double key, Time upd)
         {
-            var result = _primary.UpdateTime(key, upd);
+            _primary.UpdateTime(key, upd);
             _secondary.ForEach(s => s.UpdateTime(key, upd));
-            return result;
         }
 
         public override double MaxTimeId(string tablename = "")

@@ -52,7 +52,6 @@ namespace TheTimeApp.TimeData
         public ProgressFinishDel ProgressFinishEvent;
         public ConnectionChangedDel ConnectionChangedEvent;
         public UpdateChangeDel UpdateChangedEvent;
-        protected SqlConnection _connection = new SqlConnection();// Only referenced from SqlConnection property!
 
         #endregion
         
@@ -66,7 +65,7 @@ namespace TheTimeApp.TimeData
         
         public abstract List<string> UserNames();
         
-        public abstract int DeleteUser(string username);
+        public abstract void DeleteUser(string username);
 
         public abstract Day CurrentDay();
         
@@ -74,13 +73,13 @@ namespace TheTimeApp.TimeData
 
         public abstract List<Day> DaysInRange(DateTime a, DateTime b);
         
-        public abstract int DeleteDay(DateTime date);
+        public abstract void DeleteDay(DateTime date);
         
         public abstract List<Day> AllDays();
 
         public abstract TimeSpan HoursInRange(DateTime a, DateTime b);
         
-        public abstract int DeleteRange(DateTime start, DateTime end);
+        public abstract void DeleteRange(DateTime start, DateTime end);
         
         public abstract void PunchIn();
 
@@ -88,11 +87,11 @@ namespace TheTimeApp.TimeData
         
         public abstract List<Time> AllTimes();
 
-        public abstract int DeleteTime(double key);
+        public abstract void DeleteTime(double key);
         
-        public abstract int UpdateDetails(DateTime date, string details);
+        public abstract void UpdateDetails(DateTime date, string details);
         
-        public abstract int UpdateTime(double key, Time upd);
+        public abstract void UpdateTime(double key, Time upd);
 
         public abstract double MaxTimeId(string tablename = "");
         

@@ -21,6 +21,7 @@ namespace TheTimeApp.TimeData
         private static readonly object SqlServerLock = new object();
         private static readonly object SqlPullLock = new object();
         private static readonly object SqlPushLock = new object();
+        private SqlConnection _connection = new SqlConnection();// Only referenced from SqlConnection property!
 
         public List<SerilizeSqlCommand> Commands;
 
@@ -316,7 +317,7 @@ namespace TheTimeApp.TimeData
                                             CREATE TABLE {timeTable} (Date date, Details text)"));
         }
 
-        public override int DeleteUser(string username)
+        public override void DeleteUser(string username)
         {
             throw new NotImplementedException();
         }
@@ -331,7 +332,7 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override int DeleteDay(DateTime date)
+        public override void DeleteDay(DateTime date)
         {
             throw new NotImplementedException();
         }
@@ -346,7 +347,7 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override int DeleteRange(DateTime start, DateTime end)
+        public override void DeleteRange(DateTime start, DateTime end)
         {
             throw new NotImplementedException();
         }
@@ -371,17 +372,17 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override int DeleteTime(double key)
+        public override void DeleteTime(double key)
         {
             throw new NotImplementedException();
         }
 
-        public override int UpdateDetails(DateTime date, string details)
+        public override void UpdateDetails(DateTime date, string details)
         {
             throw new NotImplementedException();
         }
 
-        public override int UpdateTime(double key, Time upd)
+        public override void UpdateTime(double key, Time upd)
         {
             throw new NotImplementedException();
         }

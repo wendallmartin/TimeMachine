@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SQLite;
 using System.Diagnostics;
-using System.Linq;
+using System.Threading;
 using MySql.Data.MySqlClient;
 using NLog;
 using MySqlDataAdapter = MySql.Data.MySqlClient.MySqlDataAdapter;
@@ -12,15 +11,23 @@ namespace TheTimeApp.TimeData
 {
     public class MySql:TimeServer
     {
-        private static NLog.Logger logger = LogManager.GetCurrentClassLogger();
+        public enum UpdateModes
+        {
+            Async,
+            Sync
+        }
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private MySqlConnection _connection;
-        public string DataBase { get; set; } = "testsql";
-
+        private readonly List<SerilizeSqlCommand> _commandsToExecute; 
         private readonly string _connectionString;
-        
-        public MySql(string conStringBuilder)
+        private readonly object _pumpLock = new object();
+        private UpdateModes UpdateMode { get; }
+
+        public MySql(string conStringBuilder, UpdateModes mode)
         {
             logger.Info("Initualize.........");
+            _commandsToExecute = new List<SerilizeSqlCommand>();
+            UpdateMode = mode;
             _connectionString = conStringBuilder;
             _connection = new MySqlConnection(conStringBuilder);
             _connection.Open();
@@ -30,21 +37,75 @@ namespace TheTimeApp.TimeData
                 if (AppSettings.Instance.MySqlDatabase == "")
                     AppSettings.Instance.MySqlDatabase = "TimeDataBase";
                 cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{AppSettings.Instance.MySqlDatabase}`";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{UserTable}`(`Name` TEXT , `Rate` TEXT , `Unit` TEXT , `Active` TEXT )";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS`{DayTableName}` ( `Date` TEXT, `Details` TEXT )";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{TimeTableName}` (`Date` TEXT, `TimeIn` TEXT, `TimeOut` TEXT, `Key` INT )";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
             
             logger.Info("Initualize.........FINISHED!!!");
-        } 
-        
+        }
+
+        public List<SerilizeSqlCommand> CommandBuffer()
+        {
+            return _commandsToExecute;
+        }
+
+        private void AddToPump(MySqlCommand command)
+        {
+            SerilizeSqlCommand serializedSqlCommand = new SerilizeSqlCommand(command.CommandText);
+            foreach (MySqlParameter commandParameter in command.Parameters)
+            {
+                serializedSqlCommand.AddParameter(commandParameter);
+            }
+            _commandsToExecute.Add(serializedSqlCommand);
+
+            if (UpdateMode == UpdateModes.Async) PumpSqlAsync();       
+            else PumpSql();
+        }
+
+        private void PumpSqlAsync()
+        {
+            new Thread(() =>
+            {
+                lock (_pumpLock)
+                {
+                    PumpSql();
+                }
+            }).Start();
+        }
+
+        private void PumpSql()
+        {
+            try
+            {
+                List<SerilizeSqlCommand> executed = new List<SerilizeSqlCommand>();
+                foreach (SerilizeSqlCommand command in _commandsToExecute)
+                {
+                    MySqlCommand c = command.GetMySqlCommand;
+                    c.Connection = _connection;
+                    c.ExecuteNonQuery();
+                    executed.Add(command);
+                }
+
+                foreach (SerilizeSqlCommand command in executed)
+                {
+                    _commandsToExecute.Remove(command);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Info("\n\n----------------MYSLQ PUMP EXCEPTION!!!----------------\n" + e);
+                Debug.WriteLine(e);
+            }
+        }
+
         public override bool IsClockedIn()
         {
             Debug.WriteLine("IsClockedIn:");
@@ -84,7 +145,7 @@ namespace TheTimeApp.TimeData
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{UserTable}`(`Name` TEXT , `Rate` TEXT , `Unit` TEXT , `Active` TEXT )";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 cmd.CommandText = $"Insert into `{UserTable}` (Name, Rate, Unit, Active) values (@Name, @Rate, @Unit, @Active)";
                 cmd.Parameters.Clear();
@@ -92,20 +153,19 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new MySqlParameter("Rate", 0));
                 cmd.Parameters.Add(new MySqlParameter("Unit", ""));
                 cmd.Parameters.Add(new MySqlParameter("Active", "false"));
-                cmd.ExecuteNonQuery();
-                
+                AddToPump(cmd);
                 
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{dayTable}` ( `Date` TEXT, `Details` TEXT )";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{timeTable}` (`Date` TEXT, `TimeIn` TEXT, `TimeOut` TEXT, `Key` INT )";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 foreach (Day day in user.Days)
                 {
                     cmd.CommandText = $"INSERT INTO `{dayTable}` VALUES(@Date, @Details)";
                     cmd.Parameters.Clear();
                     cmd.Parameters.Add(new MySqlParameter("Date", DateSqLite(day.Date)));
                     cmd.Parameters.Add(new MySqlParameter("Details", day.Details));
-                    cmd.ExecuteNonQuery();
+                    AddToPump(cmd);
                     foreach (Time time in day.Times)
                     {
                         cmd.Parameters.Clear();
@@ -114,7 +174,7 @@ namespace TheTimeApp.TimeData
                         cmd.Parameters.Add(new MySqlParameter("TimeIn", DateTimeSqLite(time.TimeIn)));
                         cmd.Parameters.Add(new MySqlParameter("TimeOut", DateTimeSqLite(time.TimeOut)));
                         cmd.Parameters.Add(new MySqlParameter("Key", MaxTimeId(timeTable) + 1));
-                        cmd.ExecuteNonQuery();
+                        AddToPump(cmd);
                     }
                 }
             }
@@ -159,36 +219,32 @@ namespace TheTimeApp.TimeData
             return usernames;
         }
 
-        public override int DeleteUser(string username)
+        public override void DeleteUser(string username)
         {
             logger.Info($"Delete user: {username}.........");
-            int result = 0;
-            Debug.WriteLine($"DeleteUser: {username}");
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $@"DROP TABLE IF EXISTS `{ToDayTableName(username)}`";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 cmd.CommandText = $@"DROP TABLE IF EXISTS `{ToTimeTableName(username)}`";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 cmd.CommandText = $"DELETE FROM `{UserTable}` WHERE `Name` = @Name";
                 cmd.Parameters.Add(new MySqlParameter("Name", username));
-                result = cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
-            logger.Info($"Delete user: {username}.........FINISHED!!! Result: {result}");
-            return result;
-
+            logger.Info($"Delete user: {username}.........FINISHED!!!");
         }
 
         public override void AddDay(Day day)
         {
             logger.Info($"Add day: {day.Date}.........");
-            Debug.WriteLine($"AddDay: {day}");
+            
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"INSERT INTO {DayTableName} VALUES(@Date, @Details)";
                 cmd.Parameters.Add(new MySqlParameter("Date", DateSqLite(day.Date.Date)));
                 cmd.Parameters.Add(new MySqlParameter("Details", day.Details));
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 foreach (Time time in day.Times)
                 {
@@ -197,7 +253,7 @@ namespace TheTimeApp.TimeData
                     cmd.Parameters.Add(new MySqlParameter("Date", DateSqLite(time.TimeIn.Date)));
                     cmd.Parameters.Add(new MySqlParameter("TimeIn", DateTimeSqLite(time.TimeIn)));
                     cmd.Parameters.Add(new MySqlParameter("TimeOut", DateTimeSqLite(time.TimeOut)));
-                    cmd.ExecuteNonQuery();
+                    AddToPump(cmd);
                 }
             }
             logger.Info($"Add day: {day.Date}.........FINISHED!!!");
@@ -207,7 +263,6 @@ namespace TheTimeApp.TimeData
         public override List<Day> DaysInRange(DateTime dateA, DateTime dateB)
         {
             logger.Info($"DaysInRange, DateA: {dateA} | DateB: {dateB}.........");
-            Debug.WriteLine($"DaysInRange: {dateA}-{dateB}");
             
             var times = new List<Day>();
             string qry = $"select * from {DayTableName}";
@@ -232,24 +287,21 @@ namespace TheTimeApp.TimeData
 
         }
 
-        public override int DeleteDay(DateTime date)
+        public override void DeleteDay(DateTime date)
         {
             logger.Info($"Delete day: {date}........");
-            Debug.WriteLine($"DeleteDay: {date}");
-            int result = 0;
+            
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"DELETE FROM {DayTableName} WHERE Date = @Date";
                 cmd.Parameters.Add(new MySqlParameter("Date", DateSqLite(date)));
-                result += cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 cmd.CommandText = $"DELETE FROM {TimeTableName} WHERE Date = @Date";
-                result += cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
 
-            logger.Info($"Delete day: {date}........FINISHED!!! Result: {result}");
-            return result;
-
+            logger.Info($"Delete day: {date}........FINISHED!!! ");
         }
 
         public override List<Day> AllDays()
@@ -290,11 +342,10 @@ namespace TheTimeApp.TimeData
 
         }
 
-        public override int DeleteRange(DateTime start, DateTime end)
+        public override void DeleteRange(DateTime start, DateTime end)
         {
             logger.Info($"Delete range, Start: {start} | End: {end}.........");
-            Debug.WriteLine($"DeleteRange: {start}-{end}");
-            int result = 0;
+
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 string stringstart = DateSqLite(start);
@@ -303,17 +354,15 @@ namespace TheTimeApp.TimeData
                 cmd.CommandText = $"DELETE FROM {DayTableName} WHERE Date >= @start AND Date <= @end";
                 cmd.Parameters.Add(new MySqlParameter("start", stringstart));
                 cmd.Parameters.Add(new MySqlParameter("end", stringend));
-                result += cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 cmd.Parameters.Clear();
                 
                 cmd.CommandText = $"DELETE FROM {TimeTableName} WHERE Date >= @start AND Date <= @end";
                 cmd.Parameters.Add(new MySqlParameter("start", stringstart));
                 cmd.Parameters.Add(new MySqlParameter("end", stringend));
-                result += cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
-
-            return result;
         }
 
         public override void PunchIn()
@@ -323,7 +372,7 @@ namespace TheTimeApp.TimeData
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{TimeTableName}` ( `Date` TEXT, `TimeIn` TEXT, `TimeOut` TEXT, `Key` INT )";
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
                 
                 DateTime now = DateTime.Now;
                 cmd.CommandText = $"INSERT INTO `{TimeTableName}` VALUES(@Date, @TimeIn, @TimeOut, @Key)";
@@ -331,7 +380,7 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new MySqlParameter("TimeIn", DateTimeSqLite(now)));
                 cmd.Parameters.Add(new MySqlParameter("TimeOut", DateTimeSqLite(now)));
                 cmd.Parameters.Add(new MySqlParameter("Key", MaxTimeId() + 1));
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
 
         }
@@ -344,7 +393,7 @@ namespace TheTimeApp.TimeData
             {
                 cmd.CommandText = $"UPDATE `{TimeTableName}` SET `TimeOut` = @TimeOut WHERE `Key` = '{MaxTimeId()}'";
                 cmd.Parameters.Add(new MySqlParameter("TimeOut", DateTimeSqLite(DateTime.Now)));
-                cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
 
         }
@@ -374,7 +423,7 @@ namespace TheTimeApp.TimeData
         public override Day CurrentDay()
         {
             Day day = new Day(DateTime.MinValue);
-            Debug.WriteLine("CurrentDay:");
+            
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"select * from {DayTableName} Where Date = '{DateSqLite(DateTime.Now)}'";
@@ -397,47 +446,41 @@ namespace TheTimeApp.TimeData
                 AddDay(day);
             }
             
-            Debug.Write(day.ToString());
             return day;
 
         }
 
-        public override int DeleteTime(double key)
+        public override void DeleteTime(double key)
         {
             logger.Info($"Delete time: {key}.........");
-            Debug.WriteLine($"DeleteTime: {key}");
+            
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"DELETE FROM {TimeTableName} WHERE `Key` = @Key";
                 cmd.Parameters.Add(new MySqlParameter("Key", key));
-                return cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
             logger.Info($"Delete time: {key}.........FINISHED!!!");
-
         }
 
-        public override int UpdateDetails(DateTime date, string details)
+        public override void UpdateDetails(DateTime date, string details)
         {
             logger.Info($"Update details, Date: {date} | Details: {details}.........");
-            int result = 0;
-            Debug.WriteLine($"UdateDetails: {date}:{details}");
+            
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $@"UPDATE {DayTableName} SET Details = @Details WHERE Date = '{DateSqLite(date.Date)}'";
                 cmd.Parameters.Add(new MySqlParameter("Details", details));
-                result = cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
 
-            logger.Info($"Update details, Date: {date} | Details: {details}.........FINISHED!!! Result: {result}");
-            return result;
-
+            logger.Info($"Update details, Date: {date} | Details: {details}.........FINISHED!!! ");
         }
 
-        public override int UpdateTime(double key, Time upd)
+        public override void UpdateTime(double key, Time upd)
         {
             logger.Info($"Update time, Key: {key} | Update: {upd}...........");
-            Debug.WriteLine($"UpdateTime: {key}:{upd}");
-            int result = 0;
+            
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"select * from {DayTableName} Where Date = @Date";
@@ -459,12 +502,10 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new MySqlParameter("TimeIn", DateTimeSqLite(upd.TimeIn)));
                 cmd.Parameters.Add(new MySqlParameter("TimeOut", DateTimeSqLite(upd.TimeOut)));
                 cmd.Parameters.Add(new MySqlParameter("Key", key));
-                result = cmd.ExecuteNonQuery();
+                AddToPump(cmd);
             }
             
-            logger.Info($"Update time, Key: {key} | Update: {upd}...........FINISHED!!! Result: {result}");
-            return result;
-
+            logger.Info($"Update time, Key: {key} | Update: {upd}...........FINISHED!!! ");
         }
 
         public override double MaxTimeId(string tablename = "")

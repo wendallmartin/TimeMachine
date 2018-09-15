@@ -200,7 +200,7 @@ namespace TheTimeApp.TimeData
             return day;
         }
 
-        public override int DeleteTime(double key)
+        public override void DeleteTime(double key)
         {
             logger.Info($"Delete time: {key}.........");
             Debug.WriteLine($"DeleteTime: {key}");
@@ -208,7 +208,7 @@ namespace TheTimeApp.TimeData
             {
                 cmd.CommandText = $"DELETE FROM [{TimeTableName}] WHERE Key = @Key";
                 cmd.Parameters.Add(new SQLiteParameter("Key", key));
-                return cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
             logger.Info($"Delete time: {key}.........FINISHED!!!");
         }
@@ -238,30 +238,27 @@ namespace TheTimeApp.TimeData
         }
 
 
-        public override int DeleteDay(DateTime date)
+        public override void DeleteDay(DateTime date)
         {
             logger.Info($"Delete day: {date}........");
-            Debug.WriteLine($"DeleteDay: {date}");
-            int result = 0;
+            
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"DELETE FROM [{DayTableName}] WHERE Date = @Date";
                 cmd.Parameters.Add(new SQLiteParameter("Date", DateSqLite(date)));
-                result += cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
                 
                 cmd.CommandText = $"DELETE FROM [{TimeTableName}] WHERE Date = @Date";
-                result += cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
              }
 
-            logger.Info($"Delete day: {date}........FINISHED!!! Result: {result}");
-            return result;
+            logger.Info($"Delete day: {date}........FINISHED!!! ");
         }
 
-        public override int DeleteRange(DateTime start, DateTime end)
+        public override void DeleteRange(DateTime start, DateTime end)
         {
             logger.Info($"Delete range, Start: {start} | End: {end}.........");
-            Debug.WriteLine($"DeleteRange: {start}-{end}");
-            int result = 0;
+            
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
                 string stringstart = DateSqLite(start);
@@ -270,25 +267,23 @@ namespace TheTimeApp.TimeData
                 cmd.CommandText = $"DELETE FROM [{DayTableName}] WHERE Date >= @start AND Date <= @end";
                 cmd.Parameters.Add(new SQLiteParameter("start", stringstart));
                 cmd.Parameters.Add(new SQLiteParameter("end", stringend));
-                result += cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
                 
                 cmd.Parameters.Clear();
                 
                 cmd.CommandText = $"DELETE FROM [{TimeTableName}] WHERE Date >= @start AND Date <= @end";
                 cmd.Parameters.Add(new SQLiteParameter("start", stringstart));
                 cmd.Parameters.Add(new SQLiteParameter("end", stringend));
-                result += cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
 
-            logger.Info($"Delete range, Start: {start} | End: {end}..........FINISHED!!! Result: {result}");
-            return result;
+            logger.Info($"Delete range, Start: {start} | End: {end}..........FINISHED!!!");
         }
 
-        public override int DeleteUser(string username)
+        public override void DeleteUser(string username)
         {
             logger.Info($"Delete user: {username}.........");
-            int result = 0;
-            Debug.WriteLine($"DeleteUser: {username}");
+            
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $@"DROP TABLE IF EXISTS [{ToDayTableName(username)}]";
@@ -297,33 +292,29 @@ namespace TheTimeApp.TimeData
                 cmd.ExecuteNonQuery();
                 cmd.CommandText = $"DELETE FROM [{UserTable}] WHERE Name = @Name";
                 cmd.Parameters.Add(new SQLiteParameter("Name", username));
-                result = cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
-            logger.Info($"Delete user: {username}.........FINISHED!!! Result: {result}");
-            return result;
+            logger.Info($"Delete user: {username}.........FINISHED!!! ");
         }
 
-        public override int UpdateDetails(DateTime date, string details)
+        public override void UpdateDetails(DateTime date, string details)
         {
             logger.Info($"Update details, Date: {date} | Details: {details}.........");
-            int result = 0;
-            Debug.WriteLine($"UdateDetails: {date}:{details}");
+            
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $@"UPDATE [{DayTableName}] SET Details = @Details WHERE Date = '{DateSqLite(date.Date)}'";
                 cmd.Parameters.Add(new SQLiteParameter("Details", details));
-                result = cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
 
-            logger.Info($"Update details, Date: {date} | Details: {details}.........FINISHED!!! Result: {result}");
-            return result;
+            logger.Info($"Update details, Date: {date} | Details: {details}.........FINISHED!!! ");
         }
 
-        public override int UpdateTime(double key, Time upd)
+        public override void UpdateTime(double key, Time upd)
         {
             logger.Info($"Update time, Key: {key} | Update: {upd}...........");
-            Debug.WriteLine($"UpdateTime: {key}:{upd}");
-            int result = 0;
+            
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"select * from [{TimeTableName}] Where Date = @Date";
@@ -344,11 +335,10 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new SQLiteParameter("TimeIn", DateTimeSqLite(upd.TimeIn)));
                 cmd.Parameters.Add(new SQLiteParameter("TimeOut", DateTimeSqLite(upd.TimeOut)));
                 cmd.Parameters.Add(new SQLiteParameter("Key", key));
-                result = cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
             
-            logger.Info($"Update time, Key: {key} | Update: {upd}...........FINISHED!!! Result: {result}");
-            return result;
+            logger.Info($"Update time, Key: {key} | Update: {upd}...........FINISHED!!! ");
         }
 
         public override void PunchIn()

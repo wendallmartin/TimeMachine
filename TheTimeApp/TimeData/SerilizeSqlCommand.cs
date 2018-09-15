@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Windows.Documents;
 using System.Windows.Forms.VisualStyles;
+using MySql.Data.MySqlClient;
 
 namespace TheTimeApp.TimeData
 {
@@ -34,6 +35,11 @@ namespace TheTimeApp.TimeData
         {
             Params.Add(new KeyValuePair<string, string>(param.ParameterName,param.Value.ToString()));
         }
+        
+        public void AddParameter(MySqlParameter param)
+        {
+            Params.Add(new KeyValuePair<string, string>(param.ParameterName,param.Value == null ? "" : param.Value.ToString()));
+        }
 
         public SqlCommand GetSqlCommand
         {
@@ -46,6 +52,19 @@ namespace TheTimeApp.TimeData
                 }
 
                 return command;
+            }
+        }
+
+        public MySqlCommand GetMySqlCommand
+        {
+            get{
+                MySqlCommand cmd = new MySqlCommand {CommandText = CommandText};
+                foreach (var param in Params)
+                {
+                    cmd.Parameters.Add(new MySqlParameter(){ParameterName = param.Key, Value = param.Value});    
+                }
+
+                return cmd;
             }
         }
 

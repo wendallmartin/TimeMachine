@@ -30,7 +30,7 @@ namespace Tests
                 Database = "test",
                 Port = 3306
             };
-            _instance = new TheTimeApp.TimeData.MySql(mysqlBuiler.ConnectionString);
+            _instance = new TheTimeApp.TimeData.MySql(mysqlBuiler.ConnectionString, TheTimeApp.TimeData.MySql.UpdateModes.Sync);
             _instance.ClearDataBase("test");
             _instance.AddUser(new User("nunit", "", new List<Day>()));
             TimeServer.SqlCurrentUser = "nunit";
@@ -39,6 +39,7 @@ namespace Tests
         [TearDown]
         public void TearDown()
         {
+            Assert.IsTrue(_instance.CommandBuffer().Count == 0);
             _instance.Dispose();
         }
 
@@ -96,8 +97,7 @@ namespace Tests
             _instance.PunchOut();
             Assert.True(_instance.AllTimes().Count == 1);
             Time time = _instance.AllTimes().First();
-            int result = _instance.DeleteTime(time.Key);
-            Assert.True(result == 1);
+            _instance.DeleteTime(time.Key);
             Assert.True(_instance.AllTimes().Count == 0);
         }
 
@@ -163,7 +163,7 @@ namespace Tests
             _instance.PunchIn();
             _instance.PunchOut();
             DateTime now = DateTime.Now;
-            Assert.True(_instance.UpdateTime(1, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue}) == 1);
+            _instance.UpdateTime(1, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue});
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.ToString(CultureInfo.InvariantCulture) == now.ToString(CultureInfo.InvariantCulture));
             Assert.True(last.TimeOut.ToString(CultureInfo.InvariantCulture) == DateTime.MaxValue.ToString(CultureInfo.InvariantCulture));
