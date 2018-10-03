@@ -48,8 +48,9 @@ namespace Tests
         [Test]
         public void Test_IsClockedIn()
         {
+            long key = TimeServer.GenerateId();
             Assert.False(_instance.IsClockedIn());
-            _instance.PunchIn();
+            _instance.PunchIn(key);
             Assert.True(_instance.IsClockedIn());
             Thread.Sleep(100);
             _instance.PunchOut();
@@ -84,7 +85,8 @@ namespace Tests
         [Test]
         public void Test_DeleteTime()
         {
-            _instance.PunchIn();
+            long key = TimeServer.GenerateId();
+            _instance.PunchIn(key);
             _instance.PunchOut();
             Assert.True(_instance.AllTimes().Count == 1);
             Time time = _instance.AllTimes().First();
@@ -151,10 +153,11 @@ namespace Tests
         [Test]
         public void Test_UpdateTime()
         {
-            _instance.PunchIn();
+            long key = TimeServer.GenerateId();
+            _instance.PunchIn(key);
             _instance.PunchOut();
             DateTime now = DateTime.Now;
-            _instance.UpdateTime(1, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue});
+            _instance.UpdateTime(key, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue});
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.ToString(CultureInfo.InvariantCulture) == now.ToString(CultureInfo.InvariantCulture));
             Assert.True(last.TimeOut.ToString(CultureInfo.InvariantCulture) == DateTime.MaxValue.ToString(CultureInfo.InvariantCulture));
@@ -184,19 +187,21 @@ namespace Tests
         [Test]
         public void Test_PunchIn()
         {
-            Assert.True(Math.Abs(_instance.MaxTimeId()) < .0001);
-            _instance.PunchIn();
+            long key = TimeServer.GenerateId();
+            Assert.True(_instance.LastTimeId() == 0);
+            _instance.PunchIn(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.ToString(CultureInfo.InvariantCulture) == last.TimeOut.ToString(CultureInfo.InvariantCulture));
             Assert.True(last.TimeIn.Millisecond == last.TimeOut.Millisecond);
-            Assert.True(Math.Abs(_instance.MaxTimeId() - 1) < .0001);
+            Assert.True(_instance.LastTimeId() != 0);
         }
 
         [Test]
         public void Test_PunchOut()
         {
-            Assert.True(Math.Abs(_instance.MaxTimeId()) < .0001);
-            _instance.PunchIn();
+            long key = TimeServer.GenerateId();
+            Assert.True(_instance.LastTimeId() == 0);
+            _instance.PunchIn(key);
             Thread.Sleep(100);
             _instance.PunchOut();
             Time last = _instance.AllTimes().Last();
