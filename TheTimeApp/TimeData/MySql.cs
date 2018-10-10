@@ -531,30 +531,14 @@ namespace TheTimeApp.TimeData
 
         public override DateTime MinDate()
         {
-            using (MySqlCommand cmd = _connection.CreateCommand())
-            {
-                cmd.CommandText = $@"Select Min(Date) from {DayTableName}";
-                object result = cmd.ExecuteScalar();
-                
-                if (result.ToString() == "" || result is DBNull)
-                    return DateTime.MinValue;
-
-                return Convert.ToDateTime(result.ToString());
-            }
+            var times = AllTimes();
+            return times.Min(t => t.TimeIn);
         }
 
         public override DateTime MaxDate()
         {
-            using (MySqlCommand cmd = _connection.CreateCommand())
-            {
-                cmd.CommandText = $@"Select Max(Date) from {DayTableName}";
-                object result = cmd.ExecuteScalar();
-                
-                if (result.ToString() == "" || result is DBNull)
-                    return DateTime.MinValue;
-
-                return Convert.ToDateTime(result.ToString());
-            }
+            var times = AllTimes();
+            return times.Max(t => t.TimeIn);
         }
 
         public override void RePushToServer()
