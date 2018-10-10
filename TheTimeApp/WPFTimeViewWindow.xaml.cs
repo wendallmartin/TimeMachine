@@ -27,6 +27,16 @@ namespace TheTimeApp
         private bool _24Hour;
         private DateTime _baseDate;
 
+        /// <summary>
+        /// Min date used for scroll.
+        /// </summary>
+        private DateTime _min;
+
+        /// <summary>
+        /// Max date used for scroll.
+        /// </summary>
+        private DateTime _max;
+
         TimeViewEdit _timeedit;
 
         public WpfTimeViewWindow()
@@ -45,6 +55,10 @@ namespace TheTimeApp
                 TwelveHourButton.Background = Brushes.LightSkyBlue;
                 TwentyFourHourButton.Background = Brushes.Transparent;
             }
+
+            _min = DataBaseManager.Instance.MinDate();
+
+            _max = DataBaseManager.Instance.MaxDate();
 
             _baseDate = DataBaseManager.Instance.CurrentDay().Date;
             
@@ -225,16 +239,16 @@ namespace TheTimeApp
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
-        private void Btn_NextClick(object sender, System.Windows.RoutedEventArgs e)
+        private void Btn_NextClick(object sender, RoutedEventArgs e)
         {
-            _baseDate = new DateTime(Math.Min(_baseDate.AddDays(7).Ticks, DataBaseManager.Instance.MaxDate().Date.Ticks));
+            _baseDate = new DateTime(Math.Min(_baseDate.AddDays(7).Ticks, _max.Date.Ticks));
             
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
         private void Btn_PrevClick(object sender, RoutedEventArgs e)
         {
-            _baseDate = new DateTime(Math.Max(_baseDate.AddDays(-7).Ticks, DataBaseManager.Instance.MinDate().Date.Ticks));
+            _baseDate = new DateTime(Math.Max(_baseDate.AddDays(-7).Ticks, _min.Ticks));
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
