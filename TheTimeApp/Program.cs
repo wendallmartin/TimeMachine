@@ -42,8 +42,6 @@ namespace TheTimeApp
             Application.SetCompatibleTextRenderingDefault(false);
             try
             {
-                AppSettings.Validate();
-                
                 // set user name if not specified
                 while (string.IsNullOrEmpty(AppSettings.Instance.CurrentUser))
                 {
@@ -54,7 +52,7 @@ namespace TheTimeApp
                 
                 TimeServer.SqlCurrentUser = AppSettings.Instance.CurrentUser;
                 
-                DataBaseManager.Initulize();
+                DataBaseManager.Initualize();
 
                 if (!DataBaseManager.Instance.UserNames().Contains(TimeServer.SqlCurrentUser))
                 {
@@ -75,6 +73,7 @@ namespace TheTimeApp
                     _mytime.ShowDialog();
                     _log.Info("TimeApp run......FINISHED!!!");   
                 }
+                DataBaseManager.Instance.SaveBuffer();
                 AppSettings.Instance.Save();
             }
             catch (Exception e)
@@ -91,8 +90,8 @@ namespace TheTimeApp
             get
             {
                 return ApplicationDeployment.IsNetworkDeployed
-                    ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString()
-                    : Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString()
+                : Assembly.GetExecutingAssembly().GetName().Version.ToString();
             }
         } 
     }

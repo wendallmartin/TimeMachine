@@ -67,7 +67,7 @@ namespace TheTimeApp.Controls
             return _time;
         }
 
-        public double GetKey()
+        public string GetKey()
         {
             return _time.Key;
         }

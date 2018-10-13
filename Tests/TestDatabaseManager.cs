@@ -60,12 +60,12 @@ namespace Tests
         [Test]
         public void Test_IsClockedIn()
         {
-            long key = TimeServer.GenerateId();
+            string key = TimeServer.GenerateId();
             Assert.False(_instance.IsClockedIn());
             _instance.PunchIn(key);
             Assert.True(_instance.IsClockedIn());
             Thread.Sleep(100);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Assert.False(_instance.IsClockedIn());
         }
 
@@ -97,9 +97,9 @@ namespace Tests
         [Test]
         public void Test_DeleteTime()
         {
-            long key = TimeServer.GenerateId();
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Assert.True(_instance.AllTimes().Count == 1);
             Time time = _instance.AllTimes().First();
             _instance.DeleteTime(time.Key);
@@ -165,9 +165,9 @@ namespace Tests
         [Test]
         public void Test_UpdateTime()
         {
-            long key = TimeServer.GenerateId();
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             DateTime now = DateTime.Now;
             _instance.UpdateTime(key, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue});
             Time last = _instance.AllTimes().Last();
@@ -199,23 +199,20 @@ namespace Tests
         [Test]
         public void Test_PunchIn()
         {
-            long key = TimeServer.GenerateId();
-            Assert.True(_instance.LastTimeId() == 0);
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.ToString(CultureInfo.InvariantCulture) == last.TimeOut.ToString(CultureInfo.InvariantCulture));
             Assert.True(last.TimeIn.Millisecond == last.TimeOut.Millisecond);
-            Assert.True(_instance.LastTimeId() != 0);
         }
 
         [Test]
         public void Test_PunchOut()
         {
-            long key = TimeServer.GenerateId();
-            Assert.True(_instance.LastTimeId() == 0);
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
             Thread.Sleep(100);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.Millisecond != last.TimeOut.Millisecond);
             

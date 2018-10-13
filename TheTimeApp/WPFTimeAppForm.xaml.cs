@@ -40,6 +40,12 @@ namespace TheTimeApp
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
 
+            SqlStatusBar.Visibility = AppSettings.Instance.SqlEnabled == "true" ? Visibility.Visible : Visibility.Hidden;
+            Start_Button.Height = AppSettings.Instance.SqlEnabled == "true" ? 105 : 85;
+            
+            DataBaseManager.Instance.ConnectionChangedEvent += ConnectionChanged;
+            DataBaseManager.Instance.UpdateChangedEvent += SqlUpdateChanged;
+
             SetStartChecked();
             UpdateTimer();
         }
@@ -69,6 +75,7 @@ namespace TheTimeApp
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
             AppSettings.Instance.CurrentUser = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
+            DataBaseManager.Instance.VerifySql();
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
             UpdateTimer();
         }
@@ -100,19 +107,13 @@ namespace TheTimeApp
             if (Equals(Start_Button.Background, Brushes.Green))
             {
                 UpdateTimer();
-                _timeTic.Start();
-                
-                DataBaseManager.Instance.PunchIn();
-                Start_Button.Background = Brushes.Red;
-                Start_Button.Content = "Stop";
+                DataBaseManager.Instance.PunchIn(TimeServer.GenerateId());// unique 15 digit 
+                SetStartChecked();
             }
             else
             {
-                DataBaseManager.Instance.PunchOut();
-                Start_Button.Background = Brushes.Green;
-                Start_Button.Content = "Start";
-                
-                _timeTic.Stop();
+                DataBaseManager.Instance.PunchOut(DataBaseManager.Instance.LastTimeId());
+                SetStartChecked();
                 UpdateTimer();
             }
         }
@@ -209,6 +210,6 @@ namespace TheTimeApp
         {
             new SettingsWindow().ShowDialog();
             Init();// reinitialize
-        }
+        }        
     }
 }

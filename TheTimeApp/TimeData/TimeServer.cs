@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
+using System.Resources;
 using System.Timers;
 using NLog;
 
@@ -11,6 +12,13 @@ namespace TheTimeApp.TimeData
 {
     public abstract class TimeServer
     {
+        public enum State
+        {
+            Connected,
+            Disconnected
+        }
+        public State ServerState { get; set; }
+            
         private Logger logger = LogManager.GetCurrentClassLogger();
         private static readonly object IsConnectedLock = new object();
         private static readonly object SqlServerLock = new object();
@@ -81,19 +89,19 @@ namespace TheTimeApp.TimeData
         
         public abstract void DeleteRange(DateTime start, DateTime end);
         
-        public abstract void PunchIn();
+        public abstract void PunchIn(string key);
 
-        public abstract void PunchOut();
+        public abstract void PunchOut(string key);
         
         public abstract List<Time> AllTimes();
 
-        public abstract void DeleteTime(double key);
+        public abstract void DeleteTime(string key);
         
         public abstract void UpdateDetails(DateTime date, string details);
         
-        public abstract void UpdateTime(double key, Time upd);
+        public abstract void UpdateTime(string key, Time upd);
 
-        public abstract double MaxTimeId(string tablename = "");
+        public abstract string LastTimeId();
         
         public abstract List<Time> TimesinRange(DateTime dateA, DateTime dateB);
         
@@ -105,9 +113,14 @@ namespace TheTimeApp.TimeData
         
         public abstract DateTime MaxDate();
 
-        public abstract void RePushToServer();
+        /// <summary>
+        /// Pushes given list of days to
+        /// sql server.
+        /// </summary>
+        /// <param name="days"></param>
+        public abstract void Push(List<Day> days);
         
-        public abstract void LoadFromServer();
+        public abstract List<Day> Pull();
 
         public string TimeTableName => ToTimeTableName(SqlCurrentUser);
 
@@ -174,7 +187,14 @@ namespace TheTimeApp.TimeData
         {
             return $"{Math.Floor(hours.TotalHours):0}:{hours.Minutes:00}";
         }
+        
+        public static string GenerateId()
+        {
+            return Guid.NewGuid().ToString();
+        }
 
         public abstract void Dispose();
+
+        public abstract void VerifySql();
     }
 }

@@ -18,7 +18,13 @@ namespace TheTimeApp.TimeData
             UpdateDetails,
         }
         
-        public CommandType Type { get; set; }
+        public enum SqlType
+        {
+            MySql,
+            Azure
+        }
+
+        public SqlType Type { get; set; }
         
         public List<KeyValuePair<string, string>> Params = new List<KeyValuePair<string, string>>();
         
@@ -58,13 +64,21 @@ namespace TheTimeApp.TimeData
         public MySqlCommand GetMySqlCommand
         {
             get{
-                MySqlCommand cmd = new MySqlCommand {CommandText = CommandText};
-                foreach (var param in Params)
+                try
                 {
-                    cmd.Parameters.Add(new MySqlParameter(){ParameterName = param.Key, Value = param.Value});    
-                }
+                    MySqlCommand cmd = new MySqlCommand {CommandText = CommandText};
+                    foreach (var param in Params)
+                    {
+                        cmd.Parameters.Add(new MySqlParameter(){ParameterName = param.Key, Value = param.Value});    
+                    }
 
-                return cmd;
+                    return cmd;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
         }
 

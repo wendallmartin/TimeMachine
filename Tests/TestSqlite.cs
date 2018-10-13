@@ -15,15 +15,17 @@ namespace Tests
     public class TestSqlite
     {
         private Sqlite _instance;
+        private string user = "1_ - 3~988}.wr.*@%'?>sS";
+        
         [SetUp]
         public void Setup()
         {
-            TimeServer.SqlCurrentUser = "nunit";
+            TimeServer.SqlCurrentUser = user;
             AppSettings.Instance = new AppSettings();
             AppSettings.Instance.DataPath = "TimeData.sqlite";
             _instance = Sqlite.LoadFromFile();
-            _instance.AddUser(new User("nunit", "", new List<Day>()));
-            TimeServer.SqlCurrentUser = "nunit";
+            _instance.AddUser(new User(user, "", new List<Day>()));
+            TimeServer.SqlCurrentUser = user;
         }
 
         [TearDown]
@@ -39,7 +41,7 @@ namespace Tests
         public void Test_UserNames()
         {
             Assert.True(_instance.UserNames().Count == 1);
-            Assert.True(_instance.UserNames().Contains("nunit"));
+            Assert.True(_instance.UserNames().Contains(user));
             _instance.AddUser(new User("Test", "", new List<Day>()));
             Assert.True(_instance.UserNames().Count == 2);
             Assert.True(_instance.UserNames().Contains("Test"));
@@ -48,19 +50,19 @@ namespace Tests
         [Test]
         public void Test_IsClockedIn()
         {
-            long key = TimeServer.GenerateId();
+            string key = TimeServer.GenerateId();
             Assert.False(_instance.IsClockedIn());
             _instance.PunchIn(key);
             Assert.True(_instance.IsClockedIn());
             Thread.Sleep(100);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Assert.False(_instance.IsClockedIn());
         }
 
         [Test]
         public void Test_SqlCurrentUser()
         {
-            Assert.True(TimeServer.SqlCurrentUser == "nunit");
+            Assert.True(TimeServer.SqlCurrentUser == user);
             _instance.AddUser(new User("tester", "", new List<Day>()));
             TimeServer.SqlCurrentUser = "tester";
             Assert.True(TimeServer.SqlCurrentUser == "tester");
@@ -85,9 +87,9 @@ namespace Tests
         [Test]
         public void Test_DeleteTime()
         {
-            long key = TimeServer.GenerateId();
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Assert.True(_instance.AllTimes().Count == 1);
             Time time = _instance.AllTimes().First();
             _instance.DeleteTime(time.Key);
@@ -136,7 +138,7 @@ namespace Tests
         [Test]
         public void Test_DeleteUser()
         {
-            _instance.DeleteUser("nunit");
+            _instance.DeleteUser(user);
             Assert.True(_instance.UserNames().Count == 0);
         }
 
@@ -153,9 +155,9 @@ namespace Tests
         [Test]
         public void Test_UpdateTime()
         {
-            long key = TimeServer.GenerateId();
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             DateTime now = DateTime.Now;
             _instance.UpdateTime(key, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue});
             Time last = _instance.AllTimes().Last();
@@ -187,23 +189,20 @@ namespace Tests
         [Test]
         public void Test_PunchIn()
         {
-            long key = TimeServer.GenerateId();
-            Assert.True(_instance.LastTimeId() == 0);
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.ToString(CultureInfo.InvariantCulture) == last.TimeOut.ToString(CultureInfo.InvariantCulture));
             Assert.True(last.TimeIn.Millisecond == last.TimeOut.Millisecond);
-            Assert.True(_instance.LastTimeId() != 0);
         }
 
         [Test]
         public void Test_PunchOut()
         {
-            long key = TimeServer.GenerateId();
-            Assert.True(_instance.LastTimeId() == 0);
+            string key = TimeServer.GenerateId();
             _instance.PunchIn(key);
             Thread.Sleep(100);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.Millisecond != last.TimeOut.Millisecond);
             
@@ -214,6 +213,48 @@ namespace Tests
         {
             Assert.True(TimeServer.StartEndWeek(DateTime.Now)[0].DayOfWeek == DayOfWeek.Sunday && TimeServer.StartEndWeek(DateTime.Now)[1].DayOfWeek == DayOfWeek.Saturday);
             Assert.True((TimeServer.StartEndWeek(DateTime.Now)[1].DayOfYear - TimeServer.StartEndWeek(DateTime.Now)[0].DayOfYear ) == 6);
+        }
+        
+        [Test]
+        public void Test_PushPull()
+        {
+            Day day1 = new Day(new DateTime(2001, 11, 7, 9, 44, 15, 411));
+            List<Time> times1 = new List<Time>();
+            times1.Add(new Time(new DateTime(2001, 11, 7, 9, 44, 15, 411), new DateTime(2001, 11, 7, 12, 3, 1, 411)){Key = TimeServer.GenerateId()});
+            times1.Add(new Time(new DateTime(2001, 11, 7, 1, 00, 00, 200), new DateTime(2001, 11, 7, 3, 00, 1, 999)){Key = TimeServer.GenerateId()});
+            day1.Times = times1;
+            day1.Details = "does this even work any more?";
+            
+            Day day2 = new Day(new DateTime(2051, 11, 6, 8, 44, 15, 411));
+            List<Time> times2 = new List<Time>();
+            times2.Add(new Time(new DateTime(2051, 11, 6, 8, 44, 15, 411), new DateTime(2051, 11, 6, 12, 30, 1, 100)){Key = TimeServer.GenerateId()});
+            times2.Add(new Time(new DateTime(2051, 11, 6, 10, 4, 15, 411), new DateTime(2051, 11, 6, 11, 44, 15, 411)){Key = TimeServer.GenerateId()});
+            day2.Times = times2;
+            day2.Details = "lets try again.....";
+            
+            Day day3 = new Day(new DateTime(2021, 4, 3, 5, 5, 5, 888));
+            List<Time> times3 = new List<Time>();
+            times3.Add(new Time(new DateTime(2021, 4, 3, 5, 5, 5, 888), new DateTime(2021, 4, 3, 8, 5, 9, 800)){Key = TimeServer.GenerateId()});
+            times3.Add(new Time(new DateTime(2021, 4, 3, 1, 5, 9, 800), new DateTime(2021, 4, 3, 6, 55, 9, 800)){Key = TimeServer.GenerateId()});
+            day3.Times = times3;
+            day3.Details = "one more time!";
+
+            var push = new List<Day>() {day1, day2, day3 };
+            _instance.Push(push);
+            var pull = _instance.Pull();
+            foreach (Day day in push)
+            {
+                bool contains = false;
+                foreach (Day d in pull)
+                {
+                    if (Day.Equals(day, d))
+                    {
+                        contains = true;
+                    }       
+                }
+                Assert.IsTrue(contains);
+            }
+            Assert.IsTrue(push.Count == pull.Count);
         }
     }
 }

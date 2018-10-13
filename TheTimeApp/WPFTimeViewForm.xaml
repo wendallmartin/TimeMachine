@@ -9,8 +9,8 @@
              ForceCursor="True" 
              WindowStyle="ThreeDBorderWindow" 
              Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-             Width="520"
-             Height="600"
+             Width="375"
+             Height="375"
              Icon="Resources/timecardpic.ico"
              Title="Time Clock">
     <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
@@ -19,17 +19,17 @@
                 <Image Source="Resources/settings.png" Height="23"></Image>
             </StackPanel>
         </Button>
-        <Canvas HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="367" Margin="0,0,0,21" >
-            <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="82" Canvas.Left="10"/>
-            <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="92"  Canvas.Left="265" />
-        </Canvas>
+        <Label x:Name="lb_VersionNumber" Content="Label" HorizontalAlignment="Right" VerticalAlignment="Top" Width="Auto" FontSize="10"/>
+        <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Margin="0,10,0,0" Click="btn_SelectedUser_Click"/>
         <ScrollViewer x:Name="ScrollViewer" Background="Gray" Margin="10,50,10,60" HorizontalAlignment="Center" Width="470" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="StackPanel" Orientation="Vertical" Background="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
         </ScrollViewer>
-        <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Margin="0,10,0,0" Click="btn_SelectedUser_Click"/>
         <ScrollViewer x:Name = "scroll_UserSelection" HorizontalAlignment="Center" Margin="0,35,0,0" VerticalAlignment="Top" Width="150" Visibility="Hidden" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="pnl_UserSelection" HorizontalAlignment="Center" Height="Auto" VerticalAlignment="Top" Width="150"/>
         </ScrollViewer>
-        <Label x:Name="lb_VersionNumber" Content="Label" HorizontalAlignment="Right" VerticalAlignment="Top" Width="Auto" FontSize="10"/>
+        <Canvas x:Name="SqlStatusBar" HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="Auto">
+            <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="Auto" Canvas.Left="10"/>
+            <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="Auto"  Canvas.Right="10" />
+        </Canvas>        
     </Grid>
 </Window>
