@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -205,7 +207,6 @@ namespace Tests
             _instance.PunchOut(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.Millisecond != last.TimeOut.Millisecond);
-            
         }
 
         [Test]
@@ -255,6 +256,84 @@ namespace Tests
                 Assert.IsTrue(contains);
             }
             Assert.IsTrue(push.Count == pull.Count);
+        }
+        
+        [Test]
+        public void Test_FixVersionMismatches()
+        {
+            TimeServer.SqlCurrentUser = "TestFixMisMatch";
+            DateTime dateTime = DateTime.Now;
+            string dateString = TimeServer.DateSqLite(dateTime);
+            string dateTimeString = TimeServer.DateTimeSqLite(dateTime);
+            using (SQLiteCommand cmd = _instance.GetConnection.CreateCommand())
+            {
+                cmd.CommandText = $"DROP TABLE IF EXISTS [{_instance.DayTableName}]";
+                cmd.ExecuteNonQuery();
+                
+                cmd.CommandText = $"DROP TABLE IF EXISTS [{_instance.TimeTableName}]";
+                cmd.ExecuteNonQuery();
+            }
+            using (SQLiteCommand cmd = _instance.GetConnection.CreateCommand())
+            {
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{_instance.DayTableName}] ( [Date] TEXT, [Details] TEXT)";
+                cmd.ExecuteNonQuery();
+                
+                cmd.CommandText = $"CREATE TABLE IF NOT EXISTS [{_instance.TimeTableName}]([Date] TEXT, [TimeIn] TEXT, [TimeOut] TEXT, [Key] INT)";
+                cmd.ExecuteNonQuery();
+            }
+
+            using (SQLiteCommand cmd = _instance.GetConnection.CreateCommand())
+            {
+                cmd.CommandText = $"INSERT INTO [{_instance.DayTableName}] VALUES(@Date, @Details)";
+                cmd.Parameters.Add(new SQLiteParameter("Date", dateString));
+                cmd.Parameters.Add(new SQLiteParameter("Details", "testing....."));
+                cmd.ExecuteNonQuery();
+            }
+            using (SQLiteCommand cmd = _instance.GetConnection.CreateCommand())
+            {
+                cmd.CommandText = $"INSERT INTO [{_instance.TimeTableName}] VALUES(@Date, @TimeIn, @TimeOut, @Key)";
+                cmd.Parameters.Add(new SQLiteParameter("Date", dateString));
+                cmd.Parameters.Add(new SQLiteParameter("TimeIn", dateTimeString));
+                cmd.Parameters.Add(new SQLiteParameter("TimeOut", dateTimeString));
+                cmd.Parameters.Add(new SQLiteParameter("Key", 6));
+                cmd.ExecuteNonQuery();
+            }
+            using (SQLiteCommand cmd = _instance.GetConnection.CreateCommand())
+            {
+                cmd.CommandText = $"INSERT INTO [{_instance.TimeTableName}] VALUES(@Date, @TimeIn, @TimeOut, @Key)";
+                cmd.Parameters.Add(new SQLiteParameter("Date", dateString));
+                cmd.Parameters.Add(new SQLiteParameter("TimeIn", dateTimeString));
+                cmd.Parameters.Add(new SQLiteParameter("TimeOut", dateTimeString));
+                cmd.Parameters.Add(new SQLiteParameter("Key", 8));
+                cmd.ExecuteNonQuery();
+            }
+            using (SQLiteCommand cmd = _instance.GetConnection.CreateCommand())
+            {
+                cmd.CommandText = $"INSERT INTO [{_instance.TimeTableName}] VALUES(@Date, @TimeIn, @TimeOut, @Key)";
+                cmd.Parameters.Add(new SQLiteParameter("Date", dateString));
+                cmd.Parameters.Add(new SQLiteParameter("TimeIn", dateTimeString));
+                cmd.Parameters.Add(new SQLiteParameter("TimeOut", dateTimeString));
+                cmd.Parameters.Add(new SQLiteParameter("Key", 7));
+                cmd.ExecuteNonQuery();
+            }
+            
+            var days = _instance.AllDays();
+            Assert.IsTrue(days[0].Times.Count == 3);
+            _instance.FixVersionMismatches();
+
+            days = _instance.AllDays();
+            Assert.IsTrue(days[0].Times.Count == 3);
+            foreach (Day day in days)
+            {
+                Assert.IsTrue(day.Details == "testing.....");
+                Assert.IsTrue(day.Date.ToString() == dateTime.Date.ToString());
+                foreach (Time time in day.Times)
+                {
+                    Assert.IsTrue(time.TimeIn.ToString() == dateTime.ToString());
+                    Assert.IsTrue(time.TimeOut.ToString() == dateTime.ToString());
+                    Assert.IsTrue(time.Key.Length > 1);
+                }
+            }
         }
     }
 }

@@ -32,7 +32,7 @@
             <StackPanel x:Name="pnl_UserSelection" HorizontalAlignment="Center" Height="Auto" VerticalAlignment="Top" Width="150"/>
         </ScrollViewer>
         <Label x:Name="Lbl_Time" Content="" FontSize="20" Foreground="LightGreen" HorizontalAlignment="Center" Margin="0,0,0,122" VerticalAlignment="Bottom"/>
-        <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Width="Auto" Height="85" Margin="10,0,10,40" FontSize="36" Click="btn_Start_CheckedChanged" MinHeight="80"/>
+        <Button x:Name="Start_Button" Content="Start" Focusable="False" Background="Green" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10,0,10,40" Width="Auto" Height="80" FontSize="36" Click="btn_Start_CheckedChanged"/>
         <Canvas x:Name="SqlStatusBar" HorizontalAlignment="Stretch" Height="28" Background="Gray" VerticalAlignment="Bottom" Width="Auto">
             <Label x:Name="lbl_Connected" Content="Disconnected" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center" Width="Auto" Canvas.Left="10"/>
             <Label x:Name="lbl_UpToDate" Content="NOT up to date" Foreground="Red" HorizontalAlignment="Right" VerticalAlignment="Center" Width="Auto"  Canvas.Right="10" />

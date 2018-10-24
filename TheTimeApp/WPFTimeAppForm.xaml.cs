@@ -40,8 +40,18 @@ namespace TheTimeApp
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
 
-            SqlStatusBar.Visibility = AppSettings.Instance.SqlEnabled == "true" ? Visibility.Visible : Visibility.Hidden;
-            Start_Button.Height = AppSettings.Instance.SqlEnabled == "true" ? 105 : 85;
+            if (AppSettings.Instance.SqlEnabled != "true")
+            {
+                SqlStatusBar.Visibility = Visibility.Hidden;
+                Start_Button.Margin = new Thickness(10,20,10,10);
+                Start_Button.Height = 115;
+            }
+            else
+            {
+                SqlStatusBar.Visibility = Visibility.Visible;
+                Start_Button.Margin = new Thickness(10,0,10,40);
+                Start_Button.Height = 85;
+            }
             
             DataBaseManager.Instance.ConnectionChangedEvent += ConnectionChanged;
             DataBaseManager.Instance.UpdateChangedEvent += SqlUpdateChanged;

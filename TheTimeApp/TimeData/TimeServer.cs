@@ -145,12 +145,24 @@ namespace TheTimeApp.TimeData
             return "Day_" + user + "_TimeTable";
         }
 
+        /// <summary>
+        /// Returns datetime in
+        /// yy-mm-dd-hh-mm-milli format.
+        /// </summary>
+        /// <param name="datetime"></param>
+        /// <returns></returns>
         public static string DateTimeSqLite(DateTime datetime)
         {
             string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
             return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second,datetime.Millisecond);
         }
         
+        /// <summary>
+        /// Returns date only in
+        /// yy-mm-dd format.
+        /// </summary>
+        /// <param name="datetime"></param>
+        /// <returns></returns>
         public static string DateSqLite(DateTime datetime)
         {
             string dateFormat = "{0}-{1}-{2}";

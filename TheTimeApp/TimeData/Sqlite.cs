@@ -21,6 +21,8 @@ namespace TheTimeApp.TimeData
         private SQLiteConnection _connection;
         private string _connectionString;
 
+        public SQLiteConnection GetConnection => _connection;
+
         public Sqlite(string conStringBuilder)
         {
             logger.Info("Initalize......");
@@ -36,7 +38,7 @@ namespace TheTimeApp.TimeData
             logger.Info("Initalize......FINISHED!!!");
         }
 
-        private void FixVersionMismatches()
+        public void FixVersionMismatches()
         {
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
@@ -327,8 +329,15 @@ namespace TheTimeApp.TimeData
             {
                 cmd.CommandText = $@"DROP TABLE IF EXISTS [{ToDayTableName(username)}]";
                 cmd.ExecuteNonQuery();
+            }
+
+            using (SQLiteCommand cmd = _connection.CreateCommand())
+            {
                 cmd.CommandText = $@"DROP TABLE IF EXISTS [{ToTimeTableName(username)}]";
                 cmd.ExecuteNonQuery();
+            }
+            using (SQLiteCommand cmd = _connection.CreateCommand())
+            {
                 cmd.CommandText = $"DELETE FROM [{UserTable}] WHERE Name = @Name";
                 cmd.Parameters.Add(new SQLiteParameter("Name", username));
                 cmd.ExecuteNonQuery();
