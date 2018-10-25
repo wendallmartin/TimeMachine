@@ -35,7 +35,7 @@ namespace TheTimeApp.TimeData
                         UserID = AppSettings.Instance.MySqlUserId,
                         Password = AppSettings.Instance.MySqlPassword,
                         Port = (uint) AppSettings.Instance.MySqlPort,
-                        SslMode = MySqlSslMode.None// todo add mysql ssl setting
+                        SslMode = AppSettings.Instance.MySqlSsl == "true" ? MySqlSslMode.Required : MySqlSslMode.None 
                     };
                     try
                     {

@@ -49,6 +49,7 @@ namespace TheTimeApp
             TextBoxMySqlPassword.Text = "*********";
             TextBoxMySqlPort.Text = AppSettings.Instance.MySqlPort.ToString();
             TextBoxMySqlDatabase.Text = AppSettings.Instance.MySqlDatabase;
+            CheckBoxMySqlSsl.IsChecked = AppSettings.Instance.MySqlSsl == "true";
             
             btn_SQLEnable.Content = AppSettings.Instance.SqlEnabled == "true" ? "Enabled" : "Disabled";
             btn_Permission.Content = AppSettings.Instance.MainPermission == "write" ? "Write" : "Read";
@@ -460,6 +461,16 @@ namespace TheTimeApp
                 thread.SetApartmentState(ApartmentState.STA);
                 thread.Start();
             }
+        }
+
+        private void MySqlSsl_Checked(object sender, RoutedEventArgs e)
+        {
+            AppSettings.Instance.MySqlSsl = "true";
+        }
+
+        private void MySqlSsl_UnChecked(object sender, RoutedEventArgs e)
+        {
+            AppSettings.Instance.MySqlSsl = "false";
         }
     }
 }

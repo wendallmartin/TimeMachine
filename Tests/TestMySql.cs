@@ -34,7 +34,7 @@ namespace Tests
                 UserID = "WendallMartin",
                 Password = "test",
                 Port = 3306,
-                SslMode = MySqlSslMode.None
+                SslMode = MySqlSslMode.Required
             };
             _instance = new TheTimeApp.TimeData.MySql(mysqlBuiler, TheTimeApp.TimeData.MySql.UpdateModes.Sync);
             _instance.AddUser(new User(user, "", new List<Day>()));

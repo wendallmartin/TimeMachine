@@ -35,6 +35,8 @@ namespace Tests
         {
             _instance.Dispose();
             
+            Thread.Sleep(100);// Give sqlite time to dispose.
+            
             if(File.Exists($"{AppSettings.Instance.DataPath}"))
                 File.Delete($"{AppSettings.Instance.DataPath}");
         }

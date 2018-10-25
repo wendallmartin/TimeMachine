@@ -98,22 +98,22 @@
                     </Grid>
 
                     <Grid x:Name="MySqlSettings" Visibility="Visible" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="172">
-                        <Label Content="Data source" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,19,0,0" />
-                        <Label Content="User" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,49,0,0" />
-                        <Label Content="Password" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,80,0,0" />
-                        <Label Content="Database" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,109,0,0" />
-                        <Label Content="Port" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,141,0,0" />
+                        <Label Content="Data source" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,1,0,0" />
+                        <Label Content="User" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,31,0,0" />
+                        <Label Content="Password" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,62,0,0" />
+                        <Label Content="Database" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,91,0,0" />
+                        <Label Content="Port" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,123,0,0" />
                         <TextBox x:Name="TextBoxMySqlDataSource" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                             VerticalAlignment="Top" Width="196" Margin="119,20,0,0" />
+                             VerticalAlignment="Top" Width="196" Margin="119,2,0,0" />
                         <TextBox x:Name="TextBoxMySqlUserId" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                             VerticalAlignment="Top" Width="196" Margin="119,51,0,0" />
+                             VerticalAlignment="Top" Width="196" Margin="119,33,0,0" />
                         <TextBox x:Name="TextBoxMySqlPassword" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                             VerticalAlignment="Top" Width="196" Margin="119,81,0,0"/>
+                             VerticalAlignment="Top" Width="196" Margin="119,63,0,0"/>
                         <TextBox x:Name="TextBoxMySqlDatabase" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                            VerticalAlignment="Top" Width="196" Margin="119,110,0,0" TextChanged="TextBoxMySqlDatabase_TextChanged"/>
+                            VerticalAlignment="Top" Width="196" Margin="119,92,0,0" TextChanged="TextBoxMySqlDatabase_TextChanged"/>
                         <TextBox x:Name="TextBoxMySqlPort" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap"
-                             VerticalAlignment="Top" Width="196" Margin="119,141,0,0" />
-                        
+                             VerticalAlignment="Top" Width="196" Margin="119,123,0,0" />
+                        <CheckBox x:Name="CheckBoxMySqlSsl" Content="Ssl" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,151,0,0" Checked="MySqlSsl_Checked" Unchecked="MySqlSsl_UnChecked"/>
                     </Grid>
 
                 </Grid>
