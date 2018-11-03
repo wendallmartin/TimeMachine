@@ -2,6 +2,7 @@ using System;
 using System.Windows.Forms;
 using System.Windows.Media;
 using TheTimeApp.TimeData;
+using static TheTimeApp.Controls.PrevEmailWin;
 using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace TheTimeApp.Controls
@@ -20,11 +21,9 @@ namespace TheTimeApp.Controls
 
         public event WeekDel EmailWeekEvent;
 
-        public event WeekDel PrintWeekEvent;
-
         public event WeekDel PreviewWeekEvent;
 
-        public WpfWeekViewBar(DateTime dateTime, TimeSpan hours)
+        public WpfWeekViewBar(DateTime dateTime, double hours)
         {
             BrushSelected = Brushes.DimGray;
             BrushUnselected = Brushes.Gray;
@@ -32,7 +31,7 @@ namespace TheTimeApp.Controls
             _date = dateTime;
 
             Text = "Week - " + dateTime.Month + "//" +
-                   dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + $"{TimeServer.TimeSpanToText(hours)}";
+                   dateTime.Day + "//" + dateTime.Year + "                                                         Hours: " + $"{TimeServer.DecToQuarter(hours)}";
 
             DeleteEvent += OnDeleteDay;
             SelectedEvent += OnMouseDown;
@@ -51,21 +50,17 @@ namespace TheTimeApp.Controls
 
         private void OnMouseDown(ViewBar view)
         {
-            EmailOrPrintWindow emailOrPrintWindow = new EmailOrPrintWindow();
+            PrevEmailWin emailOrPreview = new PrevEmailWin();
 
-            emailOrPrintWindow.ShowDialog();
+            emailOrPreview.ShowDialog();
 
-            var sure = emailOrPrintWindow.DialogResult;
+            ResultValue result = emailOrPreview.Result;
 
-            if (sure == DialogResult.Yes)
+            if (result == ResultValue.Email)
             {
                 EmailWeekEvent?.Invoke(_date);
             }
-            else if (sure == DialogResult.No)
-            {
-                PrintWeekEvent?.Invoke(_date);
-            }
-            else if (sure == DialogResult.OK)
+            else if (result == ResultValue.Prev)
             {
                 PreviewWeekEvent?.Invoke(_date);
             }

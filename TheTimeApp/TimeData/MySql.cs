@@ -660,25 +660,6 @@ namespace TheTimeApp.TimeData
 
         }
 
-        public override string GetRangeAsText(DateTime dateA, DateTime dateB)
-        {
-            logger.Info($"GetRangeAsText, DateA: {dateA} | DateB: {dateB}");
-            Debug.WriteLine($"GetRangeAsText: {dateA}-{dateB}");
-            string result = "";
-            result += dateA.Date.Month + "\\" + dateA.Date.Day + "\\" + dateA.Date.Year + " to " + dateB.Date.Month + "\\" + dateB.Date.Day + "\\" + dateB.Date.Year;
-            
-            foreach (Day day in DaysInRange(dateA,dateB))
-            {
-                result += "\n   " + day.Date.Month + "\\" + day.Date.Day + "\\" + day.Date.Year + " Hours = " + day.Hours().ToString(@"hh\:mm");
-                result += "\n " + day.Details;
-                result += "\n--------------------------------------------------------";
-            }
-            result += "\n -------------------------------";
-            result += "\n Total hours = " + HoursInRange(dateA, dateB);
-            return result;
-
-        }
-
         public override DateTime MinDate()
         {
             var times = AllDays();

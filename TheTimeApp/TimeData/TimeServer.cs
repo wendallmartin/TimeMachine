@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Globalization;
-using System.Linq;
-using System.Resources;
-using System.Timers;
 using NLog;
+using Timer = System.Timers.Timer;
 
 namespace TheTimeApp.TimeData
 {
     public abstract class TimeServer
     {
+        public static string AppDataDirectory => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\TheTimeApp";
+        
         public enum State
         {
             Connected,
@@ -25,7 +24,7 @@ namespace TheTimeApp.TimeData
         private static readonly object SqlPullLock = new object();
         private static readonly object SqlPushLock = new object();
         
-        public static string SqlCurrentUser { get; set; }
+        public static string SqlCurrentUser { get; set; } = string.Empty;
         protected bool _wasConnected;
         protected readonly Timer _connectionRetry = new Timer(1000);
         protected SqlMode SqlMode { get; set; }
@@ -104,8 +103,6 @@ namespace TheTimeApp.TimeData
         public abstract string LastTimeId();
         
         public abstract List<Time> TimesinRange(DateTime dateA, DateTime dateB);
-        
-        public abstract string GetRangeAsText(DateTime dateA, DateTime dateB);
 
         public string UserTable => "Users_TimeTable";
 
@@ -156,6 +153,11 @@ namespace TheTimeApp.TimeData
             string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
             return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second,datetime.Millisecond);
         }
+
+        public static string DateString(DateTime time)
+        {
+            return $"{time.Month}/{time.Day}/{time.Year}";
+        }
         
         /// <summary>
         /// Returns date only in
@@ -204,6 +206,26 @@ namespace TheTimeApp.TimeData
         {
             return Guid.NewGuid().ToString();
         }
+        
+        /// <summary>
+        /// Converts decimal to value rounded to quarter.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double DecToQuarter(double value)
+        {
+            double wholeNum = Math.Truncate(value);
+            double decPart = value - wholeNum;
+
+            if (decPart >= .875) decPart = 1;
+            else if (decPart >= .625) decPart = .75;
+            else if (decPart >= .375) decPart = .5;
+            else if (decPart >= .125) decPart = .25;
+            else decPart = 0;
+
+            return wholeNum + decPart;
+        }
+
 
         public abstract void Dispose();
 

@@ -55,6 +55,10 @@ namespace TheTimeApp.TimeData
             return punchout - punchin;
         }
 
+        public double HoursAsDec => GetTime().TotalHours;
+
+        public double HoursAsDecToQuarter => TimeServer.DecToQuarter(HoursAsDec);
+
         /// <summary>
         /// Since both timin and timeout are
         /// set at punchin, if the equal eachouther we

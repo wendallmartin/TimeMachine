@@ -73,10 +73,9 @@ namespace TheTimeApp.TimeData
             return times.Count > 0;
         }
 
-        public double HoursAsDec()
-        {
-            return Math.Round(Hours().TotalHours, 1);
-        }
+        public double HoursAsDec => Hours().TotalHours;
+
+        public double HoursAsDecToQuarter => TimeServer.DecToQuarter(HoursAsDec);
 
         public TimeSpan Hours()
         {

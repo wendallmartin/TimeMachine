@@ -73,6 +73,7 @@
     <Compile Include="TestMySql.cs" />
     <Compile Include="TestSqlite.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestTimeServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TheTimeApp\TheTimeApp.csproj">

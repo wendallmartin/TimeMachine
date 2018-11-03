@@ -417,26 +417,6 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        public override string GetRangeAsText(DateTime dateA, DateTime dateB)
-        {
-            logger.Info($"GetRangeAsText, DateA: {dateA} | DateB: {dateB}");
-            Debug.WriteLine($"GetRangeAsText: {dateA}-{dateB}");
-            string result = "";
-            TimeSpan hours = HoursInRange(dateA, dateB);
-            result += dateA.Date.Month + "\\" + dateA.Date.Day + "\\" + dateA.Date.Year + " to " + dateB.Date.Month + "\\" + dateB.Date.Day + "\\" + dateB.Date.Year;
-            
-            foreach (Day day in DaysInRange(dateA,dateB))
-            {
-                result += "\n   " + day.Date.Month + "\\" + day.Date.Day + "\\" + day.Date.Year + " Hours = " + day.Hours().ToString(@"hh\:mm");
-                result += "\n " + day.Details;
-                result += "\n--------------------------------------------------------";
-            }
-            result += "\n -------------------------------";
-            result += "\n Total hours as time span = " + TimeSpanToText(hours);
-            result += "\n Total hours as decimal = " + Math.Round(hours.TotalHours, 1);
-            return result;
-        }
-
         public override TimeSpan HoursInRange(DateTime dateA, DateTime dateB)
         {
             logger.Info($"HoursInRange, DateA: {dateA} | DateB: {dateB}.........");

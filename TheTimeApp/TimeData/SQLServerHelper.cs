@@ -396,11 +396,6 @@ namespace TheTimeApp.TimeData
         {
             throw new NotImplementedException();
         }
-
-        public override string GetRangeAsText(DateTime dateA, DateTime dateB)
-        {
-            throw new NotImplementedException();
-        }
         
         public List<string> GetAllTables()
         {

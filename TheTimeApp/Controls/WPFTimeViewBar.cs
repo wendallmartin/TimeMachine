@@ -31,12 +31,12 @@ namespace TheTimeApp.Controls
             if (is25Hour)
             {
                 Text = "        In: " + _time.TimeIn.ToString("HH:mm") + "   Out: " + _time.TimeOut.ToString("HH:mm")
-                       + "   Total: " + _time.GetTime().Hours + ":" + _time.GetTime().Minutes;   
+                       + "   Total: " + time.HoursAsDecToQuarter;   
             }
             else
             {
                 Text = "        In: " + _time.TimeIn.ToString("hh:mm tt") + "   Out: " + _time.TimeOut.ToString("hh:mm tt")
-                       + "   Total: " + _time.GetTime().Hours + ":" + _time.GetTime().Minutes;
+                       + "   Total: " + time.HoursAsDecToQuarter;
             }
 
             SelectedEvent += OnMouseClick;

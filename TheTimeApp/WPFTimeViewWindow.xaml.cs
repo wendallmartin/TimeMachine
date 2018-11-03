@@ -1,20 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Printing;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Mail;
-using System.Threading;
 using System.Windows;
-using System.Windows.Forms;
 using TheTimeApp.Controls;
 using TheTimeApp.TimeData;
+using static TheTimeApp.Controls.PrevEmailWin;
 using Brushes = System.Windows.Media.Brushes;
 using Day = TheTimeApp.TimeData.Day;
-using MessageBox = System.Windows.MessageBox;
 using DataBase = TheTimeApp.TimeData.TimeData;
 
 namespace TheTimeApp
@@ -69,15 +62,14 @@ namespace TheTimeApp
         {
             bool honest = File.Exists("honest.txt");
             StackPanel.Children.Clear();
-            TimeSpan totalHours = DataBaseManager.Instance.HoursInRange(startEnd[0], startEnd[1]);
+            double totalHours = TimeServer.DecToQuarter(DataBaseManager.Instance.HoursInRange(startEnd[0], startEnd[1]).TotalHours);
             
             if (DateTimeFormatInfo.CurrentInfo != null)
             {
                 WpfWeekViewBar weekViewBar = new WpfWeekViewBar(startEnd[0], totalHours);
                 weekViewBar.DeleteWeekEvent += OnDeleteWeek;
-                weekViewBar.EmailWeekEvent += OnEmailWeek;
-                weekViewBar.PrintWeekEvent += OnPrintWeek;
-                weekViewBar.PreviewWeekEvent += OnPreviewWeek;
+                weekViewBar.EmailWeekEvent += HtmlTimeReporter.OnEmailWeek;
+                weekViewBar.PreviewWeekEvent += HtmlTimeReporter.OnPreviewWeek;
                 StackPanel.Children.Add(weekViewBar);
             }
             
@@ -99,7 +91,7 @@ namespace TheTimeApp
                 prev = day;
             }
 
-            TotalTime.Content = TimeServer.TimeSpanToText(totalHours);
+            TotalTime.Content = totalHours;
         }
 
         private void OnDeleteWeek(DateTime date)
@@ -144,79 +136,6 @@ namespace TheTimeApp
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
-        private void OnEmailWeek(DateTime date)
-        {
-            new Thread(() =>
-            {
-                try
-                {
-                    MailMessage msg = new MailMessage(AppSettings.Instance.FromAddress, AppSettings.Instance.ToAddress);
-                    SmtpClient smtp = new SmtpClient();
-                    NetworkCredential basicCredential = new NetworkCredential(AppSettings.Instance.FromUser, AppSettings.Instance.FromPass);
-                    smtp.EnableSsl = AppSettings.Instance.SslEmail == "true";
-                    smtp.Port = Convert.ToInt32(AppSettings.Instance.FromPort);
-                    smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
-                    smtp.UseDefaultCredentials = false;
-                    smtp.Credentials = basicCredential;
-                    smtp.Host = AppSettings.Instance.EmailHost;
-                    msg.Subject = "Time";
-                    msg.Body = DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]);
-                    smtp.Send(msg);
-                    MessageBox.Show("Mail sent!");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.ToString());
-                }
-            }).Start();
-        }
-
-        private void OnPrintWeek(DateTime date)
-        {
-            PrintDocument p = new PrintDocument();
-            p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
-            {
-                e1.Graphics.DrawString(DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
-                    new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
-            };
-            try
-            {
-                PrintDialog pdp = new PrintDialog {Document = p};
-
-                if (pdp.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    p.Print();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        }
-
-        private void OnPreviewWeek(DateTime date)
-        {
-            PrintDocument p = new PrintDocument();
-            p.PrintPage += delegate(object sender1, PrintPageEventArgs e1)
-            {
-                e1.Graphics.DrawString(DataBaseManager.Instance.GetRangeAsText(TimeServer.StartEndWeek(date)[0], TimeServer.StartEndWeek(date)[1]), new Font("Times New Roman", 12), new SolidBrush(Color.Black),
-                    new RectangleF(0, 0, p.DefaultPageSettings.PrintableArea.Width, p.DefaultPageSettings.PrintableArea.Height));
-            };
-            try
-            {
-                PrintPreviewDialog pdp = new PrintPreviewDialog {Document = p};
-
-                if (pdp.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    p.Print();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        }
-
         private void Twelve_Hour_Click(object sender, EventArgs e)
         {
             TwelveHourButton.Background = Brushes.LightSkyBlue;
@@ -254,24 +173,21 @@ namespace TheTimeApp
 
         private void BtnTotalTimeClick(object sender, RoutedEventArgs e)
         {
-            EmailOrPrintWindow emailOrPrintWindow = new EmailOrPrintWindow();
+            PrevEmailWin emailOrPreview = new PrevEmailWin();
 
-            emailOrPrintWindow.ShowDialog();
+            emailOrPreview.ShowDialog();
 
-            DialogResult sure = emailOrPrintWindow.DialogResult;
+            ResultValue result = emailOrPreview.Result;
 
-            if (sure == System.Windows.Forms.DialogResult.Yes)
+            switch (result)
             {
-                OnEmailWeek(_baseDate);
+                case ResultValue.Email:
+                    HtmlTimeReporter.OnEmailWeek(_baseDate);
+                    break;
+                case ResultValue.Prev:
+                    HtmlTimeReporter.OnPreviewWeek(_baseDate);
+                    break;
             }
-            else if (sure == System.Windows.Forms.DialogResult.No)
-            {
-                OnPrintWeek(_baseDate);
-            }
-            else if (sure == System.Windows.Forms.DialogResult.OK)
-            {
-                OnPreviewWeek(_baseDate);
-            }           
         }
     }
 }

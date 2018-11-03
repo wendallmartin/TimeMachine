@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using MySql.Data.MySqlClient;
 using NLog;
-using NLog.Fluent;
 
 namespace TheTimeApp.TimeData
 {
@@ -217,11 +215,6 @@ namespace TheTimeApp.TimeData
         public override List<Time> TimesinRange(DateTime dateA, DateTime dateB)
         {
             return _primary.TimesinRange(dateA, dateB);
-        }
-
-        public override string GetRangeAsText(DateTime dateA, DateTime dateB)
-        {
-            return _primary.GetRangeAsText(dateA,dateB);
         }
 
         public override DateTime MinDate()
