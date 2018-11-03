@@ -97,7 +97,7 @@ namespace TheTimeApp.TimeData
                 // Link
                 htmlWriter.AddAttribute("align", "center");
                 htmlWriter.RenderBeginTag("p");
-                htmlWriter.Write("Brought to you by <a href = http://www.wrmcodeblocks.com title = 'Link to authors site'> wrmcodeblocks </a>.");
+                htmlWriter.Write("Brought to you by <a href = http://wrmcodeblocks.com/TheTimeApp/Downloads/ title = 'Link to download site'> TheTimeApp </a>.");
                 htmlWriter.RenderEndTag();
                 
                 
