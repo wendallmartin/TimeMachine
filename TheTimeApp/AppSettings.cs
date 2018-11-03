@@ -21,12 +21,13 @@ namespace TheTimeApp
                 if (_instance == null)
                 {
                     _instance = new AppSettings();
+                    _instance.Validate();
                     _instance.Load();
                 }
                 
                 return _instance;
             }
-            set => _instance = value;
+            set => _instance = value;// can set singleton to anything(for testing only!)
         }
         
         public string DataPath { get; set; }
@@ -49,10 +50,11 @@ namespace TheTimeApp
         public string MySqlPassword { get; set; }
         public string MySqlDatabase { get; set; }
         public int MySqlPort { get; set; }
+        public string MySqlSsl { get; set; }
         public string SqlEnabled { get; set; }
         public string SqlType { get; set; }
         public string MainPermission { get; set; }
-        
+
         public void Load()
         {
             DataPath = ReadValueFromXml("uwnmnnvvkgsfghks", false) == "" ? "time" : ReadValueFromXml("uwnmnnvvkgsfghks", false);
@@ -75,6 +77,7 @@ namespace TheTimeApp
             MySqlPassword = ReadValueFromXml("jghjefdhguishsifpfafsdjkuh");
             MySqlDatabase = ReadValueFromXml("igaujjshjsdfhhalfjlffhio");
             MySqlPort = !string.IsNullOrEmpty(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd")) ? int.Parse(ReadValueFromXml("fvdjgfghjkjsdfhjgknklhfzsd")) : 0;
+            MySqlSsl = ReadValueFromXml("aedfjfgjafklahjfgahfap");
             SqlEnabled = ReadValueFromXml("dkjfgjpwhjpo");
             SqlType = ReadValueFromXml("jgfhgjasgjfajfghj");
             MainPermission = ReadValueFromXml("dlajwugpasdh");
@@ -102,6 +105,7 @@ namespace TheTimeApp
             WriteValueToxml("jghjefdhguishsifpfafsdjkuh", MySqlPassword);
             WriteValueToxml("igaujjshjsdfhhalfjlffhio", MySqlDatabase);
             WriteValueToxml("fvdjgfghjkjsdfhjgknklhfzsd", MySqlPort.ToString());
+            WriteValueToxml("aedfjfgjafklahjfgahfap", MySqlSsl);
             WriteValueToxml("dkjfgjpwhjpo", SqlEnabled);
             WriteValueToxml("jgfhgjasgjfajfghj", SqlType);
             WriteValueToxml("dlajwugpasdh", MainPermission);
@@ -110,7 +114,7 @@ namespace TheTimeApp
         /// <summary>
         /// Creates new database if it does not exist.
         /// </summary>
-        public static void Validate()
+        private void Validate()
         {
             if (!File.Exists(SettingsFilePath))
             {
@@ -221,6 +225,10 @@ namespace TheTimeApp
             xmlWriter.WriteEndElement();
             
             xmlWriter.WriteStartElement("fvdjgfghjkjsdfhjgknklhfzsd");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("aedfjfgjafklahjfgahfap");
             xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
 

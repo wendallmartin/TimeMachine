@@ -49,6 +49,7 @@ namespace TheTimeApp
             TextBoxMySqlPassword.Text = "*********";
             TextBoxMySqlPort.Text = AppSettings.Instance.MySqlPort.ToString();
             TextBoxMySqlDatabase.Text = AppSettings.Instance.MySqlDatabase;
+            CheckBoxMySqlSsl.IsChecked = AppSettings.Instance.MySqlSsl == "true";
             
             btn_SQLEnable.Content = AppSettings.Instance.SqlEnabled == "true" ? "Enabled" : "Disabled";
             btn_Permission.Content = AppSettings.Instance.MainPermission == "write" ? "Write" : "Read";
@@ -74,6 +75,9 @@ namespace TheTimeApp
 
             AssociateEvents();
             LoadUsers();
+
+            if(DataBaseManager.Instance.ProgressChangedEvent == null) DataBaseManager.Instance.ProgressChangedEvent += OnSqlProgressChanged;
+            if(DataBaseManager.Instance.ProgressFinishEvent == null) DataBaseManager.Instance.ProgressFinishEvent += OnProgressFinish;
         }
 
         private void LoadUsers()
@@ -173,42 +177,23 @@ namespace TheTimeApp
             }
         }
         
-        private void Btn_SQLPushAll_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Updates progress bar with given percentage.
+        /// </summary>
+        /// <param name="percentage"></param>
+        private void OnSqlProgressChanged(float percentage)
         {
-            if (AppSettings.Instance.SqlEnabled != "true")
-            {
-                MessageBox.Show("SQL not enabled!");
-                return;
-            }
-            
-            ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-            btn_SQLSyncAll.IsEnabled = false;
-            DataBaseManager.Instance.RePushToServer();
-        }
-
-        private void OnSqlProgressChanged(float value)
-        {
-            Debug.WriteLine(value);
-            Dispatcher.Invoke(new Action(() =>
-            {
-                ProgressBar_SQLRePushAll.Value = value;
-                
-            
-                if (value == 100)
-                {
-                    ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;
-                }
-            }));
+            Dispatcher.Invoke(() => { ProgressBar_SQLRePushAll.Value = percentage;});
         }
         
         private void OnProgressFinish()
         {
-            Dispatcher.Invoke(new Action(() =>
+            Dispatcher.Invoke(() =>
             {
-                btn_SQLSyncAll.IsEnabled = true;
+                btn_SQLBackup.IsEnabled = btn_SQLSyncAll.IsEnabled = true;
                 ProgressBar_SQLRePushAll.Value = 0;
                 ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;
-            }));
+            });
         }
 
 
@@ -285,6 +270,28 @@ namespace TheTimeApp
         
         #region sql settings
         
+        private void Btn_SQLPushAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (AppSettings.Instance.SqlEnabled != "true")
+            {
+                MessageBox.Show("SQL not enabled!");
+                return;
+            }
+            
+            ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
+            btn_SQLSyncAll.IsEnabled = false;
+            new Thread(() =>
+            {
+                DataBaseManager.Instance.PushPrimaryToSecondary();
+                Dispatcher.Invoke(() =>
+                {
+                    btn_SQLSyncAll.IsEnabled = true;
+                    ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;
+                });
+                
+            }).Start();
+        }
+        
         private void Btn_SQLDownload_Click(object sender, RoutedEventArgs e)
         {
             if (AppSettings.Instance.SqlEnabled != "true")
@@ -292,13 +299,22 @@ namespace TheTimeApp
                 MessageBox.Show("SQL not enabled!");
                 return;
             }
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "Time file (*.sqlite)|*.sqlite";
-            if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+
+            if (MessageBox.Show("Local data will be overwritten! \n Are you sure?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
+                btn_SQLBackup.IsEnabled = false;
                 ProgressBar_SQLRePushAll.Visibility = Visibility.Visible;
-                DataBaseManager.Instance.LoadFromServer();    
-            } 
+                new Thread(() =>
+                {
+                    DataBaseManager.Instance.PullSecondaryToPrimary();
+                    Dispatcher.Invoke(() =>
+                    {
+                        btn_SQLBackup.IsEnabled = true;
+                        MessageBox.Show("Download successful!");
+                        ProgressBar_SQLRePushAll.Visibility = Visibility.Hidden;
+                    });
+                }).Start();    
+            }
         }
 
         private void BtnTestClick(object sender, RoutedEventArgs e)
@@ -437,12 +453,24 @@ namespace TheTimeApp
 
         private void SettingsWindow_OnClosing(object sender, CancelEventArgs e)
         {
+            DataBaseManager.Instance.SaveBuffer();
             if (_changeDataPath)
             {
+                AppSettings.Instance.Save();
                 Thread thread = new Thread (() => { Process.Start("TheTimeApp.exe");});
                 thread.SetApartmentState(ApartmentState.STA);
                 thread.Start();
             }
+        }
+
+        private void MySqlSsl_Checked(object sender, RoutedEventArgs e)
+        {
+            AppSettings.Instance.MySqlSsl = "true";
+        }
+
+        private void MySqlSsl_UnChecked(object sender, RoutedEventArgs e)
+        {
+            AppSettings.Instance.MySqlSsl = "false";
         }
     }
 }

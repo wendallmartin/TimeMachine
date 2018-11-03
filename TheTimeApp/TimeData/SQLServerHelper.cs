@@ -21,6 +21,7 @@ namespace TheTimeApp.TimeData
         private static readonly object SqlServerLock = new object();
         private static readonly object SqlPullLock = new object();
         private static readonly object SqlPushLock = new object();
+        private SqlConnection _connection = new SqlConnection();// Only referenced from SqlConnection property!
 
         public List<SerilizeSqlCommand> Commands;
 
@@ -103,12 +104,7 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override void RePushToServer()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void LoadFromServer()
+        public override List<Day> Pull()
         {
             throw new NotImplementedException();
         }
@@ -120,6 +116,11 @@ namespace TheTimeApp.TimeData
             GC.Collect();
             GC.WaitForPendingFinalizers();
             logger.Info("Disposing......FINISHED!!!");
+        }
+
+        public override void VerifySql()
+        {
+            // todo implement
         }
 
         public SqlServerHelper(SqlConnectionStringBuilder conStringBuilder, SqlMode sqlMode, List<SerilizeSqlCommand> commands)
@@ -316,7 +317,7 @@ namespace TheTimeApp.TimeData
                                             CREATE TABLE {timeTable} (Date date, Details text)"));
         }
 
-        public override int DeleteUser(string username)
+        public override void DeleteUser(string username)
         {
             throw new NotImplementedException();
         }
@@ -331,7 +332,7 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override int DeleteDay(DateTime date)
+        public override void DeleteDay(DateTime date)
         {
             throw new NotImplementedException();
         }
@@ -346,17 +347,17 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override int DeleteRange(DateTime start, DateTime end)
+        public override void DeleteRange(DateTime start, DateTime end)
         {
             throw new NotImplementedException();
         }
 
-        public override void PunchIn()
+        public override void PunchIn(string key)
         {
             throw new NotImplementedException();
         }
 
-        public override void PunchOut()
+        public override void PunchOut(string key)
         {
             throw new NotImplementedException();
         }
@@ -371,22 +372,22 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
-        public override int DeleteTime(double key)
+        public override void DeleteTime(string key)
         {
             throw new NotImplementedException();
         }
 
-        public override int UpdateDetails(DateTime date, string details)
+        public override void UpdateDetails(DateTime date, string details)
         {
             throw new NotImplementedException();
         }
 
-        public override int UpdateTime(double key, Time upd)
+        public override void UpdateTime(string key, Time upd)
         {
             throw new NotImplementedException();
         }
 
-        public override double MaxTimeId(string tablename = "")
+        public override string LastTimeId()
         {
             throw new NotImplementedException();
         }
@@ -446,7 +447,7 @@ namespace TheTimeApp.TimeData
         /// Delete sql table and repushes everything
         /// </summary>
         /// <param name="days"></param>
-        public void RePushToServer(List<Day> days)
+        public override void Push(List<Day> days)
         {
             new Thread(() =>
             {
@@ -575,8 +576,6 @@ namespace TheTimeApp.TimeData
                 using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {ToDayTableName(CurrentUserName)} SET Details = @Details WHERE( Date = '" + day.Date + "' AND TimeIn = '" + new TimeSpan() + "')"))
                 {
                     cmd.AddParameter(new SqlParameter("Details", day.Details));
-                    cmd.Type = SerilizeSqlCommand.CommandType.UpdateDetails;
-                    
                     AddCommand(cmd);
                 }
             }
@@ -588,8 +587,6 @@ namespace TheTimeApp.TimeData
             Debug.WriteLine("Update time");
             using (SerilizeSqlCommand cmd = new SerilizeSqlCommand($"UPDATE {ToTimeTableName(CurrentUserName)} SET Date = '{upd.TimeIn.Date}', TimeIn = '{upd.TimeIn.TimeOfDay}', TimeOut = '{upd.TimeOut.TimeOfDay}' WHERE( Date = '" + prev.TimeIn.Date + "' AND TimeIn = '" +prev.TimeIn.TimeOfDay + "' AND TimeOut = '" + prev.TimeOut.TimeOfDay + "')"))
             {
-                cmd.Type = SerilizeSqlCommand.CommandType.UpdateTime;
-               
                 AddCommand(cmd);
             }
         }

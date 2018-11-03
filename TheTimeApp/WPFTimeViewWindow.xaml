@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:TheTimeApp"
              Icon="Resources/timecardpic.ico"
              mc:Ignorable="d" 
+             WindowStartupLocation="CenterScreen"
              Width="400" Height="600">
     <Window.Resources>
         <Image x:Key="PrevIcon" Source="Resources\prev.png"></Image>

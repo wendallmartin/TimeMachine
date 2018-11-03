@@ -35,13 +35,12 @@ namespace TheTimeApp
 
             lb_VersionNumber.Content = Program.CurrentVersion;
 
-            Sqlite.LoadFromFile();
-            DataBaseManager.Initulize();
+            DataBaseManager.Initualize();
            
-            if (AppSettings.Instance.SqlEnabled == "true" )
+            if (AppSettings.Instance.SqlEnabled == "true")
             {
-                DataBaseManager.Instance.LoadFromServer();
-                ConnectionChanged(true);
+                DataBaseManager.Instance.PullSecondaryToPrimary();
+                DataBaseManager.Instance.ConnectionChangedEvent += ConnectionChanged;
             }
 
             InitualizeView();
@@ -76,10 +75,8 @@ namespace TheTimeApp
             bool connectedAndEnabled = AppSettings.Instance.SqlEnabled == "true"; 
             if (connectedAndEnabled)
             {
-                DataBaseManager.Instance.LoadFromServer();
-
+                DataBaseManager.Instance.PullSecondaryToPrimary();
             }
-            ConnectionChanged(connectedAndEnabled);
             
             InitualizeView();
         }

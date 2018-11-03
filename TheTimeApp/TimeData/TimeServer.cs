@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
+using System.Resources;
 using System.Timers;
 using NLog;
 
@@ -11,6 +12,13 @@ namespace TheTimeApp.TimeData
 {
     public abstract class TimeServer
     {
+        public enum State
+        {
+            Connected,
+            Disconnected
+        }
+        public State ServerState { get; set; }
+            
         private Logger logger = LogManager.GetCurrentClassLogger();
         private static readonly object IsConnectedLock = new object();
         private static readonly object SqlServerLock = new object();
@@ -52,7 +60,6 @@ namespace TheTimeApp.TimeData
         public ProgressFinishDel ProgressFinishEvent;
         public ConnectionChangedDel ConnectionChangedEvent;
         public UpdateChangeDel UpdateChangedEvent;
-        protected SqlConnection _connection = new SqlConnection();// Only referenced from SqlConnection property!
 
         #endregion
         
@@ -66,7 +73,7 @@ namespace TheTimeApp.TimeData
         
         public abstract List<string> UserNames();
         
-        public abstract int DeleteUser(string username);
+        public abstract void DeleteUser(string username);
 
         public abstract Day CurrentDay();
         
@@ -74,27 +81,27 @@ namespace TheTimeApp.TimeData
 
         public abstract List<Day> DaysInRange(DateTime a, DateTime b);
         
-        public abstract int DeleteDay(DateTime date);
+        public abstract void DeleteDay(DateTime date);
         
         public abstract List<Day> AllDays();
 
         public abstract TimeSpan HoursInRange(DateTime a, DateTime b);
         
-        public abstract int DeleteRange(DateTime start, DateTime end);
+        public abstract void DeleteRange(DateTime start, DateTime end);
         
-        public abstract void PunchIn();
+        public abstract void PunchIn(string key);
 
-        public abstract void PunchOut();
+        public abstract void PunchOut(string key);
         
         public abstract List<Time> AllTimes();
 
-        public abstract int DeleteTime(double key);
+        public abstract void DeleteTime(string key);
         
-        public abstract int UpdateDetails(DateTime date, string details);
+        public abstract void UpdateDetails(DateTime date, string details);
         
-        public abstract int UpdateTime(double key, Time upd);
+        public abstract void UpdateTime(string key, Time upd);
 
-        public abstract double MaxTimeId(string tablename = "");
+        public abstract string LastTimeId();
         
         public abstract List<Time> TimesinRange(DateTime dateA, DateTime dateB);
         
@@ -106,9 +113,14 @@ namespace TheTimeApp.TimeData
         
         public abstract DateTime MaxDate();
 
-        public abstract void RePushToServer();
+        /// <summary>
+        /// Pushes given list of days to
+        /// sql server.
+        /// </summary>
+        /// <param name="days"></param>
+        public abstract void Push(List<Day> days);
         
-        public abstract void LoadFromServer();
+        public abstract List<Day> Pull();
 
         public string TimeTableName => ToTimeTableName(SqlCurrentUser);
 
@@ -133,12 +145,24 @@ namespace TheTimeApp.TimeData
             return "Day_" + user + "_TimeTable";
         }
 
+        /// <summary>
+        /// Returns datetime in
+        /// yy-mm-dd-hh-mm-milli format.
+        /// </summary>
+        /// <param name="datetime"></param>
+        /// <returns></returns>
         public static string DateTimeSqLite(DateTime datetime)
         {
             string dateTimeFormat = "{0}-{1}-{2} {3}:{4}:{5}.{6}";
             return string.Format(dateTimeFormat, datetime.Year, datetime.Month, datetime.Day, datetime.Hour, datetime.Minute, datetime.Second,datetime.Millisecond);
         }
         
+        /// <summary>
+        /// Returns date only in
+        /// yy-mm-dd format.
+        /// </summary>
+        /// <param name="datetime"></param>
+        /// <returns></returns>
         public static string DateSqLite(DateTime datetime)
         {
             string dateFormat = "{0}-{1}-{2}";
@@ -175,7 +199,14 @@ namespace TheTimeApp.TimeData
         {
             return $"{Math.Floor(hours.TotalHours):0}:{hours.Minutes:00}";
         }
+        
+        public static string GenerateId()
+        {
+            return Guid.NewGuid().ToString();
+        }
 
         public abstract void Dispose();
+
+        public abstract void VerifySql();
     }
 }

@@ -28,7 +28,7 @@ namespace Tests
             AppSettings.Instance.MySqlServer = "localhost";
             AppSettings.Instance.MySqlUserId = "WendallMartin";
 
-            DataBaseManager.Initulize();
+            DataBaseManager.Initualize();
             _instance = DataBaseManager.Instance;
             _instance.AddUser(new User("nunit", "", new List<Day>()));
             TimeServer.SqlCurrentUser = "nunit";
@@ -42,6 +42,8 @@ namespace Tests
                 _instance.DeleteUser(name);
             }
             _instance.Dispose();
+            
+            Thread.Sleep(100);// Give sqlite time to dispose.
             
             if(File.Exists(AppSettings.Instance.DataPath))
                 File.Delete(AppSettings.Instance.DataPath);
@@ -60,11 +62,12 @@ namespace Tests
         [Test]
         public void Test_IsClockedIn()
         {
+            string key = TimeServer.GenerateId();
             Assert.False(_instance.IsClockedIn());
-            _instance.PunchIn();
+            _instance.PunchIn(key);
             Assert.True(_instance.IsClockedIn());
             Thread.Sleep(100);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Assert.False(_instance.IsClockedIn());
         }
 
@@ -96,12 +99,12 @@ namespace Tests
         [Test]
         public void Test_DeleteTime()
         {
-            _instance.PunchIn();
-            _instance.PunchOut();
+            string key = TimeServer.GenerateId();
+            _instance.PunchIn(key);
+            _instance.PunchOut(key);
             Assert.True(_instance.AllTimes().Count == 1);
             Time time = _instance.AllTimes().First();
-            int result = _instance.DeleteTime(time.Key);
-            Assert.True(result == 1);
+            _instance.DeleteTime(time.Key);
             Assert.True(_instance.AllTimes().Count == 0);
         }
 
@@ -164,10 +167,11 @@ namespace Tests
         [Test]
         public void Test_UpdateTime()
         {
-            _instance.PunchIn();
-            _instance.PunchOut();
+            string key = TimeServer.GenerateId();
+            _instance.PunchIn(key);
+            _instance.PunchOut(key);
             DateTime now = DateTime.Now;
-            Assert.True(_instance.UpdateTime(1, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue}) == 1);
+            _instance.UpdateTime(key, new Time(){TimeIn = now, TimeOut = DateTime.MaxValue});
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.ToString(CultureInfo.InvariantCulture) == now.ToString(CultureInfo.InvariantCulture));
             Assert.True(last.TimeOut.ToString(CultureInfo.InvariantCulture) == DateTime.MaxValue.ToString(CultureInfo.InvariantCulture));
@@ -197,21 +201,20 @@ namespace Tests
         [Test]
         public void Test_PunchIn()
         {
-            Assert.True(Math.Abs(_instance.MaxTimeId()) < .0001);
-            _instance.PunchIn();
+            string key = TimeServer.GenerateId();
+            _instance.PunchIn(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.ToString(CultureInfo.InvariantCulture) == last.TimeOut.ToString(CultureInfo.InvariantCulture));
             Assert.True(last.TimeIn.Millisecond == last.TimeOut.Millisecond);
-            Assert.True(Math.Abs(_instance.MaxTimeId() - 1) < .0001);
         }
 
         [Test]
         public void Test_PunchOut()
         {
-            Assert.True(Math.Abs(_instance.MaxTimeId()) < .0001);
-            _instance.PunchIn();
+            string key = TimeServer.GenerateId();
+            _instance.PunchIn(key);
             Thread.Sleep(100);
-            _instance.PunchOut();
+            _instance.PunchOut(key);
             Time last = _instance.AllTimes().Last();
             Assert.True(last.TimeIn.Millisecond != last.TimeOut.Millisecond);
             

@@ -145,6 +145,7 @@
     <Compile Include="TimeData\DataBaseManager.cs" />
     <Compile Include="TimeData\Day.cs" />
     <Compile Include="TimeData\MySql.cs" />
+    <Compile Include="TimeData\SqlBuffer.cs" />
     <Compile Include="TimeData\TimeServer.cs" />
     <Compile Include="TimeData\Sqlite.cs" />
     <Compile Include="TimeData\SqlMode.cs" />

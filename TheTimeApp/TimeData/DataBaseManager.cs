@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using MySql.Data.MySqlClient;
 using NLog;
+using NLog.Fluent;
 
 namespace TheTimeApp.TimeData
 {
     public class DataBaseManager : TimeServer
     {
-        private NLog.Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         
-        private TimeServer _primary;
+        public readonly TimeServer _primary;
 
-        private readonly List<TimeServer> _secondary = new List<TimeServer>();
+        private readonly TimeServer _secondary;
 
         public static DataBaseManager Instance;
 
@@ -20,22 +22,36 @@ namespace TheTimeApp.TimeData
         {
             _primary = Sqlite.LoadFromFile();
             
+            _primary.ProgressChangedEvent += OnProgressChangedEvent;
+            _primary.ProgressFinishEvent += OnProgressFinishEvent;
+            
             if (AppSettings.Instance.SqlEnabled == "true")
             {
                 if (AppSettings.Instance.SqlType == "MySql" && !string.IsNullOrEmpty(AppSettings.Instance.MySqlServer))
                 {
-                    MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()
+                    MySqlConnectionStringBuilder mysqlBuiler = new MySqlConnectionStringBuilder()// Database is set later in constructor!
                     {
                         Server = AppSettings.Instance.MySqlServer,
                         UserID = AppSettings.Instance.MySqlUserId,
                         Password = AppSettings.Instance.MySqlPassword,
-                        Database = AppSettings.Instance.MySqlDatabase,
                         Port = (uint) AppSettings.Instance.MySqlPort,
-                        SslMode = MySqlSslMode.None// todo add mysql ssl setting
+                        SslMode = AppSettings.Instance.MySqlSsl == "true" ? MySqlSslMode.Required : MySqlSslMode.None 
                     };
                     try
                     {
-                        _secondary.Add(new MySql(mysqlBuiler.ConnectionString));
+                        _secondary = new MySql(mysqlBuiler, MySql.UpdateModes.Async);
+                        
+                        // Associate events
+                        _secondary.TimeDateaUpdate += OnTimeDateaUpdate;
+                        _secondary.ProgressChangedEvent += OnProgressChangedEvent;
+                        _secondary.ProgressFinishEvent += OnProgressFinishEvent;
+                        _secondary.ConnectionChangedEvent += OnConnectionChangedEvent;
+                        _secondary.UpdateChangedEvent += OnUpdateChangedEvent;
+
+                        var daysInWeek = _primary.DaysInRange(StartEndWeek(DateTime.Today)[0], StartEndWeek(DateTime.Today)[1]);
+                        
+                        if(_secondary.ServerState == State.Connected)
+                            _secondary.Push(daysInWeek);
                     }
                     catch (Exception e)
                     {
@@ -51,9 +67,30 @@ namespace TheTimeApp.TimeData
             }
         }
 
-        public static void Initulize()
+        private void OnTimeDateaUpdate(List<Day> data) => TimeDateaUpdate?.Invoke(data); 
+
+        private void OnProgressChangedEvent(float value) => ProgressChangedEvent?.Invoke(value); 
+
+        private void OnProgressFinishEvent() => ProgressFinishEvent?.Invoke();
+
+        private void OnConnectionChangedEvent(bool value) => ConnectionChangedEvent?.Invoke(value);
+
+        private void OnUpdateChangedEvent(List<SerilizeSqlCommand> value) => UpdateChangedEvent?.Invoke(value);
+
+        public static void Initualize()
         {
+            logger.Info("Initualize");
             Instance = new DataBaseManager();
+        }
+
+        /// <summary>
+        /// If secondary buffer is mysql,
+        /// save buffer to disk.
+        /// </summary>
+        public void SaveBuffer()
+        {
+            logger.Info("SaveBuffer");
+            if(_secondary != null && _secondary is MySql mySql) mySql.SaveBuffer();
         }
         
         public override bool IsClockedIn()
@@ -63,8 +100,10 @@ namespace TheTimeApp.TimeData
 
         public override void AddUser(User user)
         {
+            logger.Info("AddUser......");
             _primary.AddUser(user);
-            _secondary.ForEach(s => s.AddUser(user));
+            _secondary?.AddUser(user);
+            logger.Info("AddUser......FINISHED!!!");
         }
         
         public override List<string> UserNames()
@@ -72,17 +111,20 @@ namespace TheTimeApp.TimeData
             return _primary.UserNames();
         }
 
-        public override int DeleteUser(string username)
+        public override void DeleteUser(string username)
         {
-            var result = _primary.DeleteUser(username);
-            _secondary.ForEach(s => s.DeleteUser(username));
-            return result;
+            logger.Info("DeleteUser......");
+            _primary.DeleteUser(username);
+            _secondary?.DeleteUser(username);
+            logger.Info("DeleteUser......FINISHED!!!");
         }
 
         public override void AddDay(Day day)
         {
+            logger.Info("AddDay......");
             _primary.AddDay(day);
-            _secondary.ForEach(s => s.AddDay(day));
+            _secondary?.AddDay(day);
+            logger.Info("AddDay......FINISHED!!!");
         }
 
         public override List<Day> DaysInRange(DateTime a, DateTime b)
@@ -90,11 +132,12 @@ namespace TheTimeApp.TimeData
             return _primary.DaysInRange(a, b);
         }
 
-        public override int DeleteDay(DateTime date)
+        public override void DeleteDay(DateTime date)
         {
-            var result = _primary.DeleteDay(date);
-            _secondary.ForEach(s => s.DeleteDay(date));
-            return result;
+            logger.Info("DeleteDay......");
+            _primary.DeleteDay(date);
+            _secondary?.DeleteDay(date);
+            logger.Info("DeleteDay......FINISHED!!!");
         }
 
         public override List<Day> AllDays()
@@ -107,23 +150,28 @@ namespace TheTimeApp.TimeData
             return _primary.HoursInRange(a, b);
         }
 
-        public override int DeleteRange(DateTime start, DateTime end)
+        public override void DeleteRange(DateTime start, DateTime end)
         {
-            var result = _primary.DeleteRange(start, end);
-            _secondary.ForEach(s => s.DeleteRange(start,end));
-            return result;
+            logger.Info("DeleteRange......");
+            _primary.DeleteRange(start, end);
+            _secondary?.DeleteRange(start,end);
+            logger.Info("DeleteRange......FINISHED!!!");
         }
 
-        public override void PunchIn()
+        public override void PunchIn(string key)
         {
-            _primary.PunchIn();
-            _secondary.ForEach(s => s.PunchIn());
+            logger.Info("PunchIn......");
+            _primary.PunchIn(key);
+            _secondary?.PunchIn(key);
+            logger.Info("PunchIn......FINISHED!!!");
         }
 
-        public override void PunchOut()
+        public override void PunchOut(string key)
         {
-            _primary.PunchOut();
-            _secondary.ForEach(s => s.PunchOut());
+            logger.Info("PunchOut......");
+            _primary.PunchOut(key);
+            _secondary?.PunchOut(key);
+            logger.Info("PunchOut......FINISHED!!!");
         }
 
         public override List<Time> AllTimes()
@@ -137,30 +185,33 @@ namespace TheTimeApp.TimeData
             return day;
         }
 
-        public override int DeleteTime(double key)
+        public override void DeleteTime(string key)
         {
-            var result = _primary.DeleteTime(key);
-            _secondary.ForEach(s => s.DeleteTime(key));
-            return result;
+            logger.Info("DeleteTime......");
+            _primary.DeleteTime(key);
+            _secondary?.DeleteTime(key);
+            logger.Info("DeleteTime......FINISHED!!!");
         }
 
-        public override int UpdateDetails(DateTime date, string details)
+        public override void UpdateDetails(DateTime date, string details)
         {
-            var result = _primary.UpdateDetails(date, details);
-            _secondary.ForEach(s => s.UpdateDetails(date, details));
-            return result;
+            logger.Info("UpdateDetails.......");
+            _primary.UpdateDetails(date, details);
+            _secondary?.UpdateDetails(date, details);
+            logger.Info("UpdateDetails.......FINISHED!!!");
         }
 
-        public override int UpdateTime(double key, Time upd)
+        public override void UpdateTime(string key, Time upd)
         {
-            var result = _primary.UpdateTime(key, upd);
-            _secondary.ForEach(s => s.UpdateTime(key, upd));
-            return result;
+            logger.Info("UpdateTime......");
+            _primary.UpdateTime(key, upd);
+            _secondary?.UpdateTime(key, upd);
+            logger.Info("UpdateTime......FINISHED!!!");
         }
 
-        public override double MaxTimeId(string tablename = "")
+        public override string LastTimeId()
         {
-            return _primary.MaxTimeId(tablename);
+            return _primary.LastTimeId();
         }
 
         public override List<Time> TimesinRange(DateTime dateA, DateTime dateB)
@@ -183,22 +234,75 @@ namespace TheTimeApp.TimeData
             return _primary.MaxDate();
         }
 
-        public override void RePushToServer()
+        /// <summary>
+        /// Pushes given day list
+        /// to secondary server.
+        /// </summary>
+        /// <param name="days"></param>
+        public override void Push(List<Day> days)
         {
-            _primary.RePushToServer();
+            logger.Info("Push......");
+            _secondary?.Push(days);
+            logger.Info("Push......FINISHED!!!");
         }
 
-        public override void LoadFromServer()
+        /// <summary>
+        /// Loads list of days
+        /// from secondary server.
+        /// </summary>
+        /// <returns></returns>
+        public override List<Day> Pull()
         {
-            _primary.LoadFromServer();
+            logger.Info("Pull");
+            return _secondary == null ? new List<Day>() : _secondary.Pull();
+        }
+
+        /// <summary>
+        /// Pulls secondary to primary,
+        /// in context of current user.
+        /// </summary>
+        public void PullSecondaryToPrimary()
+        {
+            logger.Info("PullSecondaryToPrimary......");
+            try{ _primary.Push(Pull()); }
+            catch{/* eat them! */}
+            logger.Info("PullSecondaryToPrimary......FINISHED!!!");
+        }
+
+        /// <summary>
+        /// Pushes primary server to secondary,
+        /// in context of current user.
+        /// </summary>
+        public void PushPrimaryToSecondary()
+        {
+            logger.Info("PushPrimaryToSecondary......");
+            try { _secondary?.Push(_primary.Pull()); }
+            catch { /* eat em! */}
+            logger.Info("PushPrimaryToSecondary......FINISHED!!!");
         }
 
         public override void Dispose()
         {
             logger.Info("Disposing......");
-            _primary.Dispose();
-            _secondary.ForEach(s => s.Dispose());
+            _primary?.Dispose();
+            _secondary?.Dispose();
             logger.Info("Disposing......Finished!!!");
+        }
+
+        /// <summary>
+        /// Verifies primary
+        /// and secondary server.
+        /// </summary>
+        public override void VerifySql()
+        {
+            try
+            {
+                logger.Info("VerifySql.....");
+                _primary?.VerifySql();
+                _secondary?.VerifySql();
+                logger.Info("VerifySql.....FINISHED!!!");
+            }
+            catch{ /* eat em! */}
         }
     }
 }

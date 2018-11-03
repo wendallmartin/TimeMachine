@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace TheTimeApp.TimeData
@@ -91,6 +92,23 @@ namespace TheTimeApp.TimeData
         public List<Time> GetTimes()
         {
             return times;
+        }
+
+        public static bool Equals(Day a, Day b)
+        {
+            if (a.times.Count != b.times.Count) return false;
+            for (int i = 0; i < a.times.Count; i++)
+            {
+                if (a.times[i].TimeIn.ToString() != b.times[i].TimeIn.ToString()) return false;
+                if (a.times[i].TimeOut.ToString() != b.times[i].TimeOut.ToString()) return false;
+                if (a.times[i].Key != b.times[i].Key) return false;
+            }
+
+            if (a._date.ToString() != b._date.ToString()) return false;
+            if (a._details != b._details) return false;
+            if (a.Emailed.ToString() != b.Emailed.ToString()) return false;
+
+            return true;
         }
     }
 }

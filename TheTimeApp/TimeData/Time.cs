@@ -9,7 +9,7 @@ namespace TheTimeApp.TimeData
     {
         private DateTime punchin;
         private DateTime punchout;
-        public double Key;
+        public string Key;
 
         public Time(DateTime punchIn, DateTime punchOUt)
         {

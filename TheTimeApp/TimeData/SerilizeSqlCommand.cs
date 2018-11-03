@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Windows.Documents;
 using System.Windows.Forms.VisualStyles;
+using MySql.Data.MySqlClient;
 
 namespace TheTimeApp.TimeData
 {
@@ -17,7 +18,13 @@ namespace TheTimeApp.TimeData
             UpdateDetails,
         }
         
-        public CommandType Type { get; set; }
+        public enum SqlType
+        {
+            MySql,
+            Azure
+        }
+
+        public SqlType Type { get; set; }
         
         public List<KeyValuePair<string, string>> Params = new List<KeyValuePair<string, string>>();
         
@@ -34,6 +41,11 @@ namespace TheTimeApp.TimeData
         {
             Params.Add(new KeyValuePair<string, string>(param.ParameterName,param.Value.ToString()));
         }
+        
+        public void AddParameter(MySqlParameter param)
+        {
+            Params.Add(new KeyValuePair<string, string>(param.ParameterName,param.Value == null ? "" : param.Value.ToString()));
+        }
 
         public SqlCommand GetSqlCommand
         {
@@ -46,6 +58,27 @@ namespace TheTimeApp.TimeData
                 }
 
                 return command;
+            }
+        }
+
+        public MySqlCommand GetMySqlCommand
+        {
+            get{
+                try
+                {
+                    MySqlCommand cmd = new MySqlCommand {CommandText = CommandText};
+                    foreach (var param in Params)
+                    {
+                        cmd.Parameters.Add(new MySqlParameter(){ParameterName = param.Key, Value = param.Value});    
+                    }
+
+                    return cmd;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
         }
 
