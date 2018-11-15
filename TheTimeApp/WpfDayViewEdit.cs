@@ -21,13 +21,9 @@ namespace TheTimeApp
 
         private void RichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (!Enabled)
-                return;
-
-            if (AppSettings.Instance.MainPermission == "write")
-            {
-                DataBaseManager.Instance.UpdateDetails(_day.Date, dayDetails.Text);
-            }
+            if (!Enabled) return;
+                
+            DataBaseManager.Instance.UpdateDetails(_day.Date, dayDetails.Text);
         }
     }
 }

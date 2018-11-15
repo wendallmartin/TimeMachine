@@ -62,10 +62,6 @@ namespace TheTimeApp.TimeData
 
         #endregion
         
-        
-        
-        
-        
         public abstract bool IsClockedIn();
 
         public abstract void AddUser(User user);
@@ -131,7 +127,6 @@ namespace TheTimeApp.TimeData
         {
             return "Time_" + user + "_TimeTable";
         }
-
 
         /// <summary>
         /// Returns user name converted to table name.
