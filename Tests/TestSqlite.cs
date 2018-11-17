@@ -337,5 +337,61 @@ namespace Tests
                 }
             }
         }
+
+        [Test]
+        public void TestGitCommit()
+        {
+            DateTime time = DateTime.Now;
+            
+            GitCommit commitA = new GitCommit("testA", time, "commit A", Guid.NewGuid().ToString())
+            {
+                Branch = "commitABranch",
+                Url = "wrmcodeblocks.com"
+            };
+            
+            GitCommit commitB = new GitCommit("testB", time, "commit B", Guid.NewGuid().ToString())
+            {
+                Branch = "commitBBranch",
+                Url = "urlB"
+            };
+            
+            GitCommit commitC = new GitCommit("testC", time, "commit C", Guid.NewGuid().ToString());
+            
+            _instance.AddCommit(commitA);
+            _instance.AddCommit(commitA);
+            _instance.AddCommit(commitA);
+            
+            Assert.IsTrue(_instance.GetCommits(time).Count == 1);// Test duplicate safety feature.
+            
+            _instance.AddCommit(commitB);
+            
+            Assert.IsTrue(_instance.GetCommits(time).Count == 2);
+            
+            _instance.AddCommit(commitC);
+            
+            Assert.IsTrue(_instance.GetCommits(time).Count == 3);
+
+            var commits = _instance.GetCommits(time);
+
+            Assert.IsTrue(commits.Count == 3);
+            
+            Assert.IsTrue(commitA.Equals(commits[0]));
+            
+            Assert.IsTrue(commitB.Equals(commits[1]));
+            
+            Assert.IsTrue(commitC.Equals(commits[2]));
+            
+            _instance.RemoveCommit(commitA);
+            
+            Assert.IsTrue(_instance.GetCommits(time).Count == 2);
+            
+            _instance.RemoveCommit(commitB);
+            
+            Assert.IsTrue(_instance.GetCommits(time).Count == 1);
+            
+            _instance.RemoveCommit(commitC);
+            
+            Assert.IsTrue(_instance.GetCommits(time).Count == 0);
+        }
     }
 }

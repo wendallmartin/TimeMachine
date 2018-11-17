@@ -106,6 +106,18 @@ namespace TheTimeApp.TimeData
         
         public abstract DateTime MaxDate();
 
+        
+#region git support
+
+        public abstract void AddCommit(GitCommit commit);
+
+        public abstract List<GitCommit> GetCommits(DateTime dateTime);
+
+        public abstract void RemoveCommit(GitCommit commit);
+
+#endregion
+        
+
         /// <summary>
         /// Pushes given list of days to
         /// sql server.
@@ -114,6 +126,8 @@ namespace TheTimeApp.TimeData
         public abstract void Push(List<Day> days);
         
         public abstract List<Day> Pull();
+
+        public string GitTableName => ToGitTableName(SqlCurrentUser);
 
         public string TimeTableName => ToTimeTableName(SqlCurrentUser);
 
@@ -135,6 +149,11 @@ namespace TheTimeApp.TimeData
         public string ToDayTableName(string user)
         {
             return "Day_" + user + "_TimeTable";
+        }
+
+        public string ToGitTableName(string user)
+        {
+            return $"Git_{user}_CommitTable";
         }
 
         /// <summary>

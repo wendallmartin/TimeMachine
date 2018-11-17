@@ -34,7 +34,7 @@ namespace TheTimeApp
             _detailsChanged.AutoReset = false;
 
             _timeTic = new System.Timers.Timer() {Interval = 60000};
-            _timeTic.Elapsed += UpdateTimer;
+            _timeTic.Elapsed += TimeTic;
             _timeTic.AutoReset = true;
 
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
@@ -57,7 +57,9 @@ namespace TheTimeApp
             DataBaseManager.Instance.UpdateChangedEvent += SqlUpdateChanged;
 
             SetStartChecked();
-            UpdateTimer();
+            
+            UpdateTime();
+            UpdateGit();
         }
 
         private void LoadUsers()
@@ -87,7 +89,7 @@ namespace TheTimeApp
             scroll_UserSelection.Visibility = Visibility.Hidden;
             DataBaseManager.Instance.VerifySql();
             DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
-            UpdateTimer();
+            UpdateTime();
         }
 
         private void btn_SelectedUser_Click(object sender, EventArgs e)
@@ -116,7 +118,7 @@ namespace TheTimeApp
         {
             if (Equals(Start_Button.Background, Brushes.Green))
             {
-                UpdateTimer();
+                UpdateTime();
                 DataBaseManager.Instance.PunchIn(TimeServer.GenerateId());// unique 15 digit 
                 SetStartChecked();
             }
@@ -124,7 +126,8 @@ namespace TheTimeApp
             {
                 DataBaseManager.Instance.PunchOut(DataBaseManager.Instance.LastTimeId());
                 SetStartChecked();
-                UpdateTimer();
+                UpdateTime();
+                UpdateGit();
             }
         }
 
@@ -133,12 +136,20 @@ namespace TheTimeApp
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void UpdateTimer(object sender, ElapsedEventArgs e)
+        private void TimeTic(object sender, ElapsedEventArgs e)
         {
-            UpdateTimer();
+            UpdateTime();
+            UpdateGit();
         }
 
-        private void UpdateTimer()
+        private void UpdateGit()
+        {
+            if (!AppSettings.Instance.GitEnabled) return;
+            var commits = GitManager.Instance.CommitsOnDate(DateTime.Today);
+            commits.ForEach(c => DataBaseManager.Instance.AddCommit(c));
+        }
+
+        private void UpdateTime()
         {
             TimeSpan ts = DataBaseManager.Instance.HoursInRange(DateTime.Today, DateTime.Today);
             if (DataBaseManager.Instance.IsClockedIn())

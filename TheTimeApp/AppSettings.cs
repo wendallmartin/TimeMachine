@@ -54,7 +54,10 @@ namespace TheTimeApp
         public string SqlEnabled { get; set; }
         public string SqlType { get; set; }
         public string MainPermission { get; set; }
-
+        public string GitRepoPath { get; set; }
+        public string GitUserName { get; set; }
+        public bool GitEnabled { get; set; }
+        
         public void Load()
         {
             DataPath = ReadValueFromXml("uwnmnnvvkgsfghks", false) == "" ? "time" : ReadValueFromXml("uwnmnnvvkgsfghks", false);
@@ -81,34 +84,42 @@ namespace TheTimeApp
             SqlEnabled = ReadValueFromXml("dkjfgjpwhjpo");
             SqlType = ReadValueFromXml("jgfhgjasgjfajfghj");
             MainPermission = ReadValueFromXml("dlajwugpasdh");
+            GitRepoPath = ReadValueFromXml("lewinsaaowtwe", false);
+            GitUserName = ReadValueFromXml("aagaajfafsdf");
+            GitEnabled = ReadValueFromXml("djahjeuasdjl") == "true";
         }
+
+        
 
         public void Save()
         {
-            WriteValueToxml("uwnmnnvvkgsfghks", DataPath, false);
-            WriteValueToxml("ahkakljdfgj", CurrentUser);
-            WriteValueToxml("ufhgawh", FromAddress);
-            WriteValueToxml("klaosof", FromUser);
-            WriteValueToxml("wasllefa", FromPass);
-            WriteValueToxml("adjflegad", FromPort);
-            WriteValueToxml("slllejfas", EmailHost);
-            WriteValueToxml("aaljgjlkej", ToAddress);
-            WriteValueToxml("keslkwkjw", MilitaryTime);
-            WriteValueToxml("ljowoiislo", SslEmail);
-            WriteValueToxml("kwkvuesav", AzureDateSource);
-            WriteValueToxml("aslejfooowgh", AzureUser);
-            WriteValueToxml("lsoenwowdjf", AzurePassword);
-            WriteValueToxml("lafjedoioowowfowof", AzureCateloge);
-            WriteValueToxml("dhjahhdjh", AzurePort);
-            WriteValueToxml("aksdfajhfgjh", MySqlServer);
-            WriteValueToxml("jgufsedasdfhjkfhif", MySqlUserId);
-            WriteValueToxml("jghjefdhguishsifpfafsdjkuh", MySqlPassword);
-            WriteValueToxml("igaujjshjsdfhhalfjlffhio", MySqlDatabase);
-            WriteValueToxml("fvdjgfghjkjsdfhjgknklhfzsd", MySqlPort.ToString());
-            WriteValueToxml("aedfjfgjafklahjfgahfap", MySqlSsl);
-            WriteValueToxml("dkjfgjpwhjpo", SqlEnabled);
-            WriteValueToxml("jgfhgjasgjfajfghj", SqlType);
-            WriteValueToxml("dlajwugpasdh", MainPermission);
+            WriteValueToXml("uwnmnnvvkgsfghks", DataPath, false);
+            WriteValueToXml("ahkakljdfgj", CurrentUser);
+            WriteValueToXml("ufhgawh", FromAddress);
+            WriteValueToXml("klaosof", FromUser);
+            WriteValueToXml("wasllefa", FromPass);
+            WriteValueToXml("adjflegad", FromPort);
+            WriteValueToXml("slllejfas", EmailHost);
+            WriteValueToXml("aaljgjlkej", ToAddress);
+            WriteValueToXml("keslkwkjw", MilitaryTime);
+            WriteValueToXml("ljowoiislo", SslEmail);
+            WriteValueToXml("kwkvuesav", AzureDateSource);
+            WriteValueToXml("aslejfooowgh", AzureUser);
+            WriteValueToXml("lsoenwowdjf", AzurePassword);
+            WriteValueToXml("lafjedoioowowfowof", AzureCateloge);
+            WriteValueToXml("dhjahhdjh", AzurePort);
+            WriteValueToXml("aksdfajhfgjh", MySqlServer);
+            WriteValueToXml("jgufsedasdfhjkfhif", MySqlUserId);
+            WriteValueToXml("jghjefdhguishsifpfafsdjkuh", MySqlPassword);
+            WriteValueToXml("igaujjshjsdfhhalfjlffhio", MySqlDatabase);
+            WriteValueToXml("fvdjgfghjkjsdfhjgknklhfzsd", MySqlPort.ToString());
+            WriteValueToXml("aedfjfgjafklahjfgahfap", MySqlSsl);
+            WriteValueToXml("dkjfgjpwhjpo", SqlEnabled);
+            WriteValueToXml("jgfhgjasgjfajfghj", SqlType);
+            WriteValueToXml("dlajwugpasdh", MainPermission);
+            WriteValueToXml("lewinsaaowtwe", GitRepoPath, false);
+            WriteValueToXml("aagaajfafsdf", GitUserName);
+            WriteValueToXml("djahjeuasdjl", GitEnabled ? "true" : "false");
         }
                 
         /// <summary>
@@ -231,7 +242,19 @@ namespace TheTimeApp
             xmlWriter.WriteStartElement("aedfjfgjafklahjfgahfap");
             xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
-
+            
+            xmlWriter.WriteStartElement("lewinsaaowtwe");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("aagaajfafsdf");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("djahjeuasdjl");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
             xmlWriter.WriteEndDocument();
             xmlWriter.Close();
         }
@@ -272,7 +295,7 @@ namespace TheTimeApp
         /// Writes the updated value to XML
         /// </summary>
         /// <returns></returns>
-        private static void WriteValueToxml(string name, string value, bool encrypted = true)
+        private static void WriteValueToXml(string name, string value, bool encrypted = true)
         {
             try
             {

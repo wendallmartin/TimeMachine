@@ -437,6 +437,28 @@ namespace TheTimeApp.TimeData
             AddCommand(new SerilizeSqlCommand($@"IF EXISTS (SELECT * FROM sysobjects WHERE name='{ToDayTableName(username)}' AND xtype='U') DROP TABLE {ToDayTableName(username)}"));
         }
 
+        
+        
+        
+#region git support
+
+        public override void AddCommit(GitCommit commit)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override List<GitCommit> GetCommits(DateTime dateTime)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void RemoveCommit(GitCommit commit)
+        {
+            throw new NotImplementedException();
+        }
+
+#endregion
+
 
         /// <summary>
         /// Delete sql table and repushes everything

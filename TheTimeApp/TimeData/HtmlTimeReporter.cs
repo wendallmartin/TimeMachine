@@ -70,10 +70,34 @@ namespace TheTimeApp.TimeData
                         htmlWriter.RenderEndTag();
                         
                         // Details
-                        htmlWriter.AddAttribute("title", "Work details");
-                        htmlWriter.RenderBeginTag("font");
-                        htmlWriter.Write(day.Details + "<br>");
-                        htmlWriter.RenderEndTag();
+                        if (!string.IsNullOrEmpty(day.Details))
+                        {
+                            htmlWriter.AddAttribute("title", "Work details");
+                            htmlWriter.RenderBeginTag("font");
+                            htmlWriter.Write(day.Details + "<br>");
+                            htmlWriter.RenderEndTag();    
+                        }
+                        
+                        // Git commits
+                        if (AppSettings.Instance.GitEnabled)
+                        {
+                            var commits = DataBaseManager.Instance.GetCommits(day.Date.Date);
+                            if (commits.Count > 0)
+                            {
+                                htmlWriter.AddAttribute("title", "Commits");
+                                htmlWriter.RenderBeginTag("ul");
+                                foreach (GitCommit commit in commits)
+                                {
+                                    htmlWriter.RenderBeginTag("li");
+                                    htmlWriter.AddAttribute("title", "Commit message");
+                                    htmlWriter.RenderBeginTag("font");
+                                    htmlWriter.Write($"{commit.Message} <br>");
+                                    htmlWriter.RenderEndTag();
+                                    htmlWriter.RenderEndTag();
+                                }    
+                                htmlWriter.RenderEndTag();
+                            }
+                        }
                         
                         // Divider
                         htmlWriter.RenderBeginTag("p");

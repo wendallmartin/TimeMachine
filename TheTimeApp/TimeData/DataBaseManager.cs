@@ -226,7 +226,31 @@ namespace TheTimeApp.TimeData
         {
             return _primary.MaxDate();
         }
+        
+        
+        
+#region git support
 
+        public override void AddCommit(GitCommit commit)
+        {
+            _primary.AddCommit(commit);
+            _secondary?.AddCommit(commit);
+        }
+
+        public override List<GitCommit> GetCommits(DateTime dateTime)
+        {
+            return _primary.GetCommits(dateTime);
+        }
+
+        public override void RemoveCommit(GitCommit commit)
+        {
+            _primary.RemoveCommit(commit);
+            _secondary?.RemoveCommit(commit);
+        }
+
+#endregion
+
+        
         /// <summary>
         /// Pushes given day list
         /// to secondary server.

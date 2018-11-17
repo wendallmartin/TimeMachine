@@ -4,8 +4,8 @@ using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -55,6 +55,10 @@ namespace TheTimeApp
             btn_Permission.Content = AppSettings.Instance.MainPermission == "write" ? "Write" : "Read";
 
             SqlTypeExpaner.Header = AppSettings.Instance.SqlType;
+
+            Txt_GitRepoPath.Text = AppSettings.Instance.GitRepoPath;
+            Txt_GitUserName.Text = AppSettings.Instance.GitUserName;
+            Chk_GitEnabled.IsChecked = AppSettings.Instance.GitEnabled;
 
             switch (AppSettings.Instance.SqlType)
             {
@@ -472,5 +476,84 @@ namespace TheTimeApp
         {
             AppSettings.Instance.MySqlSsl = "false";
         }
+
+#region git
+
+        private void GitRepoTextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.Instance.GitRepoPath = Txt_GitRepoPath.Text;
+        }
+
+        private void GitRepoMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                if (!string.IsNullOrEmpty(AppSettings.Instance.GitRepoPath) && Directory.Exists(AppSettings.Instance.GitRepoPath))
+                {
+                    folderDialog.SelectedPath = AppSettings.Instance.GitRepoPath;
+                }
+                
+                DialogResult result = folderDialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    AppSettings.Instance.GitRepoPath = folderDialog.SelectedPath;
+                    Txt_GitRepoPath.Text = AppSettings.Instance.GitRepoPath;
+                }
+            }
+        }
+                
+        private void GitUserTextChanged(object sender, TextChangedEventArgs e)
+        {
+            AppSettings.Instance.GitUserName = Txt_GitUserName.Text;
+        }
+        
+        private void Btn_LoadAllCommits_Click(object sender, RoutedEventArgs e)
+        {
+            LoadAllCommits();
+        }
+
+        private void GitEnabledChecked(object sender, RoutedEventArgs e)
+        {
+            AppSettings.Instance.GitEnabled = true;
+        }
+
+        private void GitEnabledUnChecked(object sender, RoutedEventArgs e)
+        {
+            AppSettings.Instance.GitEnabled = false;
+        }
+        
+        private void LoadAllCommits()
+        {
+            Task.Run(() =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    Btn_LoadAllCommits.IsEnabled = false;
+                    Prg_LoadCommits.Visibility = Visibility.Visible;
+                });
+                var commits = GitManager.Instance.Commits();
+                float commitProgress = 0;
+                foreach (GitCommit gitCommit in commits)
+                {
+                    DataBaseManager.Instance.AddCommit(gitCommit);
+                    commitProgress++;
+                    UpdateCommitProgressBar(commitProgress, commits.Count);
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    Prg_LoadCommits.Value = 0;
+                    Prg_LoadCommits.Visibility = Visibility.Hidden;
+                    Btn_LoadAllCommits.IsEnabled = true;
+                });
+            });
+        }
+
+        private void UpdateCommitProgressBar(float commitProgress, int commitsCount)
+        {
+            Dispatcher.Invoke(delegate() { Prg_LoadCommits.Value = commitProgress / commitsCount * 100; });
+        }
+
+        #endregion
     }
 }

@@ -122,6 +122,12 @@ namespace TheTimeApp.TimeData
                 }
 
                 _connectionStringBuilder.Database = AppSettings.Instance.MySqlDatabase; // only place the database is set.
+                
+                using (MySqlCommand cmd = _connection.CreateCommand())
+                {
+                    cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS `{GitTableName}` (`Committer` TEXT, `Date` TEXT, `Message` TEXT, `Branch` Text, `Url` VARCHAR(150), `Id` VARCHAR(100), UNIQUE (`Url`, `Id`))";
+                    cmd.ExecuteNonQuery();
+                }
 
                 using (MySqlCommand cmd = _connection.CreateCommand())
                 {
@@ -672,6 +678,65 @@ namespace TheTimeApp.TimeData
             return times.Max(t => t.Date);
         }
 
+        
+        #region git support
+
+        public override void AddCommit(GitCommit commit)
+        {
+            using (MySqlCommand cmd = _connection.CreateCommand())
+            {
+                cmd.CommandText = $"INSERT IGNORE INTO `{GitTableName}` VALUES(@Committer, @Date, @Message, @Branch, @Url, @Id)";
+                cmd.Parameters.Add(new MySqlParameter("Committer", commit.Committer));
+                cmd.Parameters.Add(new MySqlParameter("Date", DateTimeSqLite(commit.Date)));
+                cmd.Parameters.Add(new MySqlParameter("Message", commit.Message));
+                cmd.Parameters.Add(new MySqlParameter("Branch", commit.Branch));
+                cmd.Parameters.Add(new MySqlParameter("Url", commit.Url));
+                cmd.Parameters.Add(new MySqlParameter("Id", commit.Id));
+                AddToPump(cmd);
+            }
+        }
+
+        public override List<GitCommit> GetCommits(DateTime datetime)
+        {
+            List<GitCommit> result = new List<GitCommit>();
+            string qry = $"SELECT * FROM `{GitTableName}`";
+            DataTable vt = new DataTable();
+            MySqlDataAdapter da = new MySqlDataAdapter(qry, _connection);
+            da.Fill(vt);
+
+            foreach (DataRow row in vt.Rows)
+            {
+                if (row["Date"].ToString() == DateTimeSqLite(datetime))
+                {
+                    GitCommit commit = new GitCommit(row["Committer"].ToString(), Convert.ToDateTime(row["Date"].ToString()), row["Message"].ToString(), row["Id"].ToString())
+                    {
+                        Branch = row["Branch"].ToString(),
+                        Url = row["Url"].ToString()
+                    };
+                    result.Add(commit);
+                }
+            }
+            return result;
+        }
+
+        public override void RemoveCommit(GitCommit commit)
+        {
+            using (MySqlCommand cmd = _connection.CreateCommand())
+            {
+                cmd.CommandText = $"DELETE FROM `{GitTableName}` WHERE (`Committer` = @Committer AND `Date` = @Date AND `Message` = @Message AND `Branch` = @Branch AND `Url` = @Url AND `Id` = @Id)";
+                cmd.Parameters.Add(new MySqlParameter("Committer", commit.Committer));
+                cmd.Parameters.Add(new MySqlParameter("Date", DateTimeSqLite(commit.Date)));
+                cmd.Parameters.Add(new MySqlParameter("Message", commit.Message));
+                cmd.Parameters.Add(new MySqlParameter("Branch", commit.Branch));
+                cmd.Parameters.Add(new MySqlParameter("Url", commit.Url));
+                cmd.Parameters.Add(new MySqlParameter("Id", commit.Id));
+                AddToPump(cmd);
+            }
+        }
+
+        #endregion
+
+        
         public override void Push(List<Day> days)
         {
             logger.Info($"Repushing to server.........count = {days.Count()}");

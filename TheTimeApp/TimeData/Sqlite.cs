@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Data;
-using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Web.UI.WebControls;
 using NLog;
 
 namespace TheTimeApp.TimeData
@@ -89,6 +86,9 @@ namespace TheTimeApp.TimeData
                 if (AppSettings.Instance.MySqlDatabase == "")
                     AppSettings.Instance.MySqlDatabase = "TimeDataBase";
 
+                cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{GitTableName}] ([Committer] TEXT,  [Date] TEXT, [Message] TEXT, [Branch] TEXT, [Url] TEXT, Id TEXT, UNIQUE(Url, Id))";
+                cmd.ExecuteNonQuery();
+                
                 cmd.CommandText = $@"CREATE TABLE IF NOT EXISTS [{UserTable}]([Name] TEXT , [Rate] TEXT , [Unit] TEXT , [Active] TEXT )";
                 cmd.ExecuteNonQuery();
 
@@ -664,6 +664,63 @@ namespace TheTimeApp.TimeData
             return new Sqlite("Data Source="+ AppSettings.Instance.DataPath +";Version=3");
         }
 
-        #endregion    
+        #endregion
+
+        #region git support
+
+        public override void AddCommit(GitCommit commit)
+        {
+            using (SQLiteCommand cmd = _connection.CreateCommand())
+            {
+                cmd.CommandText = $"INSERT OR IGNORE INTO [{GitTableName}] VALUES(@Committer, @Date, @Message, @Branch, @Url, @Id)";
+                cmd.Parameters.Add(new SQLiteParameter("Committer", commit.Committer));
+                cmd.Parameters.Add(new SQLiteParameter("Date", DateTimeSqLite(commit.Date)));
+                cmd.Parameters.Add(new SQLiteParameter("Message", commit.Message));
+                cmd.Parameters.Add(new SQLiteParameter("Branch", commit.Branch));
+                cmd.Parameters.Add(new SQLiteParameter("Url", commit.Url));
+                cmd.Parameters.Add(new SQLiteParameter("Id", commit.Id));
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public override List<GitCommit> GetCommits(DateTime datetime)
+        {
+            List<GitCommit> result = new List<GitCommit>();
+            string qry = $"SELECT * FROM [{GitTableName}]";
+            DataTable vt = new DataTable();
+            SQLiteDataAdapter da = new SQLiteDataAdapter(qry, _connection);
+            da.Fill(vt);
+
+            foreach (DataRow row in vt.Rows)
+            {
+                if (DateSqLite(Convert.ToDateTime(row["Date"].ToString())) == DateSqLite(datetime))
+                {
+                    GitCommit commit = new GitCommit(row["Committer"].ToString(), Convert.ToDateTime(row["Date"].ToString()), row["Message"].ToString(), row["Id"].ToString())
+                    {
+                        Branch = row["Branch"].ToString(),
+                        Url = row["Url"].ToString(),
+                    };
+                    result.Add(commit);
+                }
+            }
+            return result;
+        }
+
+        public override void RemoveCommit(GitCommit commit)
+        {
+            using (SQLiteCommand cmd = _connection.CreateCommand())
+            {
+                cmd.CommandText = $"DELETE FROM [{GitTableName}] WHERE (Committer = @Committer AND Date = @Date AND Message = @Message AND Branch = @Branch AND Url = @Url AND Id = @Id)";
+                cmd.Parameters.Add(new SQLiteParameter("Committer", commit.Committer));
+                cmd.Parameters.Add(new SQLiteParameter("Date", DateTimeSqLite(commit.Date)));
+                cmd.Parameters.Add(new SQLiteParameter("Message", commit.Message));
+                cmd.Parameters.Add(new SQLiteParameter("Branch", commit.Branch));
+                cmd.Parameters.Add(new SQLiteParameter("Url", commit.Url));
+                cmd.Parameters.Add(new SQLiteParameter("Id", commit.Id));
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        #endregion
     }
 }

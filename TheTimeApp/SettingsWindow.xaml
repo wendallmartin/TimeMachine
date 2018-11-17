@@ -139,6 +139,23 @@
                 </Grid>
             </TabItem>
 
+            <TabItem x:Name="Git_Settings" Visibility="Visible">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Git" Foreground="Black" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                    <Label Content="Repo path" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="27.241,51.964,0,0" Height="25.96"/>
+                    <TextBox x:Name="Txt_GitRepoPath" HorizontalAlignment="Left" Height="Auto" TextWrapping="Wrap" VerticalAlignment="Top" Width="172.149" Margin="115.207,54.924,0,0" ScrollViewer.CanContentScroll="True" TextChanged="GitRepoTextChanged" PreviewMouseDown="GitRepoMouseDown"/>
+                    <Label Content="Git user name" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26.584,113.606,0,0" Height="25.96"/>
+                    <TextBox x:Name="Txt_GitUserName" HorizontalAlignment="Left" Height="Auto" TextWrapping="Wrap" VerticalAlignment="Top" Width="172.149" Margin="115.207,116.516,0,0" TextChanged="GitUserTextChanged"/>
+                    <CheckBox x:Name="Chk_GitEnabled" Content="Enabled" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,223.182,0,0" Checked="GitEnabledChecked" Unchecked="GitEnabledUnChecked"/>
+                    <Button x:Name="Btn_LoadAllCommits" Content="Load commits" Focusable="False" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,86.613" Click="Btn_LoadAllCommits_Click"/>
+                    <ProgressBar x:Name="Prg_LoadCommits" HorizontalAlignment="Center" VerticalAlignment="Center" Height="15" Width="168.668" Visibility="Hidden" Margin="0,196.604,0,60.578" />
+                </Grid>
+            </TabItem>
+
             <TabItem x:Name="Developer_Settings" Visibility="Visible">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
