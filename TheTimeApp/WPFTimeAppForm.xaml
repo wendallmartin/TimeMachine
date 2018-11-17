@@ -14,20 +14,26 @@
              Icon="Resources/timecardpic.ico"
              Title="Time Clock">
     <Grid>
-        <Label x:Name="lb_VersionNumber" Content="Label" HorizontalAlignment="Right" VerticalAlignment="Top" Width="Auto" FontSize="10"/>
+        <Label x:Name="lb_VersionNumber" Content="Label" HorizontalAlignment="Center" VerticalAlignment="Top" Width="Auto" FontSize="10" Margin="0,-4.002,0,0"/>
         <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Margin="0,18,0,0" Click="btn_SelectedUser_Click"/>
-        <TextBox x:Name="DayDetailsBox" TextWrapping="Wrap" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Stretch" Width="Auto" Margin="45,47,45,156" MinHeight="120" TextChanged="OnDayDetailsChanged" AcceptsReturn="True" ScrollViewer.CanContentScroll="True">
-        </TextBox>
-                <Button x:Name="btn_Report" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Report_Click" Margin="5,5,0,0" >
-                    <StackPanel>
-                        <Image Source="Resources/report.png" Height="25"></Image>
-                    </StackPanel>
-                </Button>
-                <Button x:Name="btn_Settings" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Settings_Click" Margin="50,5,0,0" >
-                      <StackPanel>
-                          <Image Source="Resources/settings.png" Height="23"></Image>
-                      </StackPanel>
-                </Button>
+        <TextBox x:Name="GitCommitsBox" TextWrapping="NoWrap" HorizontalAlignment="Stretch" Height="Auto" Visibility="Hidden" VerticalAlignment="Stretch" Width="Auto" Margin="45,47,45,156" MinHeight="120" IsEnabled="False" ScrollViewer.CanContentScroll="True"/>
+        <TextBox x:Name="DayDetailsBox" TextWrapping="Wrap" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Stretch" Width="Auto" Margin="45,47,45,156" MinHeight="120" TextChanged="OnDayDetailsChanged" AcceptsReturn="True" ScrollViewer.CanContentScroll="True"/>
+        <Button x:Name="btn_Report" Focusable="False" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Report_Click" Margin="5,5,0,0" >
+            <StackPanel>
+                <Image Source="Resources/report.png" Height="25"></Image>
+            </StackPanel>
+        </Button>
+        <Button x:Name="btn_Settings" Focusable="False" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Settings_Click" Margin="50,5,0,0" >
+              <StackPanel>
+                  <Image Source="Resources/settings.png" Height="23"></Image>
+              </StackPanel>
+        </Button>
+        <Button x:Name="btn_DetailsCommits" Focusable="False" HorizontalAlignment="Right" VerticalAlignment="Top" Height="30" Width="40" Click="btn_DetailsCommits_Click" Margin="0,5,5,0" >
+            <Grid>
+                <Image x:Name="ImageDetails" Source="Resources/details.png" Height="23" />
+                <Image x:Name="ImageCommits" Source="Resources/gitCommit.png" Height="23" Visibility="Hidden"/>
+            </Grid>
+        </Button>
         <ScrollViewer x:Name = "scroll_UserSelection" HorizontalAlignment="Center" Margin="0,43,0,0" Visibility="Hidden" VerticalAlignment="Top" Width="150" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="pnl_UserSelection" HorizontalAlignment="Center" Height="Auto" VerticalAlignment="Top" Width="150"/>
         </ScrollViewer>
