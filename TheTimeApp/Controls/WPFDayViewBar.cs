@@ -44,7 +44,7 @@ namespace TheTimeApp.Controls
         {
             MessageBoxButton button = MessageBoxButton.YesNo;
 
-            if (MessageBox.Show("Time will be deleted permenetly!", "Warning", button) == (MessageBoxResult) DialogResult.Yes)
+            if (MessageBox.Show("Time will be deleted permanently!", "Warning", button) == (MessageBoxResult) DialogResult.Yes)
             {
                 DeleteDayEvent?.Invoke(_day);
             }

@@ -116,6 +116,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controls\DetailsCommitView.xaml.cs">
+      <DependentUpon>DetailsCommitView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\PrevEmailWin.xaml.cs">
       <DependentUpon>PrevEmailWin.xaml</DependentUpon>
     </Compile>
@@ -205,6 +208,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\DetailsCommitView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\PrevEmailWin.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

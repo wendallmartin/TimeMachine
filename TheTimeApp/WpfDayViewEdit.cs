@@ -1,5 +1,4 @@
-﻿using System.Windows.Controls;
-using TheTimeApp.TimeData;
+﻿using TheTimeApp.TimeData;
 
 namespace TheTimeApp
 {
@@ -16,14 +15,16 @@ namespace TheTimeApp
         {
             _day = day;
             InitializeComponent();
-            dayDetails.Text = day.Details;
+
+            DetailsCommitView.Date = day.Date;
+            DetailsCommitView.DayDetails = day.Details;
         }
 
-        private void RichTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void OnDayDetailsChanged(string details)
         {
             if (!Enabled) return;
                 
-            DataBaseManager.Instance.UpdateDetails(_day.Date, dayDetails.Text);
+            DataBaseManager.Instance.UpdateDetails(_day.Date, details);
         }
     }
 }

@@ -45,11 +45,11 @@ namespace TheTimeApp
             _timeTic.Elapsed += TimeTic;
             _timeTic.AutoReset = true;
 
-            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
+            DetailsCommitView.Date = DataBaseManager.Instance.CurrentDay().Date;
+            DetailsCommitView.DayDetails = DataBaseManager.Instance.CurrentDay().Details;
+            DetailsCommitView.Init();
             btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
             
-            btn_DetailsCommits.Visibility = AppSettings.Instance.GitEnabled ? Visibility.Visible : Visibility.Hidden;
-
             if (AppSettings.Instance.SqlEnabled != "true")
             {
                 SqlStatusBar.Visibility = Visibility.Hidden;
@@ -111,7 +111,7 @@ namespace TheTimeApp
             AppSettings.Instance.CurrentUser = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
             DataBaseManager.Instance.VerifySql();
-            DayDetailsBox.Text = DataBaseManager.Instance.CurrentDay().Details;
+            DetailsCommitView.DayDetails = DataBaseManager.Instance.CurrentDay().Details;
             UpdateTime();
         }
 
@@ -227,7 +227,7 @@ namespace TheTimeApp
             });
         }
 
-        private void OnDayDetailsChanged(object sender, TextChangedEventArgs e)
+        private void DetailsCommitView_OnDetailsChangedEvent(string newDetails)
         {
             if (AppSettings.Instance.SqlEnabled == "true")
             {
@@ -236,8 +236,7 @@ namespace TheTimeApp
             
                 _detailsChanged.Start();    
             }
-            string details = DayDetailsBox.Text;
-            DataBaseManager.Instance.UpdateDetails(DataBaseManager.Instance.CurrentDay().Date, details);
+            DataBaseManager.Instance.UpdateDetails(DataBaseManager.Instance.CurrentDay().Date, newDetails);
         }
         
         private void OnDetailsChangeTick(object sender, ElapsedEventArgs e)
@@ -255,34 +254,6 @@ namespace TheTimeApp
         {
             new SettingsWindow().ShowDialog();
             Init();// reinitialize
-        }
-
-        private void btn_DetailsCommits_Click(object sender, RoutedEventArgs e)
-        {
-            ToggleDetailsCommits();
-        }
-
-        private void ToggleDetailsCommits()
-        {
-            _gitCommits = !_gitCommits;
-            if (_gitCommits)
-            {
-                LoadCommitMsgs();
-                
-                DayDetailsBox.Visibility = Visibility.Hidden;
-                GitCommitsBox.Visibility = Visibility.Visible;
-                
-                ImageDetails.Visibility = Visibility.Hidden;
-                ImageCommits.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                GitCommitsBox.Visibility = Visibility.Hidden;
-                DayDetailsBox.Visibility = Visibility.Visible;
-                
-                ImageCommits.Visibility = Visibility.Hidden;
-                ImageDetails.Visibility = Visibility.Visible;
-            }
         }
     }
 }
