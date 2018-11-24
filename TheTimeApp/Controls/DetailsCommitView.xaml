@@ -12,7 +12,7 @@
             </Grid>
         </Button>
         <TextBox x:Name="DayDetailsBox" Margin="10,40,10,10" TextWrapping="WrapWithOverflow" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextChanged="DayDetailsBox_TextChanged"/>
-        <TextBox x:Name="GitCommitsBox" Margin="10,40,10,10" TextWrapping="WrapWithOverflow" Visibility="Hidden" VerticalScrollBarVisibility="Auto" IsEnabled="False"/>
+        <TextBox x:Name="GitCommitsBox" Margin="10,40,10,10" TextWrapping="WrapWithOverflow" Visibility="Hidden" VerticalScrollBarVisibility="Auto" TextChanged="GitCommitsBox_OnTextChanged"/>
         <Label x:Name="Label" Content="Details" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="hidden" />
     </Grid>
 </UserControl>

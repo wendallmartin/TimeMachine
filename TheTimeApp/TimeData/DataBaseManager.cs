@@ -241,6 +241,11 @@ namespace TheTimeApp.TimeData
         {
             return _primary.GetCommits(dateTime);
         }
+        
+        public override List<GitCommit> GetCommits()
+        {
+            return _primary.GetCommits();
+        }
 
         public override void RemoveCommit(GitCommit commit)
         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,12 +22,8 @@ namespace TheTimeApp
         private System.Timers.Timer _timeTic;
         private System.Timers.Timer _detailsChanged;
 
-        /// <summary>
-        /// True if git commits are
-        /// visible instead of details.
-        /// </summary>
-        private bool _gitCommits;
-
+        private Task _gitTask;
+        
         public WPFTimeAppForm()
         {
             InitializeComponent();
@@ -63,26 +60,13 @@ namespace TheTimeApp
                 Start_Button.Height = 85;
             }
 
-            LoadCommitMsgs();
-            
             DataBaseManager.Instance.ConnectionChangedEvent += ConnectionChanged;
             DataBaseManager.Instance.UpdateChangedEvent += SqlUpdateChanged;
 
             SetStartChecked();
             
             UpdateTime();
-            UpdateGit();
-        }
-
-        private void LoadCommitMsgs()
-        {
-            if (!AppSettings.Instance.GitEnabled) return;
-
-            GitCommitsBox.Text = "";
-            foreach (GitCommit commit in GitManager.Instance.CommitsOnDate(DateTime.Today))
-            {
-                GitCommitsBox.Text += "-o- " +  commit.Message;
-            }
+            UpdateGitIfEnabled();
         }
 
         private void LoadUsers()
@@ -150,7 +134,7 @@ namespace TheTimeApp
                 DataBaseManager.Instance.PunchOut(DataBaseManager.Instance.LastTimeId());
                 SetStartChecked();
                 UpdateTime();
-                UpdateGit();
+                UpdateGitIfEnabled();
             }
         }
 
@@ -162,15 +146,29 @@ namespace TheTimeApp
         private void TimeTic(object sender, ElapsedEventArgs e)
         {
             UpdateTime();
-            UpdateGit();
+            UpdateGitIfEnabled();
         }
 
-        private void UpdateGit()
+        private void UpdateGitIfEnabled()
         {
             if (!AppSettings.Instance.GitEnabled) return;
-            var commits = GitManager.Instance.CommitsOnDate(DateTime.Today);
-            commits.ForEach(c => DataBaseManager.Instance.AddCommit(c));
-            LoadCommitMsgs();
+            if (_gitTask != null && _gitTask.Status == TaskStatus.Running) return;
+            
+            _gitTask = Task.Run(() =>
+            {
+                var newCommits = GitManager.Instance.CommitsOnDate(DateTime.Today);
+                var oldCommits = DataBaseManager.Instance.GetCommits();
+
+                foreach (GitCommit gitCommit in newCommits)
+                {
+                    if (oldCommits.All(c => c.Message != gitCommit.Message || c.Branch != gitCommit.Branch))
+                    {
+                        DataBaseManager.Instance.AddCommit(gitCommit);
+                    }    
+                }
+            
+                DetailsCommitView.LoadCommitMsgs();       
+            });
         }
 
         private void UpdateTime()

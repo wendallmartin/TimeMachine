@@ -683,6 +683,7 @@ namespace TheTimeApp.TimeData
 
         public override void AddCommit(GitCommit commit)
         {
+            logger.Info($"Add commit: {commit.Message}..........");
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"INSERT IGNORE INTO `{GitTableName}` VALUES(@Committer, @Date, @Message, @Branch, @Url, @Id)";
@@ -694,10 +695,18 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new MySqlParameter("Id", commit.Id));
                 AddToPump(cmd);
             }
+            logger.Info($"Add commit: {commit.Message}..........FINISHED!!!");
         }
 
         public override List<GitCommit> GetCommits(DateTime datetime)
         {
+            logger.Info($"Get commits on date: {datetime}");
+            return GetCommits().Where(c => c.Date.Date == datetime.Date).ToList();
+        }
+
+        public override List<GitCommit> GetCommits()
+        {
+            logger.Info("Get Commits...........");
             List<GitCommit> result = new List<GitCommit>();
             string qry = $"SELECT * FROM `{GitTableName}`";
             DataTable vt = new DataTable();
@@ -706,16 +715,15 @@ namespace TheTimeApp.TimeData
 
             foreach (DataRow row in vt.Rows)
             {
-                if (row["Date"].ToString() == DateTimeSqLite(datetime))
+                GitCommit commit = new GitCommit(row["Committer"].ToString(), Convert.ToDateTime(row["Date"].ToString()), row["Message"].ToString(), row["Id"].ToString())
                 {
-                    GitCommit commit = new GitCommit(row["Committer"].ToString(), Convert.ToDateTime(row["Date"].ToString()), row["Message"].ToString(), row["Id"].ToString())
-                    {
-                        Branch = row["Branch"].ToString(),
-                        Url = row["Url"].ToString()
-                    };
-                    result.Add(commit);
-                }
+                    Branch = row["Branch"].ToString(),
+                    Url = row["Url"].ToString()
+                };
+                result.Add(commit);
             }
+
+            logger.Info("Get Commits...........FINISHED!!!");
             return result;
         }
 

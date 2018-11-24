@@ -17,7 +17,6 @@
     <Grid>
         <Label x:Name="lb_VersionNumber" Content="Label" HorizontalAlignment="Center" VerticalAlignment="Top" Width="Auto" FontSize="10" Margin="0,-4.002,0,0"/>
         <Button x:Name="btn_SelectedUser" Content="User" HorizontalAlignment="Center" VerticalAlignment="Top" Width="75" Margin="0,18,0,0" Click="btn_SelectedUser_Click"/>
-        <TextBox x:Name="GitCommitsBox" TextWrapping="NoWrap" HorizontalAlignment="Stretch" Height="Auto" Visibility="Hidden" VerticalAlignment="Stretch" Width="Auto" Margin="45,47,45,156" MinHeight="120" IsEnabled="False" ScrollViewer.CanContentScroll="True"/>
         <Button x:Name="btn_Report" Focusable="False" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="40" Click="btn_Report_Click" Margin="5,5,0,0" >
             <StackPanel>
                 <Image Source="Resources/report.png" Height="25"/>

@@ -452,6 +452,11 @@ namespace TheTimeApp.TimeData
             throw new NotImplementedException();
         }
 
+        public override List<GitCommit> GetCommits()
+        {
+            throw new NotImplementedException();
+        }
+
         public override void RemoveCommit(GitCommit commit)
         {
             throw new NotImplementedException();

@@ -226,5 +226,68 @@ namespace Tests
             Assert.True(TimeServer.StartEndWeek(DateTime.Now)[0].DayOfWeek == DayOfWeek.Sunday && TimeServer.StartEndWeek(DateTime.Now)[1].DayOfWeek == DayOfWeek.Saturday);
             Assert.True((TimeServer.StartEndWeek(DateTime.Now)[1].DayOfYear - TimeServer.StartEndWeek(DateTime.Now)[0].DayOfYear ) == 6);
         }
+        
+        [Test]
+        public void TestGitCommit()
+        {
+            DateTime now = DateTime.Now;
+            DateTime wayBack = new DateTime(2000, 2, 5);
+            
+            GitCommit commitA = new GitCommit("testA", now, "commit A", Guid.NewGuid().ToString())
+            {
+                Branch = "commitABranch",
+                Url = "wrmcodeblocks.com"
+            };
+            
+            GitCommit commitB = new GitCommit("testB", now, "commit B", Guid.NewGuid().ToString())
+            {
+                Branch = "commitBBranch",
+                Url = "urlB"
+            };
+            
+            GitCommit commitC = new GitCommit("testC", now, "commit C", Guid.NewGuid().ToString());
+            
+            GitCommit commitD = new GitCommit("testD", wayBack, "work back here?", Guid.NewGuid().ToString());
+            
+            _instance.AddCommit(commitA);
+            _instance.AddCommit(commitA);
+            _instance.AddCommit(commitA);
+            
+            Assert.IsTrue(_instance.GetCommits(now).Count == 1);// Test duplicate safety feature.
+            
+            _instance.AddCommit(commitB);
+            
+            Assert.IsTrue(_instance.GetCommits(now).Count == 2);
+            
+            _instance.AddCommit(commitC);
+            
+            _instance.AddCommit(commitD);
+            
+            Assert.IsTrue(_instance.GetCommits(now).Count == 3);
+
+            var commits = _instance.GetCommits(now);
+
+            Assert.IsTrue(commits.Count == 3);
+            
+            Assert.IsTrue(commitA.Equals(commits[0]));
+            
+            Assert.IsTrue(commitB.Equals(commits[1]));
+            
+            Assert.IsTrue(commitC.Equals(commits[2]));
+            
+            _instance.RemoveCommit(commitA);
+            
+            Assert.IsTrue(_instance.GetCommits(now).Count == 2);
+            
+            _instance.RemoveCommit(commitB);
+            
+            Assert.IsTrue(_instance.GetCommits(now).Count == 1);
+            
+            _instance.RemoveCommit(commitC);
+            
+            Assert.IsTrue(_instance.GetCommits(now).Count == 0);
+            
+            Assert.IsTrue(_instance.GetCommits().Count == 1);
+        }
     }
 }

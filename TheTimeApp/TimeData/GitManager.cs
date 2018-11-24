@@ -41,8 +41,12 @@ namespace TheTimeApp.TimeData
                 {
                     try
                     {
-                        if (commit.Author.Name.Contains(AppSettings.Instance.GitUserName)) 
-                            commits.Add(ToGitCommit(commit));
+                        if (commit.Author.Name.Contains(AppSettings.Instance.GitUserName))
+                        {
+                            GitCommit gitCommit = ToGitCommit(commit);
+                            gitCommit.Branch = _repo.Head.FriendlyName;
+                            commits.Add(gitCommit);
+                        }
                     }
                     catch (Exception)
                     {

@@ -112,6 +112,8 @@ namespace TheTimeApp.TimeData
         public abstract void AddCommit(GitCommit commit);
 
         public abstract List<GitCommit> GetCommits(DateTime dateTime);
+        
+        public abstract List<GitCommit> GetCommits();
 
         public abstract void RemoveCommit(GitCommit commit);
 

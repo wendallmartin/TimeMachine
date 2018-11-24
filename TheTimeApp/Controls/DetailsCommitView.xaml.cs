@@ -48,6 +48,11 @@ namespace TheTimeApp.Controls
         {
             DetailsChangedEvent?.Invoke(DayDetailsBox.Text);
         }
+        
+        private void GitCommitsBox_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            LoadCommitMsgs();
+        }
 
         private void btn_DetailsCommits_Click(object sender, RoutedEventArgs e)
         {
@@ -84,16 +89,25 @@ namespace TheTimeApp.Controls
                 ImageDetails.Visibility = Visibility.Visible;
             }
         }
-        
-        private void LoadCommitMsgs()
+
+        public void LoadCommitMsgs()
         {
             if (!AppSettings.Instance.GitEnabled) return;
+            if (!CheckAccess())
+            {
+                Dispatcher.Invoke(LoadCommitMsgs);
+                return;
+            }
+
+            GitCommitsBox.TextChanged -= GitCommitsBox_OnTextChanged;
 
             GitCommitsBox.Text = "";
-            foreach (GitCommit commit in GitManager.Instance.CommitsOnDate(_date.Date))
+            foreach (GitCommit commit in DataBaseManager.Instance.GetCommits(_date.Date))
             {
                 GitCommitsBox.Text += "-o- " +  commit.Message;
             }
+            
+            GitCommitsBox.TextChanged += GitCommitsBox_OnTextChanged;
         }
     }
 }

@@ -341,37 +341,42 @@ namespace Tests
         [Test]
         public void TestGitCommit()
         {
-            DateTime time = DateTime.Now;
+            DateTime now = DateTime.Now;
+            DateTime wayBack = new DateTime(2000, 2, 5);
             
-            GitCommit commitA = new GitCommit("testA", time, "commit A", Guid.NewGuid().ToString())
+            GitCommit commitA = new GitCommit("testA", now, "commit A", Guid.NewGuid().ToString())
             {
                 Branch = "commitABranch",
                 Url = "wrmcodeblocks.com"
             };
             
-            GitCommit commitB = new GitCommit("testB", time, "commit B", Guid.NewGuid().ToString())
+            GitCommit commitB = new GitCommit("testB", now, "commit B", Guid.NewGuid().ToString())
             {
                 Branch = "commitBBranch",
                 Url = "urlB"
             };
             
-            GitCommit commitC = new GitCommit("testC", time, "commit C", Guid.NewGuid().ToString());
+            GitCommit commitC = new GitCommit("testC", now, "commit C", Guid.NewGuid().ToString());
+            
+            GitCommit commitD = new GitCommit("testD", wayBack, "work back here?", Guid.NewGuid().ToString());
             
             _instance.AddCommit(commitA);
             _instance.AddCommit(commitA);
             _instance.AddCommit(commitA);
             
-            Assert.IsTrue(_instance.GetCommits(time).Count == 1);// Test duplicate safety feature.
+            Assert.IsTrue(_instance.GetCommits(now).Count == 1);// Test duplicate safety feature.
             
             _instance.AddCommit(commitB);
             
-            Assert.IsTrue(_instance.GetCommits(time).Count == 2);
+            Assert.IsTrue(_instance.GetCommits(now).Count == 2);
             
             _instance.AddCommit(commitC);
             
-            Assert.IsTrue(_instance.GetCommits(time).Count == 3);
+            _instance.AddCommit(commitD);
+            
+            Assert.IsTrue(_instance.GetCommits(now).Count == 3);
 
-            var commits = _instance.GetCommits(time);
+            var commits = _instance.GetCommits(now);
 
             Assert.IsTrue(commits.Count == 3);
             
@@ -383,15 +388,17 @@ namespace Tests
             
             _instance.RemoveCommit(commitA);
             
-            Assert.IsTrue(_instance.GetCommits(time).Count == 2);
+            Assert.IsTrue(_instance.GetCommits(now).Count == 2);
             
             _instance.RemoveCommit(commitB);
             
-            Assert.IsTrue(_instance.GetCommits(time).Count == 1);
+            Assert.IsTrue(_instance.GetCommits(now).Count == 1);
             
             _instance.RemoveCommit(commitC);
             
-            Assert.IsTrue(_instance.GetCommits(time).Count == 0);
+            Assert.IsTrue(_instance.GetCommits(now).Count == 0);
+            
+            Assert.IsTrue(_instance.GetCommits().Count == 1);
         }
     }
 }
