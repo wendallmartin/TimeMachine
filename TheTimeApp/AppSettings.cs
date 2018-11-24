@@ -57,6 +57,7 @@ namespace TheTimeApp
         public string GitRepoPath { get; set; }
         public string GitUserName { get; set; }
         public bool GitEnabled { get; set; }
+        public string LastVersion { get; set; }
         
         public void Load()
         {
@@ -87,6 +88,7 @@ namespace TheTimeApp
             GitRepoPath = ReadValueFromXml("lewinsaaowtwe", false);
             GitUserName = ReadValueFromXml("aagaajfafsdf");
             GitEnabled = ReadValueFromXml("djahjeuasdjl") == "true";
+            LastVersion = ReadValueFromXml("lafalfasgha");
         }
 
         
@@ -120,6 +122,7 @@ namespace TheTimeApp
             WriteValueToXml("lewinsaaowtwe", GitRepoPath, false);
             WriteValueToXml("aagaajfafsdf", GitUserName);
             WriteValueToXml("djahjeuasdjl", GitEnabled ? "true" : "false");
+            WriteValueToXml("lafalfasgha", LastVersion);
         }
                 
         /// <summary>
@@ -252,6 +255,10 @@ namespace TheTimeApp
             xmlWriter.WriteEndElement();
             
             xmlWriter.WriteStartElement("djahjeuasdjl");
+            xmlWriter.WriteValue("");
+            xmlWriter.WriteEndElement();
+            
+            xmlWriter.WriteStartElement("lafalfasgha");
             xmlWriter.WriteValue("");
             xmlWriter.WriteEndElement();
             

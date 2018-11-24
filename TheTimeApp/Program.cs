@@ -54,6 +54,8 @@ namespace TheTimeApp
                 
                 DataBaseManager.Initualize();
 
+                AppSettings.Instance.LastVersion = CurrentVersion;// Must update last version after initializing database!
+
                 if (!DataBaseManager.Instance.UserNames().Contains(TimeServer.SqlCurrentUser))
                 {
                     DataBaseManager.Instance.AddUser(new User(TimeServer.SqlCurrentUser, "", new List<TimeData.Day>()));
@@ -85,14 +87,9 @@ namespace TheTimeApp
         
         //using System.Deployment.Application;
         //using System.Reflection;
-        public static string CurrentVersion
-        {
-            get
-            {
-                return ApplicationDeployment.IsNetworkDeployed
+        public static string CurrentVersion =>
+            ApplicationDeployment.IsNetworkDeployed
                 ? ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString()
                 : Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            }
-        } 
     }
 }

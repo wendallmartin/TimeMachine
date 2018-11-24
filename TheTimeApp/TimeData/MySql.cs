@@ -56,7 +56,8 @@ namespace TheTimeApp.TimeData
 
             VerifySql();
 
-            FixVersionMismatches();
+            if(AppSettings.Instance.LastVersion != Program.CurrentVersion)
+                FixVersionMismatches();
             
             logger.Info("Initualize.........FINISHED!!!");
         }
@@ -683,7 +684,7 @@ namespace TheTimeApp.TimeData
 
         public override void AddCommit(GitCommit commit)
         {
-            logger.Info($"Add commit: {commit.Message}..........");
+            logger.Info($"Add commit: {commit.Message}");
             using (MySqlCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"INSERT IGNORE INTO `{GitTableName}` VALUES(@Committer, @Date, @Message, @Branch, @Url, @Id)";
@@ -695,7 +696,6 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new MySqlParameter("Id", commit.Id));
                 AddToPump(cmd);
             }
-            logger.Info($"Add commit: {commit.Message}..........FINISHED!!!");
         }
 
         public override List<GitCommit> GetCommits(DateTime datetime)

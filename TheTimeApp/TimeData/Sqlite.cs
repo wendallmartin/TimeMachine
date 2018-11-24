@@ -30,7 +30,8 @@ namespace TheTimeApp.TimeData
             
             VerifySql();
 
-            FixVersionMismatches();
+            if(AppSettings.Instance.LastVersion != Program.CurrentVersion)
+                FixVersionMismatches();
             
             logger.Info("Initalize......FINISHED!!!");
         }
@@ -670,7 +671,7 @@ namespace TheTimeApp.TimeData
 
         public override void AddCommit(GitCommit commit)
         {
-            logger.Info($"Add commit: {commit.Message}..........");
+            logger.Info($"Add commit: {commit.Message}");
             using (SQLiteCommand cmd = _connection.CreateCommand())
             {
                 cmd.CommandText = $"INSERT OR IGNORE INTO [{GitTableName}] VALUES(@Committer, @Date, @Message, @Branch, @Url, @Id)";
@@ -682,7 +683,6 @@ namespace TheTimeApp.TimeData
                 cmd.Parameters.Add(new SQLiteParameter("Id", commit.Id));
                 cmd.ExecuteNonQuery();
             }
-            logger.Info($"Add commit: {commit.Message}..........FINISHED!!!");
         }
 
         public override List<GitCommit> GetCommits(DateTime datetime)
