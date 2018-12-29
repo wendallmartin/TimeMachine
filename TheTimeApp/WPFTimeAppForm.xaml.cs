@@ -161,10 +161,16 @@ namespace TheTimeApp
 
                 foreach (GitCommit gitCommit in newCommits)
                 {
-                    if (oldCommits.All(c => c.Message != gitCommit.Message || c.Branch != gitCommit.Branch))
-                    {
-                        DataBaseManager.Instance.AddCommit(gitCommit);
-                    }    
+                    // Git branch must be specified
+                    if (string.IsNullOrEmpty(gitCommit.Branch)) continue;
+                    if (string.IsNullOrWhiteSpace(gitCommit.Branch)) continue;
+                    if (gitCommit.Branch.Contains("(no branch)")) continue;
+                    
+                    // Branch must be unique
+                    if (oldCommits.Any(c => c.Message == gitCommit.Message)) continue;
+
+                    
+                    DataBaseManager.Instance.AddCommit(gitCommit);
                 }
             
                 DetailsCommitView.LoadCommitMsgs();       
