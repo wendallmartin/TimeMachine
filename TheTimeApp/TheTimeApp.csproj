@@ -246,30 +246,30 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\details.png">
+    <Resource Include="Resources\details.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\gitCommit.png">
+    </Resource>
+    <Resource Include="Resources\gitCommit.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\next.png">
+    </Resource>
+    <Resource Include="Resources\next.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\prev.png">
+    </Resource>
+    <Resource Include="Resources\prev.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\report.png">
+    </Resource>
+    <Resource Include="Resources\report.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\settings.png">
+    </Resource>
+    <Resource Include="Resources\settings.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\timecardpic.ico">
+    </Resource>
+    <Resource Include="Resources\timecardpic.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\TimeTotal.png">
+    </Resource>
+    <Resource Include="Resources\TimeTotal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </Resource>
     <Content Include="timecardpic.ico" />
   </ItemGroup>
   <ItemGroup>
