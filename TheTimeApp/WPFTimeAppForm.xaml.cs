@@ -35,7 +35,6 @@ namespace TheTimeApp
             lb_VersionNumber.Content = Program.CurrentVersion;
 
             _detailsChanged = new System.Timers.Timer() {Interval = 2000};
-            _detailsChanged.Elapsed += OnDetailsChangeTick;
             _detailsChanged.AutoReset = false;
 
             _timeTic = new System.Timers.Timer() {Interval = 60000};
@@ -125,17 +124,29 @@ namespace TheTimeApp
         {
             if (Equals(Start_Button.Background, Brushes.Green))
             {
+                ReLoadDay();
                 UpdateTime();
                 DataBaseManager.Instance.PunchIn(TimeServer.GenerateId());// unique 15 digit 
-                SetStartChecked();
             }
             else
             {
                 DataBaseManager.Instance.PunchOut(DataBaseManager.Instance.LastTimeId());
-                SetStartChecked();
                 UpdateTime();
                 UpdateGitIfEnabled();
             }
+            
+            SetStartChecked();
+        }
+
+        /// <summary>
+        /// Load current day details and comments into
+        /// details/comment view. This fixed details
+        /// cary over previous day issue.
+        /// </summary>
+        private void ReLoadDay()
+        {
+            DetailsCommitView.Date = DataBaseManager.Instance.CurrentDay().Date;
+            DetailsCommitView.DayDetails = DataBaseManager.Instance.CurrentDay().Details;
         }
 
         /// <summary>
@@ -243,11 +254,6 @@ namespace TheTimeApp
             DataBaseManager.Instance.UpdateDetails(DataBaseManager.Instance.CurrentDay().Date, newDetails);
         }
         
-        private void OnDetailsChangeTick(object sender, ElapsedEventArgs e)
-        {
-               
-        }
-
         private void btn_Report_Click(object sender, RoutedEventArgs e)
         {
             new WpfTimeViewWindow().ShowDialog();
