@@ -30,8 +30,6 @@ namespace TheTimeApp
         /// </summary>
         private DateTime _max;
 
-        TimeViewEdit _timeedit;
-
         public WpfTimeViewWindow()
         {
             InitializeComponent();
@@ -122,17 +120,18 @@ namespace TheTimeApp
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 
-        private void TimeViewTimeClick(WpfTimeViewBar view)
+        private void TimeViewTimeClick(WpfTimeViewBar viewBar)
         {
-            Time prevTime = new Time {TimeIn = view.GetTime().TimeIn, TimeOut = view.GetTime().TimeOut, Key = view.GetKey()};
-            _timeedit = new TimeViewEdit(view.GetTime(), _24Hour);
+            string prevKey = viewBar.GetKey();
+            WpfTimeEdit timeEdit = new WpfTimeEdit(viewBar.GetTime());
 
-            if (_timeedit.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            var result = timeEdit.ShowDialog();
+
+            if (result.HasValue && result.Value)
             {
-                DataBaseManager.Instance.UpdateTime(prevTime.Key, _timeedit.GetTime);
+                DataBaseManager.Instance.UpdateTime(prevKey, timeEdit.Time);
             }
-
-            _timeedit.Close();
+            
             InitTimes(TimeServer.StartEndWeek(_baseDate));
         }
 

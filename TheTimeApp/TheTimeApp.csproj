@@ -116,6 +116,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controls\TimeControl.xaml.cs">
+      <DependentUpon>TimeControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\DetailsCommitView.xaml.cs">
       <DependentUpon>DetailsCommitView.xaml</DependentUpon>
     </Compile>
@@ -134,6 +137,9 @@
     <Compile Include="AppSettings.cs" />
     <Compile Include="Controls\WPFDayViewBar.cs">
       <DependentUpon>WPFDayViewBar.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WpfTimeEdit.xaml.cs">
+      <DependentUpon>WpfTimeEdit.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\WPFTimeViewBar.cs">
       <DependentUpon>WPFTimeViewBar.xaml</DependentUpon>
@@ -208,6 +214,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\TimeControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\DetailsCommitView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -217,6 +227,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Controls\ViewBar.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\WpfTimeEdit.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -1,0 +1,32 @@
+﻿<Window x:Class="TheTimeApp.Controls.WpfTimeEdit"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:TheTimeApp.Controls"
+             mc:Ignorable="d" 
+             WindowStartupLocation="CenterScreen"
+             Height="200" Width="400">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel HorizontalAlignment="Center"  VerticalAlignment="Center">
+            <Label Content="Punch in" HorizontalAlignment="Center" FontSize="20"/>
+            <local:TimeControl x:Name="InTime"/>
+        </StackPanel>
+        
+        <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center"  VerticalAlignment="Center">
+            <Label Content="Punch out" HorizontalAlignment="Center" FontSize="20" />
+            <local:TimeControl x:Name="OutTime"/>
+        </StackPanel>
+
+        <Button Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="1" Margin="10" Content="Save" Click="Btn_SaveClick"/>
+    </Grid>
+</Window>
