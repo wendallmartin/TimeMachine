@@ -142,6 +142,23 @@ namespace TheTimeApp
         /// </summary>
         private static void SetSettingsToDefault()
         {
+            string dir = Path.GetDirectoryName(SettingsFilePath);
+            if(dir != null)// Only do settings folder check if settings don't exist.
+            {
+                try
+                {
+                    if (!Directory.Exists(dir)) // Create settings folder if it don't exist.
+                        Directory.CreateDirectory(dir);
+                }
+                catch (Exception e)// If failed to create folder, throw exception.
+                {
+                    throw new Exception("Could not create settings folder! " + e.Message);
+                }
+                
+                if (!Directory.Exists(dir)) // If settings folder still don't exist, throw exception.
+                    throw new Exception("Could not create settings folder!");
+            }
+            
             XmlTextWriter xmlWriter = new XmlTextWriter(SettingsFilePath, null);
             xmlWriter.WriteStartDocument();
             xmlWriter.WriteStartElement("settings");
