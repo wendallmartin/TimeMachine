@@ -58,7 +58,6 @@ namespace TheTimeApp
 
         private void InitTimes(List<DateTime> startEnd)
         {
-            bool honest = File.Exists("honest.txt");
             StackPanel.Children.Clear();
             double totalHours = TimeServer.DecToQuarter(DataBaseManager.Instance.HoursInRange(startEnd[0], startEnd[1]).TotalHours);
             
@@ -80,7 +79,7 @@ namespace TheTimeApp
                 StackPanel.Children.Add(datevViewBar);
                 foreach (Time time in day.Times)
                 {
-                    WpfTimeViewBar timeView = new WpfTimeViewBar(time, _24Hour){ReadOnly = !honest};
+                    WpfTimeViewBar timeView = new WpfTimeViewBar(time, _24Hour);
                     timeView.TimeDeleteEvent += TimeDeleteTime;
                     timeView.TimeClickEvent += TimeViewTimeClick;
                     StackPanel.Children.Add(timeView);
