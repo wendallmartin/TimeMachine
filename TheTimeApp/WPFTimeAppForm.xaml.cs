@@ -90,12 +90,10 @@ namespace TheTimeApp
         private void OnUserSelected(ViewBar view)
         {
             TimeServer.SqlCurrentUser = view.Text;
-            btn_SelectedUser.Content = TimeServer.SqlCurrentUser;
             AppSettings.Instance.CurrentUser = TimeServer.SqlCurrentUser;
             scroll_UserSelection.Visibility = Visibility.Hidden;
             DataBaseManager.Instance.VerifySql();
-            DetailsCommitView.DayDetails = DataBaseManager.Instance.CurrentDay().Details;
-            UpdateTime();
+            Init();
         }
 
         private void btn_SelectedUser_Click(object sender, EventArgs e)
